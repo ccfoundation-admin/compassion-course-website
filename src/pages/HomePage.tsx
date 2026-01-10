@@ -1,13 +1,44 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import AnimatedText from '../components/AnimatedText';
 
 const HomePage: React.FC = () => {
+  const heroSectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    // Initialize hero background image
+    const heroSection = heroSectionRef.current;
+    if (!heroSection) return;
+
+    // Test if image loads
+    const img = new Image();
+    img.onload = function() {
+      console.log('Hero background image loaded successfully');
+      heroSection.classList.add('with-bg');
+    };
+    img.onerror = function() {
+      console.error('Failed to load hero background image');
+      // Keep the gradient background as fallback
+    };
+    img.src = '/hero-background.jpg';
+
+    // Fallback: add class after a delay even if image doesn't load
+    const fallbackTimeout = setTimeout(() => {
+      if (!heroSection.classList.contains('with-bg')) {
+        heroSection.classList.add('with-bg');
+      }
+    }, 2000);
+
+    return () => {
+      clearTimeout(fallbackTimeout);
+    };
+  }, []);
+
   return (
     <Layout>
       {/* Hero Section */}
-      <section id="home" className="hero">
+      <section id="home" className="hero" ref={heroSectionRef}>
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">Discover The Compassion Course</h1>
