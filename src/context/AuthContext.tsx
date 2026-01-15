@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   User, 
-  signInWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut, 
   onAuthStateChanged,
   getIdTokenResult
@@ -19,6 +20,7 @@ interface AuthContextType {
   isAdmin: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -249,6 +251,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const register = async (email: string, password: string) => {
+    try {
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('Registration successful:', userCredential.user.email);
+      return userCredential;
+    } catch (error: any) {
+      console.error('Firebase registration error:', error);
+      // Re-throw the error so the RegisterPage can handle it
+      throw error;
+    }
+  };
+
   const logout = async () => {
     await signOut(auth);
   };
@@ -258,6 +272,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAdmin,
     loading,
     login,
+    register,
     logout
   };
 

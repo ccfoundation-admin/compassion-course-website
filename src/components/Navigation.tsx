@@ -38,7 +38,7 @@ const Navigation: React.FC = () => {
             <a href="/#testimonials" className="nav-link">What People Say</a>
           </li>
           <li className="nav-item">
-            <Link to="/admin/login-4f73b2c" className="nav-link">Login/Register</Link>
+            <Link to="/login" className="nav-link">Login/Register</Link>
           </li>
         </ul>
         

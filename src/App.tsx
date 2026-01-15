@@ -3,12 +3,18 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ContentProvider } from './context/ContentContext'
 import ProtectedRoute from './components/ProtectedRoute'
+import UserProtectedRoute from './components/UserProtectedRoute'
 
 // Public Pages
 import HomePage from './pages/HomePage'
 import AboutPage from './pages/AboutPage'
 import ProgramsPage from './pages/ProgramsPage'
 import ContactPage from './pages/ContactPage'
+
+// User Pages
+import UserLoginPage from './pages/UserLoginPage'
+import UserRegisterPage from './pages/UserRegisterPage'
+import PortalPage from './pages/PortalPage'
 
 // Admin Pages
 import LoginPage from './pages/admin/LoginPage'
@@ -28,6 +34,15 @@ function App() {
               <Route path="/about" element={<AboutPage />} />
               <Route path="/programs" element={<ProgramsPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              
+              {/* User Routes */}
+              <Route path="/login" element={<UserLoginPage />} />
+              <Route path="/register" element={<UserRegisterPage />} />
+              <Route path="/portal" element={
+                <UserProtectedRoute>
+                  <PortalPage />
+                </UserProtectedRoute>
+              } />
               
               {/* Admin Routes */}
               <Route path="/admin/login-4f73b2c" element={<LoginPage />} />
