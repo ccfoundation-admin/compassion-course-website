@@ -13,6 +13,7 @@
     ]
   },
   "hosting": {
+    "site": "compassion-course-websit-937d6",
     "public": "dist",
     "ignore": [
       "firebase.json",
