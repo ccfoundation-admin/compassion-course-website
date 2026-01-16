@@ -42,16 +42,21 @@ jobs:
       
       - name: Setup Firebase Service Account
         run: |
-          # Write the service account JSON to a file
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $HOME/firebase-service-account.json
+          # Write the service account JSON to a file using printf to handle special characters
+          printf '%s\n' "$FIREBASE_SERVICE_ACCOUNT" > $HOME/firebase-service-account.json
           chmod 600 $HOME/firebase-service-account.json
+          # Debug: Show first and last 50 chars to verify structure
+          echo "File size: $(wc -c < $HOME/firebase-service-account.json) bytes"
+          echo "First 50 chars: $(head -c 50 $HOME/firebase-service-account.json)"
+          echo "Last 50 chars: $(tail -c 50 $HOME/firebase-service-account.json)"
           # Check if file starts with { (valid JSON)
-          if ! head -c 1 $HOME/firebase-service-account.json | grep -q '{'; then
-            echo "ERROR: JSON file does not start with '{'. The secret may be malformed."
-            echo "First 200 characters of the file:"
+          FIRST_CHAR=$(head -c 1 $HOME/firebase-service-account.json)
+          if [ "$FIRST_CHAR" != "{" ]; then
+            echo "ERROR: JSON file does not start with '{'. Got: '$FIRST_CHAR'"
+            echo "First 200 characters:"
             head -c 200 $HOME/firebase-service-account.json
             echo ""
-            echo "Please ensure the FIREBASE_SERVICE_ACCOUNT secret contains the complete JSON file starting with {"
+            echo "The secret may have leading whitespace or be malformed. Please check the FIREBASE_SERVICE_ACCOUNT secret."
             exit 1
           fi
           # Validate JSON format
