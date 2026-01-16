@@ -42,10 +42,19 @@ jobs:
       
       - name: Setup Firebase Service Account
         run: |
-          # Write the service account JSON to a file using base64 to preserve all characters
-          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" | base64 -d > $HOME/firebase-service-account.json 2>/dev/null || echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $HOME/firebase-service-account.json
+          # Write the service account JSON to a file
+          echo "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}" > $HOME/firebase-service-account.json
           chmod 600 $HOME/firebase-service-account.json
-          # Validate JSON format and show error if invalid
+          # Check if file starts with { (valid JSON)
+          if ! head -c 1 $HOME/firebase-service-account.json | grep -q '{'; then
+            echo "ERROR: JSON file does not start with '{'. The secret may be malformed."
+            echo "First 200 characters of the file:"
+            head -c 200 $HOME/firebase-service-account.json
+            echo ""
+            echo "Please ensure the FIREBASE_SERVICE_ACCOUNT secret contains the complete JSON file starting with {"
+            exit 1
+          fi
+          # Validate JSON format
           python3 -c "import json; json.load(open('$HOME/firebase-service-account.json'))" || (echo "JSON validation failed. First 500 chars:" && head -c 500 $HOME/firebase-service-account.json && exit 1)
           # Activate service account using gcloud
           gcloud auth activate-service-account --key-file=$HOME/firebase-service-account.json
