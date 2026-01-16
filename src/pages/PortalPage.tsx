@@ -58,17 +58,24 @@ const PortalPage: React.FC = () => {
             gap: '20px',
             marginTop: '30px'
           }}>
-            <div style={{ 
-              padding: '20px', 
-              background: '#f9fafb', 
-              borderRadius: '8px',
-              border: '1px solid #e5e7eb'
-            }}>
-              <h3 style={{ color: '#002B4D', marginBottom: '10px' }}>Course Materials</h3>
+            <a 
+              href="/platform"
+              style={{ 
+                padding: '20px', 
+                background: '#f9fafb', 
+                borderRadius: '8px',
+                border: '1px solid #e5e7eb',
+                textDecoration: 'none',
+                color: 'inherit',
+                display: 'block',
+                cursor: 'pointer',
+              }}
+            >
+              <h3 style={{ color: '#002B4D', marginBottom: '10px' }}>Platform</h3>
               <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                Access your course content and resources
+                Access communities, courses, and webcasts
               </p>
-            </div>
+            </a>
             
             <div style={{ 
               padding: '20px', 

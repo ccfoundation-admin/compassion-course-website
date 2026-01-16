@@ -9,6 +9,7 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
+import { createUserProfile, getUserProfile } from '../services/userProfileService';
 
 // Temporary fallback admin emails (used when Firestore is offline)
 const ADMIN_EMAILS: string[] = [
@@ -66,6 +67,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       
       if (user) {
+        // Ensure user profile exists
+        try {
+          const existingProfile = await getUserProfile(user.uid);
+          if (!existingProfile) {
+            await createUserProfile(
+              user.uid,
+              user.email || '',
+              user.displayName || user.email?.split('@')[0] || 'User',
+              user.photoURL
+            );
+            console.log('User profile created on login');
+          }
+        } catch (profileError) {
+          console.error('Error ensuring user profile exists:', profileError);
+        }
+
         // Check if user is admin - first check custom claims, then Firestore
         const checkAdmin = async (retries = 3) => {
           // First, check custom claims (most reliable)
@@ -255,6 +272,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('Registration successful:', userCredential.user.email);
+      
+      // Auto-create user profile
+      try {
+        const existingProfile = await getUserProfile(userCredential.user.uid);
+        if (!existingProfile) {
+          await createUserProfile(
+            userCredential.user.uid,
+            email,
+            userCredential.user.displayName || email.split('@')[0],
+            userCredential.user.photoURL
+          );
+          console.log('User profile created successfully');
+        }
+      } catch (profileError) {
+        console.error('Error creating user profile:', profileError);
+        // Don't fail registration if profile creation fails
+      }
+      
       return userCredential;
     } catch (error: any) {
       console.error('Firebase registration error:', error);

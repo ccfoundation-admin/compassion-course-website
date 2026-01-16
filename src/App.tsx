@@ -16,6 +16,10 @@ import UserLoginPage from './pages/UserLoginPage'
 import UserRegisterPage from './pages/UserRegisterPage'
 import PortalPage from './pages/PortalPage'
 
+// Platform Pages
+import PlatformDashboard from './pages/platform/PlatformDashboard'
+import UserProfilePage from './pages/platform/UserProfilePage'
+
 // Admin Pages
 import LoginPage from './pages/admin/LoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
@@ -41,6 +45,18 @@ function App() {
               <Route path="/portal" element={
                 <UserProtectedRoute>
                   <PortalPage />
+                </UserProtectedRoute>
+              } />
+              
+              {/* Platform Routes */}
+              <Route path="/platform" element={
+                <UserProtectedRoute>
+                  <PlatformDashboard />
+                </UserProtectedRoute>
+              } />
+              <Route path="/platform/profile" element={
+                <UserProtectedRoute>
+                  <UserProfilePage />
                 </UserProtectedRoute>
               } />
               
