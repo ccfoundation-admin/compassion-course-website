@@ -80,23 +80,29 @@ jobs:
                   parsed['private_key'] = parsed['private_key'].replace('\\n', '\n')
               
               # Write the JSON to file
-              # We write it manually to preserve actual newlines in private_key
-              # json.dump() would escape them back to \n
+              # We need to write it so that newlines in private_key are preserved
+              # json.dump() escapes newlines, so we write manually for private_key
               output_file = os.path.expanduser('~/firebase-service-account.json')
+              
+              # Create a copy for writing, but handle private_key specially
+              write_data = parsed.copy()
+              private_key_value = write_data.pop('private_key')
+              
+              # Write JSON with all fields except private_key
+              json_str = json.dumps(write_data, indent=2)
+              
+              # Insert private_key with actual newlines preserved
+              # Find the insertion point (before the closing brace)
               with open(output_file, 'w') as f:
-                  f.write('{\n')
-                  f.write(f'  "type": {json.dumps(parsed["type"])},\n')
-                  f.write(f'  "project_id": {json.dumps(parsed["project_id"])},\n')
-                  f.write(f'  "private_key_id": {json.dumps(parsed["private_key_id"])},\n')
-                  f.write(f'  "private_key": {json.dumps(parsed["private_key"])},\n')
-                  f.write(f'  "client_email": {json.dumps(parsed["client_email"])},\n')
-                  f.write(f'  "client_id": {json.dumps(parsed["client_id"])},\n')
-                  f.write(f'  "auth_uri": {json.dumps(parsed["auth_uri"])},\n')
-                  f.write(f'  "token_uri": {json.dumps(parsed["token_uri"])},\n')
-                  f.write(f'  "auth_provider_x509_cert_url": {json.dumps(parsed["auth_provider_x509_cert_url"])},\n')
-                  f.write(f'  "client_x509_cert_url": {json.dumps(parsed["client_x509_cert_url"])},\n')
-                  f.write(f'  "universe_domain": {json.dumps(parsed["universe_domain"])}\n')
-                  f.write('}\n')
+                  # Write all fields except the last one
+                  lines = json_str.split('\n')
+                  for i, line in enumerate(lines):
+                      if line.strip() == '}':
+                          # Insert private_key before closing brace
+                          f.write(f'  "private_key": {json.dumps(private_key_value)},\n')
+                      f.write(line)
+                      if i < len(lines) - 1:
+                          f.write('\n')
               
               # Set proper permissions
               os.chmod(output_file, 0o600)
