@@ -42,25 +42,70 @@ jobs:
       
       - name: Setup Firebase Service Account
         run: |
-          # Write the service account JSON to a file using printf to handle special characters
-          printf '%s\n' "$FIREBASE_SERVICE_ACCOUNT" > $HOME/firebase-service-account.json
-          chmod 600 $HOME/firebase-service-account.json
-          # Debug: Show first and last 50 chars to verify structure
-          echo "File size: $(wc -c < $HOME/firebase-service-account.json) bytes"
-          echo "First 50 chars: $(head -c 50 $HOME/firebase-service-account.json)"
-          echo "Last 50 chars: $(tail -c 50 $HOME/firebase-service-account.json)"
-          # Check if file starts with { (valid JSON)
-          FIRST_CHAR=$(head -c 1 $HOME/firebase-service-account.json)
-          if [ "$FIRST_CHAR" != "{" ]; then
-            echo "ERROR: JSON file does not start with '{'. Got: '$FIRST_CHAR'"
-            echo "First 200 characters:"
-            head -c 200 $HOME/firebase-service-account.json
-            echo ""
-            echo "The secret may have leading whitespace or be malformed. Please check the FIREBASE_SERVICE_ACCOUNT secret."
-            exit 1
-          fi
-          # Validate JSON format
-          python3 -c "import json; json.load(open('$HOME/firebase-service-account.json'))" || (echo "JSON validation failed. First 500 chars:" && head -c 500 $HOME/firebase-service-account.json && exit 1)
+          # Decode base64-encoded service account JSON and write to file
+          # This avoids GitHub Secrets' multi-line formatting issues
+          python3 << 'EOF'
+          import json
+          import base64
+          import os
+          import sys
+          
+          secret_b64 = os.environ.get('FIREBASE_SERVICE_ACCOUNT', '')
+          
+          if not secret_b64:
+              print("ERROR: FIREBASE_SERVICE_ACCOUNT environment variable is empty")
+              sys.exit(1)
+          
+          # Strip leading/trailing whitespace
+          secret_b64 = secret_b64.strip()
+          
+          # Debug: Show encoded secret info
+          print(f"Base64 secret length: {len(secret_b64)} characters")
+          print(f"First 50 chars of base64: {secret_b64[:50]}")
+          print(f"Last 50 chars of base64: {secret_b64[-50:]}")
+          
+          try:
+              # Decode base64 to get the JSON string
+              secret_json = base64.b64decode(secret_b64).decode('utf-8')
+              
+              print(f"Decoded JSON length: {len(secret_json)} characters")
+              print(f"First 50 chars of JSON: {secret_json[:50]}")
+              print(f"Last 50 chars of JSON: {secret_json[-50:]}")
+              
+              # Validate JSON format
+              parsed = json.loads(secret_json)
+              
+              # Convert \n escape sequences to actual newlines in private_key
+              # This is needed because gcloud expects actual newlines, not escape sequences
+              if 'private_key' in parsed:
+                  parsed['private_key'] = parsed['private_key'].replace('\\n', '\n')
+              
+              # Write the parsed JSON to file (this ensures proper formatting)
+              output_file = os.path.expanduser('~/firebase-service-account.json')
+              with open(output_file, 'w') as f:
+                  json.dump(parsed, f, indent=2)
+              
+              # Set proper permissions
+              os.chmod(output_file, 0o600)
+              
+              print(f"Successfully decoded and wrote service account JSON to {output_file}")
+              
+          except base64.binascii.Error as e:
+              print(f"ERROR: Invalid base64 encoding: {e}")
+              print("Please ensure the FIREBASE_SERVICE_ACCOUNT secret contains a valid base64-encoded string")
+              sys.exit(1)
+          except json.JSONDecodeError as e:
+              print(f"ERROR: Invalid JSON format after decoding: {e}")
+              print(f"Error at position {e.pos}: {e.msg}")
+              print(f"First 500 chars of decoded JSON: {secret_json[:500] if 'secret_json' in locals() else 'N/A'}")
+              sys.exit(1)
+          except Exception as e:
+              print(f"ERROR: Unexpected error: {e}")
+              import traceback
+              traceback.print_exc()
+              sys.exit(1)
+          EOF
+          
           # Activate service account using gcloud
           gcloud auth activate-service-account --key-file=$HOME/firebase-service-account.json
           # Set the project
