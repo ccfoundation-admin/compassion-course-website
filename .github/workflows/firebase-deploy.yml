@@ -75,34 +75,18 @@ jobs:
               # Parse JSON
               parsed = json.loads(secret_json)
               
-              # Convert \n escape sequences to actual newlines in private_key
+              # The private_key in the decoded JSON has \n as literal characters (backslash-n)
+              # We need to convert them to actual newlines for gcloud to read
               if 'private_key' in parsed:
+                  # Replace literal \n with actual newline characters
                   parsed['private_key'] = parsed['private_key'].replace('\\n', '\n')
               
               # Write the JSON to file
-              # We need to write it so that newlines in private_key are preserved
-              # json.dump() escapes newlines, so we write manually for private_key
+              # json.dump() will properly escape newlines as \n in the JSON string
+              # When gcloud reads the file, it will parse the JSON and convert \n back to newlines
               output_file = os.path.expanduser('~/firebase-service-account.json')
-              
-              # Create a copy for writing, but handle private_key specially
-              write_data = parsed.copy()
-              private_key_value = write_data.pop('private_key')
-              
-              # Write JSON with all fields except private_key
-              json_str = json.dumps(write_data, indent=2)
-              
-              # Insert private_key with actual newlines preserved
-              # Find the insertion point (before the closing brace)
               with open(output_file, 'w') as f:
-                  # Write all fields except the last one
-                  lines = json_str.split('\n')
-                  for i, line in enumerate(lines):
-                      if line.strip() == '}':
-                          # Insert private_key before closing brace
-                          f.write(f'  "private_key": {json.dumps(private_key_value)},\n')
-                      f.write(line)
-                      if i < len(lines) - 1:
-                          f.write('\n')
+                  json.dump(parsed, f, indent=2, ensure_ascii=False)
               
               # Set proper permissions
               os.chmod(output_file, 0o600)
