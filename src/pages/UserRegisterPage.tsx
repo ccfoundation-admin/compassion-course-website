@@ -166,7 +166,7 @@ const UserRegisterPage: React.FC = () => {
   return (
     <div className="login-page">
       <div className="login-container">
-        <h2>Compassion Course Registration</h2>
+        <h2>Global Compassion Network</h2>
         {error && <div className="error">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
