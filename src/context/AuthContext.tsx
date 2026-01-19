@@ -16,7 +16,7 @@ import { createUserProfile, getUserProfile } from '../services/userProfileServic
 
 // Temporary fallback admin emails (used when Firestore is offline)
 const ADMIN_EMAILS: string[] = [
-  // Add Compassion Course admin emails here
+  'info@compassioncf.com'
 ];
 
 interface AuthContextType {

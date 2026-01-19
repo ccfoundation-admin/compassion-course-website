@@ -27,6 +27,7 @@ import WebcastJoinPage from './pages/platform/WebcastJoinPage'
 import LoginPage from './pages/admin/LoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import WebcastManagement from './pages/admin/WebcastManagement'
+import AdminManagement from './pages/admin/AdminManagement'
 
 import './App.css'
 
@@ -90,6 +91,11 @@ function App() {
               <Route path="/admin/webcasts" element={
                 <ProtectedRoute>
                   <WebcastManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/manage" element={
+                <ProtectedRoute>
+                  <AdminManagement />
                 </ProtectedRoute>
               } />
             </Routes>
