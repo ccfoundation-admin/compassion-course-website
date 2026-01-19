@@ -38,12 +38,12 @@ const Navigation: React.FC = () => {
             <a href="/#testimonials" className="nav-link">What People Say</a>
           </li>
           <li className="nav-item">
-            <Link to="/login" className="nav-link">Login/Register</Link>
+            <Link to="/login" className="nav-link">Portal Login</Link>
           </li>
         </ul>
         
         <div className="nav-register">
-          <a href="/#register" className="btn-primary">Schedule & Register</a>
+          <a href="/#register" className="btn-primary">Schedule</a>
         </div>
         
         <div className={`hamburger ${isMenuOpen ? 'active' : ''}`} onClick={() => setIsMenuOpen(!isMenuOpen)}>
