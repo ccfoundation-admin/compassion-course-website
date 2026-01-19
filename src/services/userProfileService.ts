@@ -53,27 +53,36 @@ export async function createUserProfile(
       updatedAt: new Date(),
     };
 
-    // Only add avatar and bio if they are defined (not undefined)
-    if (avatar !== undefined) {
+    // Only add avatar and bio if they are truthy strings (not undefined, null, or empty)
+    if (avatar !== undefined && avatar !== null && avatar !== '') {
       profileData.avatar = avatar;
     }
-    if (bio !== undefined) {
+    if (bio !== undefined && bio !== null && bio !== '') {
       profileData.bio = bio;
     }
 
     const docRef = doc(db, COLLECTION_NAME, userId);
     await setDoc(docRef, profileData);
 
-    return {
+    // Return object - ensure no undefined values
+    const returnProfile: UserProfile = {
       id: userId,
       name,
       email,
-      avatar: avatar || undefined,
-      bio: bio || undefined,
       organizations: [],
       createdAt: profileData.createdAt,
       updatedAt: profileData.updatedAt,
-    } as UserProfile;
+    };
+
+    // Only add optional fields if they exist in profileData
+    if (profileData.avatar) {
+      returnProfile.avatar = profileData.avatar;
+    }
+    if (profileData.bio) {
+      returnProfile.bio = profileData.bio;
+    }
+
+    return returnProfile;
   } catch (error) {
     console.error('Error creating user profile:', error);
     throw error;
@@ -90,14 +99,14 @@ export async function updateUserProfile(
       updatedAt: new Date(),
     };
 
-    // Only include fields that are not undefined
-    if (updates.name !== undefined) {
+    // Only include fields that are not undefined, null, or empty string
+    if (updates.name !== undefined && updates.name !== null && updates.name !== '') {
       updateData.name = updates.name;
     }
-    if (updates.avatar !== undefined) {
+    if (updates.avatar !== undefined && updates.avatar !== null && updates.avatar !== '') {
       updateData.avatar = updates.avatar;
     }
-    if (updates.bio !== undefined) {
+    if (updates.bio !== undefined && updates.bio !== null && updates.bio !== '') {
       updateData.bio = updates.bio;
     }
 
