@@ -19,6 +19,7 @@ const AdminManagement: React.FC = () => {
   const [email, setEmail] = useState('');
   const [admins, setAdmins] = useState<AdminRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [granting, setGranting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -33,9 +34,9 @@ const AdminManagement: React.FC = () => {
     try {
       const adminsRef = collection(db, 'admins');
       
-      // Add timeout to prevent hanging
+      // Add timeout to prevent hanging (reduced to 5 seconds for faster feedback)
       const timeoutPromise = new Promise<never>((_, reject) => 
-        setTimeout(() => reject(new Error('Loading admins timed out after 10 seconds')), 10000)
+        setTimeout(() => reject(new Error('Loading admins timed out after 5 seconds')), 5000)
       );
       
       const querySnapshot = await Promise.race([
@@ -120,9 +121,29 @@ const AdminManagement: React.FC = () => {
       });
 
       console.log('✅ Admin document created successfully');
+      
+      // Optimistically add the new admin to the list immediately
+      const newAdmin: AdminRecord = {
+        id: normalizedEmail,
+        email: normalizedEmail,
+        role: 'admin',
+        grantedBy: user?.email || 'unknown',
+        grantedAt: new Date().toISOString(),
+        status: 'active'
+      };
+      setAdmins([...admins, newAdmin]);
+      
       setSuccess(`Admin rights granted to ${normalizedEmail}. They will have admin access when they log in.`);
       setEmail('');
-      await loadAdmins();
+      
+      // Refresh the list in the background (don't wait for it)
+      setRefreshing(true);
+      loadAdmins().finally(() => {
+        setRefreshing(false);
+      }).catch(err => {
+        console.warn('Background refresh of admins failed:', err);
+        // Don't show error to user since we already optimistically updated
+      });
     } catch (error: any) {
       console.error('❌ Error granting admin:', error);
       console.error('Error code:', error?.code);
@@ -190,8 +211,19 @@ const AdminManagement: React.FC = () => {
         console.warn('Could not query for matching admin documents:', queryError);
       }
       
+      // Optimistically remove the admin from the list immediately
+      setAdmins(admins.filter(a => a.id !== adminId && a.email.toLowerCase() !== adminEmail.toLowerCase()));
+      
       setSuccess(`Admin rights revoked from ${adminEmail}`);
-      loadAdmins();
+      
+      // Refresh the list in the background (don't wait for it)
+      setRefreshing(true);
+      loadAdmins().finally(() => {
+        setRefreshing(false);
+      }).catch(err => {
+        console.warn('Background refresh of admins failed:', err);
+        // Don't show error to user since we already optimistically updated
+      });
     } catch (error: any) {
       console.error('Error revoking admin:', error);
       setError(error.message || 'Failed to revoke admin rights. Please try again.');
@@ -306,7 +338,18 @@ const AdminManagement: React.FC = () => {
           padding: '24px',
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
         }}>
-          <h2 style={{ color: '#002B4D', marginBottom: '20px' }}>Current Admins</h2>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+            <h2 style={{ color: '#002B4D', margin: 0 }}>Current Admins</h2>
+            {refreshing && (
+              <span style={{ 
+                fontSize: '0.875rem', 
+                color: '#6b7280',
+                fontStyle: 'italic'
+              }}>
+                Refreshing...
+              </span>
+            )}
+          </div>
           
           {loading ? (
             <p style={{ color: '#6b7280' }}>Loading admins...</p>
