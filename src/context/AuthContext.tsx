@@ -95,11 +95,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Silently continue - profile will be created when Firebase comes online
         }
 
-        // Check if user is admin - first check custom claims, then Firestore
-        const checkAdmin = async (retries = 3) => {
-          // First, check custom claims (most reliable)
+        // Check if user is admin - simplified logic for known admin emails
+        const checkAdmin = async () => {
+          // Fast path: If email is in admin list, grant access immediately
+          if (user.email && ADMIN_EMAILS.includes(user.email)) {
+            console.log('✅ Admin email detected, granting immediate access:', user.email);
+            setIsAdmin(true);
+            // Try to create/verify admin document in background (don't wait)
+            createAdminDocument(user).catch(err => {
+              console.warn('⚠️ Background admin document creation failed (non-blocking):', err);
+            });
+            return;
+          }
+
+          // For other users, check custom claims first
           try {
-            const tokenResult = await getIdTokenResult(user, true); // Force refresh to get latest claims
+            const tokenResult = await getIdTokenResult(user, true);
             const hasAdminClaim = tokenResult.claims?.admin === true;
             
             console.log('🔐 Admin check for user:', {
@@ -112,148 +123,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (hasAdminClaim) {
               console.log('✅ ADMIN ACCESS CONFIRMED via custom claim!');
               setIsAdmin(true);
-              setLoading(false);
               return;
             }
           } catch (claimError: any) {
             console.warn('⚠️ Error checking custom claims:', claimError);
-            // Continue to Firestore check as fallback
           }
           
-          // Fallback: Check Firestore document
-          for (let i = 0; i < retries; i++) {
-            try {
-              const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-              const exists = adminDoc.exists();
-              const role = adminDoc.data()?.role;
-              const isAdminUser = exists && role === 'admin';
-              
-              console.log('🔐 Firestore admin check:', {
-                email: user.email,
-                uid: user.uid,
-                adminDocExists: exists,
-                role: role,
-                isAdmin: isAdminUser,
-                attempt: i + 1
-              });
-              
-              if (isAdminUser) {
-                console.log('✅ ADMIN ACCESS CONFIRMED via Firestore!');
-              } else {
-                console.log('❌ Admin check failed - User is NOT admin');
-              }
-              
-              setIsAdmin(isAdminUser);
-              
-              if (!exists) {
-                console.warn('⚠️ No admin document found for user:', user.email);
-                // Auto-create admin document if email is in admin list
-                if (user.email && ADMIN_EMAILS.includes(user.email)) {
-                  console.log('🔄 Auto-creating admin document...');
-                  const created = await createAdminDocument(user);
-                  if (created) {
-                    // Re-check admin status
-                    const newAdminDoc = await getDoc(doc(db, 'admins', user.uid));
-                    if (newAdminDoc.exists() && newAdminDoc.data()?.role === 'admin') {
-                      console.log('✅ Admin document created and verified!');
-                      setIsAdmin(true);
-                      return;
-                    }
-                  }
-                } else {
-                  console.warn('💡 To grant admin access, create a document at: admins/' + user.uid + ' with { role: "admin" }');
-                }
-              } else if (role !== 'admin') {
-                console.warn('⚠️ User has admin document but role is not "admin":', role);
-              }
-              return; // Success, exit retry loop
-            } catch (error: any) {
-              const isOfflineError = error?.code === 'unavailable' || 
-                                    error?.message?.includes('offline') ||
-                                    error?.message?.includes('network') ||
-                                    error?.message?.includes('Failed to get document because the client is offline');
-              
-              const isPermissionError = error?.code === 'permission-denied' ||
-                                       error?.code === 'PERMISSION_DENIED' ||
-                                       error?.message?.includes('Missing or insufficient permissions') ||
-                                       error?.message?.includes('permission') ||
-                                       error?.message?.includes('Permission denied');
-              
-              // Only log non-offline errors as errors
-              if (!isOfflineError) {
-                console.error(`❌ Error checking admin status (attempt ${i + 1}/${retries}):`, error);
-                console.error(`   Error code: ${error?.code}, Message: ${error?.message}`);
-              } else if (i === 0) {
-                // Only log offline error on first attempt, not on retries
-                console.log(`ℹ️ Firebase is initializing (offline mode). Retrying...`);
-              }
-              
-              // If it's a permission error, try to create admin document first
-              if (isPermissionError) {
-                console.warn('⚠️ Permission error detected');
-                
-                // Try to auto-create admin document if email is in admin list
-                if (user.email && ADMIN_EMAILS.includes(user.email)) {
-                  console.log('🔄 Attempting to auto-create admin document...');
-                  const created = await createAdminDocument(user);
-                  
-                  if (created) {
-                    // Try reading again after creation
-                    try {
-                      const adminDoc = await getDoc(doc(db, 'admins', user.uid));
-                      if (adminDoc.exists() && adminDoc.data()?.role === 'admin') {
-                        console.log('✅ Admin document created and verified!');
-                        setIsAdmin(true);
-                        setLoading(false);
-                        return;
-                      }
-                    } catch (retryError) {
-                      console.warn('⚠️ Still getting permission error after creation, using email fallback');
-                    }
-                  }
-                  
-                  // Fallback to email-based check
-                  console.log('✅ Admin access granted via email fallback:', user.email);
-                  setIsAdmin(true);
-                  setLoading(false);
-                  return;
-                } else {
-                  console.log('❌ Email not in admin fallback list');
-                  setIsAdmin(false);
-                  return;
-                }
-              }
-              
-              // On final retry attempt, try email fallback
-              if (i === retries - 1) {
-                if (user.email && ADMIN_EMAILS.includes(user.email)) {
-                  // Try creating admin document one more time
-                  const created = await createAdminDocument(user);
-                  if (created) {
-                    console.log('✅ Admin document created on final attempt');
-                    setIsAdmin(true);
-                    setLoading(false);
-                    return;
-                  }
-                  // Fallback to email check
-                  console.log('✅ Admin access granted via email fallback:', user.email);
-                  setIsAdmin(true);
-                  setLoading(false);
-                  return;
-                } else {
-                  console.log('❌ Email not in admin fallback list');
-                  setIsAdmin(false);
-                  return;
-                }
-              }
-              
-              if (i < retries - 1 && isOfflineError) {
-                // Wait before retrying with exponential backoff
-                const delay = 1000 * Math.pow(2, i);
-                console.log(`⏳ Retrying admin check in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-              }
+          // Check Firestore document (single attempt with timeout)
+          try {
+            const timeoutPromise = new Promise<never>((_, reject) => 
+              setTimeout(() => reject(new Error('Admin check timeout')), 5000)
+            );
+            const adminDoc = await Promise.race([
+              getDoc(doc(db, 'admins', user.uid)),
+              timeoutPromise
+            ]);
+            
+            const exists = adminDoc.exists();
+            const role = adminDoc.data()?.role;
+            const isAdminUser = exists && role === 'admin';
+            
+            console.log('🔐 Firestore admin check:', {
+              email: user.email,
+              uid: user.uid,
+              adminDocExists: exists,
+              role: role,
+              isAdmin: isAdminUser
+            });
+            
+            setIsAdmin(isAdminUser);
+          } catch (error: any) {
+            const isOfflineError = error?.code === 'unavailable' || 
+                                  error?.message?.includes('offline') ||
+                                  error?.message?.includes('network') ||
+                                  error?.message?.includes('timeout');
+            
+            if (!isOfflineError) {
+              console.error('❌ Error checking admin status:', error);
             }
+            // Default to non-admin if check fails
+            setIsAdmin(false);
           }
         };
         
