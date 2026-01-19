@@ -140,7 +140,7 @@ const UserLoginPage: React.FC = () => {
           {loading ? 'Signing in...' : 'Sign in with Google'}
         </button>
         <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          <p>Don't have an account? <Link to="/register">Register here</Link></p>
+          <p>Don't have an account?<br /><Link to="/register">Register here</Link></p>
         </div>
       </div>
     </div>
