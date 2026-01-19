@@ -71,54 +71,55 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       
       if (user) {
-        // Ensure user profile exists
-        try {
-          const existingProfile = await getUserProfile(user.uid);
-          if (!existingProfile) {
-            await createUserProfile(
-              user.uid,
-              user.email || '',
-              user.displayName || user.email?.split('@')[0] || 'User',
-              user.photoURL || undefined  // Convert null to undefined
-            );
-            console.log('User profile created on login');
-          }
-        } catch (profileError: any) {
-          // Don't log offline errors as errors - they're expected during initialization
-          const isOfflineError = profileError?.code === 'unavailable' || 
-                                profileError?.message?.includes('offline') ||
-                                profileError?.message?.includes('Failed to get document because the client is offline');
+        // Fast path for known admin emails - set admin immediately and set loading to false
+        if (user.email && ADMIN_EMAILS.includes(user.email)) {
+          console.log('✅ Admin email detected, granting immediate access:', user.email);
+          setIsAdmin(true);
+          setLoading(false); // Set loading to false immediately for admin users
           
-          if (!isOfflineError) {
-            console.error('Error ensuring user profile exists:', profileError);
-          }
-          // Silently continue - profile will be created when Firebase comes online
-        }
-
-        // Check if user is admin - simplified logic for known admin emails
-        const checkAdmin = async () => {
-          // Fast path: If email is in admin list, grant access immediately
-          if (user.email && ADMIN_EMAILS.includes(user.email)) {
-            console.log('✅ Admin email detected, granting immediate access:', user.email);
-            setIsAdmin(true);
-            // Try to create/verify admin document in background (don't wait)
+          // Do profile and admin document creation in background (non-blocking)
+          Promise.all([
+            // Ensure user profile exists
+            getUserProfile(user.uid).then(existingProfile => {
+              if (!existingProfile) {
+                return createUserProfile(
+                  user.uid,
+                  user.email || '',
+                  user.displayName || user.email?.split('@')[0] || 'User',
+                  user.photoURL || undefined
+                ).then(() => {
+                  console.log('User profile created on login');
+                });
+              }
+            }).catch(err => {
+              const isOfflineError = err?.code === 'unavailable' || 
+                                    err?.message?.includes('offline');
+              if (!isOfflineError) {
+                console.error('Error ensuring user profile exists:', err);
+              }
+            }),
+            // Create admin document
             createAdminDocument(user).catch(err => {
               console.warn('⚠️ Background admin document creation failed (non-blocking):', err);
-            });
-            return;
-          }
+            })
+          ]).catch(() => {
+            // Ignore background errors
+          });
+          
+          return; // Exit early for admin users
+        }
 
-          // For other users, check custom claims first
+        // For non-admin users, check admin status first (with timeout)
+        const checkAdmin = async () => {
           try {
-            const tokenResult = await getIdTokenResult(user, true);
-            const hasAdminClaim = tokenResult.claims?.admin === true;
+            const tokenResult = await Promise.race([
+              getIdTokenResult(user, true),
+              new Promise<never>((_, reject) => 
+                setTimeout(() => reject(new Error('Token check timeout')), 3000)
+              )
+            ]);
             
-            console.log('🔐 Admin check for user:', {
-              email: user.email,
-              uid: user.uid,
-              customClaims: tokenResult.claims,
-              hasAdminClaim: hasAdminClaim
-            });
+            const hasAdminClaim = tokenResult.claims?.admin === true;
             
             if (hasAdminClaim) {
               console.log('✅ ADMIN ACCESS CONFIRMED via custom claim!');
@@ -126,13 +127,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return;
             }
           } catch (claimError: any) {
-            console.warn('⚠️ Error checking custom claims:', claimError);
+            if (!claimError?.message?.includes('timeout')) {
+              console.warn('⚠️ Error checking custom claims:', claimError);
+            }
           }
           
           // Check Firestore document (single attempt with timeout)
           try {
             const timeoutPromise = new Promise<never>((_, reject) => 
-              setTimeout(() => reject(new Error('Admin check timeout')), 5000)
+              setTimeout(() => reject(new Error('Admin check timeout')), 3000)
             );
             const adminDoc = await Promise.race([
               getDoc(doc(db, 'admins', user.uid)),
@@ -143,25 +146,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const role = adminDoc.data()?.role;
             const isAdminUser = exists && role === 'admin';
             
-            console.log('🔐 Firestore admin check:', {
-              email: user.email,
-              uid: user.uid,
-              adminDocExists: exists,
-              role: role,
-              isAdmin: isAdminUser
-            });
-            
             setIsAdmin(isAdminUser);
           } catch (error: any) {
             const isOfflineError = error?.code === 'unavailable' || 
                                   error?.message?.includes('offline') ||
-                                  error?.message?.includes('network') ||
                                   error?.message?.includes('timeout');
             
             if (!isOfflineError) {
               console.error('❌ Error checking admin status:', error);
             }
-            // Default to non-admin if check fails
             setIsAdmin(false);
           }
         };
@@ -172,6 +165,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error in checkAdmin:', adminError);
           setIsAdmin(false);
         }
+        
+        // Ensure user profile exists in background (non-blocking)
+        getUserProfile(user.uid).then(existingProfile => {
+          if (!existingProfile) {
+            return createUserProfile(
+              user.uid,
+              user.email || '',
+              user.displayName || user.email?.split('@')[0] || 'User',
+              user.photoURL || undefined
+            ).then(() => {
+              console.log('User profile created on login');
+            });
+          }
+        }).catch(err => {
+          const isOfflineError = err?.code === 'unavailable' || 
+                                err?.message?.includes('offline');
+          if (!isOfflineError) {
+            console.error('Error ensuring user profile exists:', err);
+          }
+        });
       } else {
         setIsAdmin(false);
       }
