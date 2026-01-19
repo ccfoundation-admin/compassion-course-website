@@ -83,8 +83,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             );
             console.log('User profile created on login');
           }
-        } catch (profileError) {
-          console.error('Error ensuring user profile exists:', profileError);
+        } catch (profileError: any) {
+          // Don't log offline errors as errors - they're expected during initialization
+          const isOfflineError = profileError?.code === 'unavailable' || 
+                                profileError?.message?.includes('offline') ||
+                                profileError?.message?.includes('Failed to get document because the client is offline');
+          
+          if (!isOfflineError) {
+            console.error('Error ensuring user profile exists:', profileError);
+          }
+          // Silently continue - profile will be created when Firebase comes online
         }
 
         // Check if user is admin - first check custom claims, then Firestore
@@ -162,7 +170,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } catch (error: any) {
               const isOfflineError = error?.code === 'unavailable' || 
                                     error?.message?.includes('offline') ||
-                                    error?.message?.includes('network');
+                                    error?.message?.includes('network') ||
+                                    error?.message?.includes('Failed to get document because the client is offline');
               
               const isPermissionError = error?.code === 'permission-denied' ||
                                        error?.code === 'PERMISSION_DENIED' ||
@@ -170,8 +179,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                                        error?.message?.includes('permission') ||
                                        error?.message?.includes('Permission denied');
               
-              console.error(`❌ Error checking admin status (attempt ${i + 1}/${retries}):`, error);
-              console.error(`   Error code: ${error?.code}, Message: ${error?.message}`);
+              // Only log non-offline errors as errors
+              if (!isOfflineError) {
+                console.error(`❌ Error checking admin status (attempt ${i + 1}/${retries}):`, error);
+                console.error(`   Error code: ${error?.code}, Message: ${error?.message}`);
+              } else if (i === 0) {
+                // Only log offline error on first attempt, not on retries
+                console.log(`ℹ️ Firebase is initializing (offline mode). Retrying...`);
+              }
               
               // If it's a permission error, try to create admin document first
               if (isPermissionError) {

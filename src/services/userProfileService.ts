@@ -19,7 +19,18 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       } as UserProfile;
     }
     return null;
-  } catch (error) {
+  } catch (error: any) {
+    // Handle offline errors gracefully - don't log as errors
+    const isOfflineError = error?.code === 'unavailable' || 
+                          error?.message?.includes('offline') ||
+                          error?.message?.includes('Failed to get document because the client is offline');
+    
+    if (isOfflineError) {
+      // Silently return null for offline scenarios - Firestore will retry when online
+      return null;
+    }
+    
+    // Only log actual errors (permissions, etc.)
     console.error('Error getting user profile:', error);
     throw error;
   }
