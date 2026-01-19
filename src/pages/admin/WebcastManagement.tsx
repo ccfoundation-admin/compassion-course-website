@@ -229,6 +229,20 @@ const WebcastManagement: React.FC = () => {
     });
   };
 
+  const selectAllLanguages = () => {
+    setFormData({
+      ...formData,
+      translationLanguages: MEET_LANGUAGES.map(lang => lang.code),
+    });
+  };
+
+  const deselectAllLanguages = () => {
+    setFormData({
+      ...formData,
+      translationLanguages: [],
+    });
+  };
+
   if (loading) {
     return (
       <div className="admin-dashboard">
@@ -383,7 +397,57 @@ const WebcastManagement: React.FC = () => {
               </div>
 
               <div style={{ marginBottom: '20px' }}>
-                <label>Translation Languages (select all that apply)</label>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                  <label style={{ margin: 0 }}>Translation Languages (select all that apply)</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      type="button"
+                      onClick={selectAllLanguages}
+                      style={{
+                        padding: '6px 12px',
+                        background: '#002B4D',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#001a33';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#002B4D';
+                      }}
+                    >
+                      Select All
+                    </button>
+                    <button
+                      type="button"
+                      onClick={deselectAllLanguages}
+                      style={{
+                        padding: '6px 12px',
+                        background: '#6b7280',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '0.875rem',
+                        fontWeight: 500,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#4b5563';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#6b7280';
+                      }}
+                    >
+                      Deselect All
+                    </button>
+                  </div>
+                </div>
                 <div style={{
                   display: 'grid',
                   gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
