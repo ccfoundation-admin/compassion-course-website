@@ -1323,6 +1323,28 @@ button:focus {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+.team-member-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.team-member-photo {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 12px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.team-member-info {
+    flex: 1;
+}
+
 .team-member h3 {
     font-size: 1.5rem;
     color: #002B4D;
@@ -1364,6 +1386,22 @@ button:focus {
     
     .team-member {
         padding: 1.5rem;
+    }
+    
+    .team-member-header {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .team-member-photo {
+        width: 120px;
+        height: 120px;
+    }
+    
+    .team-member-info {
+        width: 100%;
     }
     
     .team-member h3 {
