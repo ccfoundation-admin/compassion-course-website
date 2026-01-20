@@ -161,6 +161,42 @@ const AboutPage: React.FC = () => {
               <p>Shahinaz discovered NVC in 2010 during her time in Austria. She found it to be such an enriching experience, she decided to take her learning forward and integrate it in her life and home country Egypt. In New York she created a partnership with Thom Bond and NYCNVC to bring NVC to the Arab speaking World. Today Shahinaz is the principle coordinator and Associate Facilitator for the 2014 Compassion Course Arabic Translation Team.</p>
               <p><strong>Contact:</strong> arabic_coordinator@nycnvc.org</p>
             </div>
+
+            <div className="team-member">
+              <div className="team-member-header">
+                <img 
+                  src="/logo-TM.jpg" 
+                  alt="Kholoud Said"
+                  className="team-member-photo"
+                  loading="lazy"
+                  onError={(e) => {
+                    console.error('Failed to load image:', e.currentTarget.src);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="team-member-info">
+                  <h3>Kholoud Said</h3>
+                </div>
+              </div>
+            </div>
+
+            <div className="team-member">
+              <div className="team-member-header">
+                <img 
+                  src="/logo-TM.jpg" 
+                  alt="Yasmine Arafa"
+                  className="team-member-photo"
+                  loading="lazy"
+                  onError={(e) => {
+                    console.error('Failed to load image:', e.currentTarget.src);
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+                <div className="team-member-info">
+                  <h3>Yasmine Arafa</h3>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="team-section">
