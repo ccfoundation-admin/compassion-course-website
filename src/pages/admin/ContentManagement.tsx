@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
@@ -11,23 +11,196 @@ import {
   getAllTeamMembers,
   saveTeamMember,
   deleteTeamMember,
-  TeamMember
+  TeamMember,
+  getAllLanguageSections,
+  saveLanguageSection,
+  deleteLanguageSection,
+  TeamLanguageSection
 } from '../../services/contentService';
+import { 
+  uploadTeamMemberPhoto, 
+  createImagePreview,
+  validateImageFile 
+} from '../../services/photoUploadService';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
+
+// Sortable Person Item Component
+interface SortablePersonItemProps {
+  member: TeamMember;
+  onEdit: (member: TeamMember) => void;
+  onDelete: (id: string) => void;
+}
+
+const SortablePersonItem: React.FC<SortablePersonItemProps> = ({ member, onEdit, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: member.id || '' });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        ...style,
+        padding: '15px',
+        border: '1px solid #e5e7eb',
+        borderRadius: '8px',
+        backgroundColor: member.isActive ? '#ffffff' : '#fef2f2',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: '10px',
+        cursor: isDragging ? 'grabbing' : 'grab',
+      }}
+    >
+      <div style={{ display: 'flex', gap: '15px', flex: 1 }}>
+        {/* Drag Handle */}
+        <div
+          {...attributes}
+          {...listeners}
+          style={{
+            cursor: 'grab',
+            display: 'flex',
+            alignItems: 'center',
+            padding: '8px',
+            color: '#6b7280',
+            fontSize: '1.2rem',
+          }}
+        >
+          ⋮⋮
+        </div>
+        
+        {/* Photo Thumbnail */}
+        {member.photo && (
+          <img
+            src={member.photo}
+            alt={member.name}
+            style={{
+              width: '60px',
+              height: '60px',
+              objectFit: 'cover',
+              borderRadius: '8px',
+              border: '1px solid #e5e7eb',
+            }}
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+            }}
+          />
+        )}
+        
+        {/* Member Info */}
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
+            <strong style={{ color: '#002B4D' }}>{member.name}</strong>
+            {member.role && (
+              <span style={{ color: '#6b7280', fontSize: '0.875rem', fontStyle: 'italic' }}>
+                {member.role}
+              </span>
+            )}
+            {!member.isActive && (
+              <span style={{
+                fontSize: '0.75rem',
+                padding: '2px 8px',
+                backgroundColor: '#fee2e2',
+                color: '#dc2626',
+                borderRadius: '4px',
+              }}>
+                Inactive
+              </span>
+            )}
+          </div>
+          {member.bio && (
+            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
+              {typeof member.bio === 'string' 
+                ? (member.bio.length > 100 ? member.bio.substring(0, 100) + '...' : member.bio)
+                : 'Bio available'
+              }
+            </div>
+          )}
+          {member.contact && (
+            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
+              Contact: {member.contact}
+            </div>
+          )}
+          <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
+            Order: {member.order ?? 0}
+          </div>
+        </div>
+      </div>
+      
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button
+          onClick={() => onEdit(member)}
+          className="btn btn-small btn-secondary"
+        >
+          Edit
+        </button>
+        <button
+          onClick={() => member.id && onDelete(member.id)}
+          className="btn btn-small btn-danger"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+};
 
 const ContentManagement: React.FC = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [sections, setSections] = useState<ContentSection[]>([]);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [languageSections, setLanguageSections] = useState<TeamLanguageSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
+  const [editingLanguageSection, setEditingLanguageSection] = useState<TeamLanguageSection | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [expandedLanguageSections, setExpandedLanguageSections] = useState<Set<string>>(new Set());
   const [showTeamMembers, setShowTeamMembers] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     loadContent();
@@ -38,9 +211,10 @@ const ContentManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Load content and team members separately to handle errors independently
+      // Load content, team members, and language sections separately to handle errors independently
       let content: ContentSection[] = [];
       let members: TeamMember[] = [];
+      let langSections: TeamLanguageSection[] = [];
       
       try {
         content = await getAllContent();
@@ -69,8 +243,24 @@ const ContentManagement: React.FC = () => {
         }
       }
       
+      try {
+        langSections = await getAllLanguageSections();
+      } catch (langError: any) {
+        console.error('Error loading language sections:', langError);
+        // If no language sections exist yet, that's okay - we'll start with empty
+        if (langError?.code !== 'failed-precondition') {
+          console.warn('Could not load language sections:', langError);
+        }
+      }
+      
       setSections(content);
       setTeamMembers(members);
+      setLanguageSections(langSections);
+      
+      // Expand first language section by default if showing team members
+      if (showTeamMembers && langSections.length > 0) {
+        setExpandedLanguageSections(new Set([langSections[0].id || '']));
+      }
       
       // Expand first section by default
       if (content.length > 0) {
@@ -147,38 +337,20 @@ const ContentManagement: React.FC = () => {
 
   const handleEditMember = (member: TeamMember) => {
     setEditingMember({ ...member });
+    setPhotoPreview(member.photo || null);
+    setPhotoFile(null);
     setError(null);
     setSuccess(null);
   };
 
   const handleCancelEditMember = () => {
     setEditingMember(null);
+    setPhotoPreview(null);
+    setPhotoFile(null);
     setError(null);
     setSuccess(null);
   };
 
-  const handleSaveMember = async () => {
-    if (!editingMember || !user?.email) return;
-
-    try {
-      setSaving(true);
-      setError(null);
-      
-      await saveTeamMember(editingMember, user.email);
-      setSuccess('Team member saved successfully!');
-      
-      await loadContent();
-      
-      setTimeout(() => {
-        setEditingMember(null);
-        setSuccess(null);
-      }, 1500);
-    } catch (err: any) {
-      setError('Failed to save team member: ' + err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleDeleteMember = async (id: string) => {
     if (!confirm('Are you sure you want to delete this team member?')) return;
@@ -194,29 +366,220 @@ const ContentManagement: React.FC = () => {
     }
   };
 
-  const handleAddNewMember = () => {
+  const handleAddNewMember = (languageSectionId?: string) => {
+    const defaultSection = languageSections.length > 0 ? languageSections[0].name : 'English Team';
+    const sectionName = languageSectionId 
+      ? languageSections.find(s => s.id === languageSectionId)?.name || defaultSection
+      : defaultSection;
+    
     setEditingMember({
       name: '',
       role: '',
       bio: '',
       photo: '',
       contact: '',
-      teamSection: 'English Team',
+      teamSection: sectionName,
       order: 0,
+      isActive: true,
+    });
+    setPhotoPreview(null);
+    setPhotoFile(null);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleEditLanguageSection = (section: TeamLanguageSection) => {
+    setEditingLanguageSection({ ...section });
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleCancelEditLanguageSection = () => {
+    setEditingLanguageSection(null);
+    setError(null);
+    setSuccess(null);
+  };
+
+  const handleSaveLanguageSection = async () => {
+    if (!editingLanguageSection || !user?.email) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+      
+      await saveLanguageSection(editingLanguageSection, user.email);
+      setSuccess('Language section saved successfully!');
+      
+      await loadContent();
+      
+      setTimeout(() => {
+        setEditingLanguageSection(null);
+        setSuccess(null);
+      }, 1500);
+    } catch (err: any) {
+      setError('Failed to save language section: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteLanguageSection = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this language section? This will not delete team members, but they will need to be reassigned to another section.')) return;
+
+    try {
+      setError(null);
+      await deleteLanguageSection(id);
+      setSuccess('Language section deleted successfully!');
+      await loadContent();
+      setTimeout(() => setSuccess(null), 2000);
+    } catch (err: any) {
+      setError('Failed to delete language section: ' + err.message);
+    }
+  };
+
+  const handleAddNewLanguageSection = () => {
+    setEditingLanguageSection({
+      name: '',
+      order: languageSections.length,
       isActive: true,
     });
     setError(null);
     setSuccess(null);
   };
 
-  const getTeamSections = (): string[] => {
-    const sections = new Set<string>();
-    teamMembers.forEach(member => {
-      if (member.teamSection) {
-        sections.add(member.teamSection);
+  const toggleLanguageSection = (sectionId: string) => {
+    const newExpanded = new Set(expandedLanguageSections);
+    if (newExpanded.has(sectionId)) {
+      newExpanded.delete(sectionId);
+    } else {
+      newExpanded.add(sectionId);
+    }
+    setExpandedLanguageSections(newExpanded);
+  };
+
+  const getMembersForSection = (sectionName: string): TeamMember[] => {
+    return teamMembers
+      .filter(m => m.teamSection === sectionName && m.isActive !== false)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  };
+
+  const handlePhotoFileSelect = async (file: File) => {
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setError(validation.error || 'Invalid image file');
+      return;
+    }
+
+    try {
+      setPhotoFile(file);
+      const preview = await createImagePreview(file);
+      setPhotoPreview(preview);
+      setError(null);
+    } catch (err: any) {
+      setError('Failed to load image preview: ' + err.message);
+    }
+  };
+
+  const handlePhotoDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files[0];
+    if (file) {
+      handlePhotoFileSelect(file);
+    }
+  };
+
+  const handlePhotoDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleSaveMember = async () => {
+    if (!editingMember || !user?.email) return;
+
+    try {
+      setSaving(true);
+      setError(null);
+      
+      let photoUrl = editingMember.photo;
+      
+      // Upload photo if a new file was selected
+      if (photoFile) {
+        setUploadingPhoto(true);
+        try {
+          const memberId = editingMember.id || 'temp-' + Date.now();
+          photoUrl = await uploadTeamMemberPhoto(photoFile, memberId);
+        } catch (uploadError: any) {
+          setError('Failed to upload photo: ' + uploadError.message);
+          setUploadingPhoto(false);
+          return;
+        } finally {
+          setUploadingPhoto(false);
+        }
+      }
+      
+      const memberToSave = {
+        ...editingMember,
+        photo: photoUrl,
+      };
+      
+      await saveTeamMember(memberToSave, user.email);
+      setSuccess('Team member saved successfully!');
+      
+      await loadContent();
+      
+      setTimeout(() => {
+        setEditingMember(null);
+        setPhotoPreview(null);
+        setPhotoFile(null);
+        setSuccess(null);
+      }, 1500);
+    } catch (err: any) {
+      setError('Failed to save team member: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDragEnd = async (event: DragEndEvent, sectionName: string) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const members = getMembersForSection(sectionName);
+    const oldIndex = members.findIndex(m => m.id === active.id);
+    const newIndex = members.findIndex(m => m.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    // Optimistically update UI
+    const reordered = arrayMove(members, oldIndex, newIndex);
+    const updatedMembers = [...teamMembers];
+    
+    // Update order values
+    reordered.forEach((member, index) => {
+      const existingIndex = updatedMembers.findIndex(m => m.id === member.id);
+      if (existingIndex !== -1) {
+        updatedMembers[existingIndex] = { ...updatedMembers[existingIndex], order: index };
       }
     });
-    return Array.from(sections).sort();
+    
+    setTeamMembers(updatedMembers);
+    
+    // Save to Firestore
+    try {
+      if (!user?.email) return;
+      
+      const updates = reordered.map((member, index) => 
+        saveTeamMember({ ...member, order: index }, user.email)
+      );
+      
+      await Promise.all(updates);
+      setSuccess('Order updated successfully!');
+      setTimeout(() => setSuccess(null), 2000);
+    } catch (err: any) {
+      setError('Failed to update order: ' + err.message);
+      // Reload to revert optimistic update
+      await loadContent();
+    }
   };
 
   const handleAddNew = (section: string, key: string) => {
@@ -483,104 +846,232 @@ const ContentManagement: React.FC = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ margin: 0, color: '#002B4D' }}>Team Members</h2>
-              <button
-                onClick={handleAddNewMember}
-                className="btn btn-primary"
-              >
-                + Add Team Member
-              </button>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={handleAddNewLanguageSection}
+                  className="btn btn-secondary"
+                >
+                  + Add Language Section
+                </button>
+              </div>
             </div>
 
-            {/* Team Members by Section */}
-            {getTeamSections().map(teamSection => {
-              const members = teamMembers.filter(m => m.teamSection === teamSection);
-              return (
-                <div key={teamSection} style={{ marginBottom: '30px' }}>
-                  <h3 style={{ color: '#6b7280', fontSize: '1rem', marginBottom: '15px', borderBottom: '1px solid #e5e7eb', paddingBottom: '8px' }}>
-                    {teamSection}
-                  </h3>
-                  {members.length === 0 ? (
-                    <p style={{ color: '#9ca3af', fontStyle: 'italic' }}>No members in this section</p>
-                  ) : (
-                    <div style={{ display: 'grid', gap: '15px' }}>
-                      {members.map((member) => (
-                        <div
-                          key={member.id}
-                          style={{
-                            padding: '15px',
-                            border: '1px solid #e5e7eb',
-                            borderRadius: '8px',
-                            backgroundColor: member.isActive ? '#ffffff' : '#fef2f2',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-start',
-                          }}
-                        >
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '8px' }}>
-                              <strong style={{ color: '#002B4D' }}>{member.name}</strong>
-                              {member.role && (
-                                <span style={{ color: '#6b7280', fontSize: '0.875rem', fontStyle: 'italic' }}>
-                                  {member.role}
-                                </span>
-                              )}
-                              {!member.isActive && (
-                                <span style={{
-                                  fontSize: '0.75rem',
-                                  padding: '2px 8px',
-                                  backgroundColor: '#fee2e2',
-                                  color: '#dc2626',
-                                  borderRadius: '4px',
-                                }}>
-                                  Inactive
-                                </span>
-                              )}
-                            </div>
-                            {member.photo && (
-                              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
-                                Photo: {member.photo}
-                              </div>
+            {/* Language Sections */}
+            {languageSections.length === 0 ? (
+              <p style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '40px' }}>
+                No language sections found. Click "Add Language Section" to create one.
+              </p>
+            ) : (
+              languageSections.map((langSection) => {
+                const isExpanded = expandedLanguageSections.has(langSection.id || '');
+                const members = getMembersForSection(langSection.name);
+                
+                return (
+                  <div
+                    key={langSection.id}
+                    style={{
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      marginBottom: '15px',
+                      overflow: 'hidden',
+                      backgroundColor: langSection.isActive ? '#ffffff' : '#fef2f2',
+                    }}
+                  >
+                    {/* Language Section Header */}
+                    <div
+                      style={{
+                        padding: '15px 20px',
+                        backgroundColor: '#f9fafb',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        cursor: 'pointer',
+                        borderBottom: isExpanded ? '1px solid #e5e7eb' : 'none',
+                      }}
+                      onClick={() => langSection.id && toggleLanguageSection(langSection.id)}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flex: 1 }}>
+                        <span style={{ fontSize: '1.2rem', color: '#6b7280' }}>
+                          {isExpanded ? '−' : '+'}
+                        </span>
+                        <div>
+                          <h3 style={{ margin: 0, color: '#002B4D', fontSize: '1.1rem' }}>
+                            {langSection.name}
+                            {!langSection.isActive && (
+                              <span style={{
+                                fontSize: '0.75rem',
+                                marginLeft: '10px',
+                                padding: '2px 8px',
+                                backgroundColor: '#fee2e2',
+                                color: '#dc2626',
+                                borderRadius: '4px',
+                              }}>
+                                Inactive
+                              </span>
                             )}
-                            {member.bio && (
-                              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
-                                {typeof member.bio === 'string' 
-                                  ? (member.bio.length > 100 ? member.bio.substring(0, 100) + '...' : member.bio)
-                                  : 'Bio available'
-                                }
-                              </div>
-                            )}
-                            {member.contact && (
-                              <div style={{ fontSize: '0.875rem', color: '#6b7280', marginBottom: '4px' }}>
-                                Contact: {member.contact}
-                              </div>
-                            )}
-                            <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
-                              Order: {member.order ?? 0} | 
-                              {member.updatedAt && ` Updated: ${member.updatedAt.toLocaleDateString()}`}
-                              {member.updatedBy && ` by ${member.updatedBy}`}
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button
-                              onClick={() => handleEditMember(member)}
-                              className="btn btn-small btn-secondary"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => member.id && handleDeleteMember(member.id)}
-                              className="btn btn-small btn-danger"
-                            >
-                              Delete
-                            </button>
-                          </div>
+                          </h3>
+                          <p style={{ margin: '4px 0 0 0', fontSize: '0.875rem', color: '#6b7280' }}>
+                            {members.length} {members.length === 1 ? 'member' : 'members'}
+                          </p>
                         </div>
-                      ))}
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddNewMember(langSection.id);
+                          }}
+                          className="btn btn-small btn-primary"
+                        >
+                          + Add Person
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditLanguageSection(langSection);
+                          }}
+                          className="btn btn-small btn-secondary"
+                        >
+                          Edit Section
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            langSection.id && handleDeleteLanguageSection(langSection.id);
+                          }}
+                          className="btn btn-small btn-danger"
+                        >
+                          Delete
+                        </button>
+                      </div>
                     </div>
-                  )}
+
+                    {/* Language Section Content - People List */}
+                    {isExpanded && (
+                      <div style={{ padding: '20px' }}>
+                        {members.length === 0 ? (
+                          <p style={{ color: '#9ca3af', fontStyle: 'italic', textAlign: 'center', padding: '20px' }}>
+                            No members in this section. Click "+ Add Person" to add one.
+                          </p>
+                        ) : (
+                          <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={(e) => handleDragEnd(e, langSection.name)}
+                          >
+                            <SortableContext
+                              items={members.map(m => m.id || '')}
+                              strategy={verticalListSortingStrategy}
+                            >
+                              {members.map((member) => (
+                                <SortablePersonItem
+                                  key={member.id}
+                                  member={member}
+                                  onEdit={handleEditMember}
+                                  onDelete={handleDeleteMember}
+                                />
+                              ))}
+                            </SortableContext>
+                          </DndContext>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        )}
+
+        {/* Language Section Edit Modal */}
+        {editingLanguageSection && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}>
+            <div style={{
+              backgroundColor: '#ffffff',
+              borderRadius: '12px',
+              padding: '30px',
+              maxWidth: '500px',
+              width: '90%',
+            }}>
+              <h2 style={{ marginTop: 0, color: '#002B4D' }}>
+                {editingLanguageSection.id ? 'Edit Language Section' : 'Add Language Section'}
+              </h2>
+              
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                  Section Name *
+                </label>
+                <input
+                  type="text"
+                  value={editingLanguageSection.name}
+                  onChange={(e) => setEditingLanguageSection({ ...editingLanguageSection, name: e.target.value })}
+                  placeholder="e.g., English Team"
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    border: '1px solid #d1d5db',
+                    borderRadius: '6px',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
+                    Order
+                  </label>
+                  <input
+                    type="number"
+                    value={editingLanguageSection.order ?? 0}
+                    onChange={(e) => setEditingLanguageSection({ ...editingLanguageSection, order: parseInt(e.target.value) || 0 })}
+                    style={{
+                      width: '100%',
+                      padding: '10px',
+                      border: '1px solid #d1d5db',
+                      borderRadius: '6px',
+                    }}
+                  />
                 </div>
-              );
-            })}
+                <div style={{ flex: 1, display: 'flex', alignItems: 'flex-end' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <input
+                      type="checkbox"
+                      checked={editingLanguageSection.isActive !== false}
+                      onChange={(e) => setEditingLanguageSection({ ...editingLanguageSection, isActive: e.target.checked })}
+                    />
+                    <span>Published (Active)</span>
+                  </label>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={handleCancelEditLanguageSection}
+                  className="btn btn-secondary"
+                  disabled={saving}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSaveLanguageSection}
+                  className="btn btn-primary"
+                  disabled={saving || !editingLanguageSection.name}
+                >
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -630,7 +1121,7 @@ const ContentManagement: React.FC = () => {
 
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Role
+                  Title
                 </label>
                 <input
                   type="text"
@@ -648,7 +1139,7 @@ const ContentManagement: React.FC = () => {
 
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Team Section *
+                  Language Section *
                 </label>
                 <select
                   value={editingMember.teamSection}
@@ -660,35 +1151,105 @@ const ContentManagement: React.FC = () => {
                     borderRadius: '6px',
                   }}
                 >
-                  <option value="English Team">English Team</option>
-                  <option value="German Team">German Team</option>
-                  <option value="Arabic Team">Arabic Team</option>
-                  <option value="Spanish Team">Spanish Team</option>
-                  <option value="Portuguese Team">Portuguese Team</option>
-                  <option value="Polish Team">Polish Team</option>
-                  <option value="Netherlands">Netherlands</option>
+                  {languageSections
+                    .filter(s => s.isActive !== false)
+                    .map(section => (
+                      <option key={section.id} value={section.name}>
+                        {section.name}
+                      </option>
+                    ))}
                 </select>
               </div>
 
               <div style={{ marginBottom: '20px' }}>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '500' }}>
-                  Photo Path *
+                  Photo *
                 </label>
-                <input
-                  type="text"
-                  value={editingMember.photo}
-                  onChange={(e) => setEditingMember({ ...editingMember, photo: e.target.value })}
-                  placeholder="/Team/ThomBond.png"
+                
+                {/* Photo Upload Area */}
+                <div
+                  onDrop={handlePhotoDrop}
+                  onDragOver={handlePhotoDragOver}
                   style={{
-                    width: '100%',
-                    padding: '10px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '6px',
+                    border: '2px dashed #d1d5db',
+                    borderRadius: '8px',
+                    padding: '20px',
+                    textAlign: 'center',
+                    backgroundColor: '#f9fafb',
+                    marginBottom: '10px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
                   }}
-                />
-                <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '4px' }}>
-                  Path to image file (e.g., /Team/Name.png)
-                </p>
+                  onDragEnter={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = '#002B4D';
+                    e.currentTarget.style.backgroundColor = '#f0f9ff';
+                  }}
+                  onDragLeave={(e) => {
+                    e.preventDefault();
+                    e.currentTarget.style.borderColor = '#d1d5db';
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
+                  }}
+                  onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (e) => {
+                      const file = (e.target as HTMLInputElement).files?.[0];
+                      if (file) {
+                        handlePhotoFileSelect(file);
+                      }
+                    };
+                    input.click();
+                  }}
+                >
+                  {photoPreview || editingMember.photo ? (
+                    <div>
+                      <img
+                        src={photoPreview || editingMember.photo}
+                        alt="Preview"
+                        style={{
+                          maxWidth: '200px',
+                          maxHeight: '200px',
+                          borderRadius: '8px',
+                          marginBottom: '10px',
+                          border: '1px solid #e5e7eb',
+                        }}
+                      />
+                      <p style={{ fontSize: '0.875rem', color: '#6b7280', margin: '8px 0' }}>
+                        Click or drag a new image to replace
+                      </p>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPhotoPreview(null);
+                          setPhotoFile(null);
+                          setEditingMember({ ...editingMember, photo: '' });
+                        }}
+                        className="btn btn-small btn-secondary"
+                        style={{ marginTop: '8px' }}
+                      >
+                        Remove Photo
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <p style={{ fontSize: '1rem', color: '#6b7280', marginBottom: '8px' }}>
+                        📷 Drag and drop an image here, or click to select
+                      </p>
+                      <p style={{ fontSize: '0.875rem', color: '#9ca3af' }}>
+                        Supports JPEG, PNG, WebP, GIF (max 5MB)
+                      </p>
+                    </div>
+                  )}
+                </div>
+                
+                {uploadingPhoto && (
+                  <div style={{ padding: '10px', textAlign: 'center', color: '#002B4D' }}>
+                    Uploading photo...
+                  </div>
+                )}
               </div>
 
               <div style={{ marginBottom: '20px' }}>
@@ -786,7 +1347,7 @@ const ContentManagement: React.FC = () => {
                 <button
                   onClick={handleSaveMember}
                   className="btn btn-primary"
-                  disabled={saving || !editingMember.name || !editingMember.photo || !editingMember.teamSection}
+                  disabled={saving || uploadingPhoto || !editingMember.name || (!photoPreview && !editingMember.photo) || !editingMember.teamSection}
                 >
                   {saving ? 'Saving...' : 'Save'}
                 </button>

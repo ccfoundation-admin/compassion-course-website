@@ -31,14 +31,24 @@ export interface ContentSection {
   items: ContentItem[];
 }
 
+export interface TeamLanguageSection {
+  id?: string;
+  name: string; // e.g., "English Team", "German Team"
+  order?: number; // For ordering sections
+  isActive?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+  updatedBy?: string;
+}
+
 export interface TeamMember {
   id?: string;
   name: string;
   role?: string; // e.g., "Compassion Course Author and Lead Trainer"
   bio: string; // Biography paragraphs (array of strings or single string)
-  photo: string; // Path to photo, e.g., "/Team/ThomBond.png"
+  photo: string; // Firebase Storage URL or path to photo
   contact?: string; // Email or contact info
-  teamSection: string; // e.g., "English Team", "German Team", "Arabic Team"
+  teamSection: string; // References TeamLanguageSection name
   order?: number; // For ordering within team section
   isActive?: boolean;
   createdAt?: Date;
@@ -356,6 +366,123 @@ export const hardDeleteTeamMember = async (id: string): Promise<void> => {
     await deleteDoc(docRef);
   } catch (error) {
     console.error('Error hard deleting team member:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get all language sections (admin - includes inactive)
+ */
+export const getAllLanguageSections = async (): Promise<TeamLanguageSection[]> => {
+  try {
+    const sectionsRef = collection(db, 'teamLanguageSections');
+    const q = query(sectionsRef);
+    
+    const snapshot = await getDocs(q);
+    const sections = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate(),
+      updatedAt: doc.data().updatedAt?.toDate(),
+    })) as TeamLanguageSection[];
+    
+    // Sort in memory by order
+    sections.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
+    return sections;
+  } catch (error) {
+    console.error('Error fetching language sections:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get active language sections only
+ */
+export const getLanguageSections = async (): Promise<TeamLanguageSection[]> => {
+  try {
+    const sectionsRef = collection(db, 'teamLanguageSections');
+    const q = query(sectionsRef, where('isActive', '==', true));
+    
+    const snapshot = await getDocs(q);
+    const sections = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: doc.data().createdAt?.toDate(),
+      updatedAt: doc.data().updatedAt?.toDate(),
+    })) as TeamLanguageSection[];
+    
+    // Sort in memory by order
+    sections.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
+    return sections;
+  } catch (error) {
+    console.error('Error fetching active language sections:', error);
+    throw error;
+  }
+};
+
+/**
+ * Save a language section (create or update)
+ */
+export const saveLanguageSection = async (
+  section: TeamLanguageSection,
+  updatedBy: string
+): Promise<void> => {
+  try {
+    const sectionsRef = collection(db, 'teamLanguageSections');
+    
+    if (section.id) {
+      const docRef = doc(sectionsRef, section.id);
+      await updateDoc(docRef, {
+        ...section,
+        updatedAt: Timestamp.now(),
+        updatedBy,
+      });
+    } else {
+      const docRef = doc(sectionsRef);
+      await setDoc(docRef, {
+        ...section,
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now(),
+        updatedBy,
+        isActive: section.isActive !== undefined ? section.isActive : true,
+        order: section.order ?? 0,
+      });
+    }
+  } catch (error) {
+    console.error('Error saving language section:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete a language section (soft delete)
+ */
+export const deleteLanguageSection = async (id: string): Promise<void> => {
+  try {
+    const sectionsRef = collection(db, 'teamLanguageSections');
+    const docRef = doc(sectionsRef, id);
+    await updateDoc(docRef, {
+      isActive: false,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error('Error deleting language section:', error);
+    throw error;
+  }
+};
+
+/**
+ * Hard delete a language section
+ */
+export const hardDeleteLanguageSection = async (id: string): Promise<void> => {
+  try {
+    const sectionsRef = collection(db, 'teamLanguageSections');
+    const docRef = doc(sectionsRef, id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error hard deleting language section:', error);
     throw error;
   }
 };

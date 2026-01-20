@@ -1,27 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { getTeamMembers, TeamMember } from '../services/contentService';
+import { getTeamMembers, getLanguageSections, TeamMember, TeamLanguageSection } from '../services/contentService';
 
 const AboutPage: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [languageSections, setLanguageSections] = useState<TeamLanguageSection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const loadTeamMembers = async () => {
+    const loadData = async () => {
       try {
         setLoading(true);
-        const members = await getTeamMembers();
+        const [members, sections] = await Promise.all([
+          getTeamMembers(),
+          getLanguageSections()
+        ]);
         setTeamMembers(members);
+        setLanguageSections(sections);
       } catch (err: any) {
-        console.error('Error loading team members:', err);
-        setError('Failed to load team members');
+        console.error('Error loading team data:', err);
+        setError('Failed to load team information');
       } finally {
         setLoading(false);
       }
     };
 
-    loadTeamMembers();
+    loadData();
   }, []);
 
   // Group team members by team section
@@ -33,11 +38,18 @@ const AboutPage: React.FC = () => {
     membersBySection[member.teamSection].push(member);
   });
 
-  // Sort sections and members within sections
-  const sortedSections = Object.keys(membersBySection).sort();
-  sortedSections.forEach(section => {
+  // Sort members within each section
+  Object.keys(membersBySection).forEach(section => {
     membersBySection[section].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   });
+  
+  // Use language sections order, filter to only sections that have members or are explicitly shown
+  const sortedSections = languageSections
+    .filter(section => {
+      // Show section if it has members or if we want to show empty sections
+      return membersBySection[section.name] && membersBySection[section.name].length > 0;
+    })
+    .map(section => section.name);
 
   const renderBio = (bio: string | string[]): React.ReactNode => {
     if (Array.isArray(bio)) {
@@ -76,9 +88,15 @@ const AboutPage: React.FC = () => {
             </div>
           )}
 
-          {!loading && !error && sortedSections.length === 0 && (
+          {!loading && !error && languageSections.length === 0 && (
             <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
-              No team members found. Please add team members through the admin panel.
+              No language sections found. Please add language sections through the admin panel.
+            </div>
+          )}
+
+          {!loading && !error && languageSections.length > 0 && sortedSections.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '40px', color: '#6b7280' }}>
+              Language sections exist but no team members found. Please add team members through the admin panel.
             </div>
           )}
 
