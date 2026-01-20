@@ -255,27 +255,66 @@ const ContentManagement: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSection]); // Only depend on activeSection, not loadedSections to avoid loops
 
+  // Helper function for retry logic with exponential backoff
+  const loadWithRetry = async <T>(
+    queryFn: () => Promise<T>,
+    maxRetries: number = 2,
+    operationName: string
+  ): Promise<T> => {
+    const startTime = Date.now();
+    console.log(`🔄 Starting ${operationName}...`);
+    
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        const result = await queryFn();
+        const duration = Date.now() - startTime;
+        console.log(`✅ ${operationName} completed in ${duration}ms (attempt ${attempt + 1})`);
+        return result;
+      } catch (error: any) {
+        const duration = Date.now() - startTime;
+        const isLastAttempt = attempt === maxRetries;
+        
+        console.error(`❌ ${operationName} failed (attempt ${attempt + 1}/${maxRetries + 1}) after ${duration}ms:`, error);
+        
+        if (isLastAttempt) {
+          throw error;
+        }
+        
+        // Exponential backoff: 1s, 2s, 4s
+        const delay = 1000 * Math.pow(2, attempt);
+        console.log(`⏳ Retrying ${operationName} in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    throw new Error(`${operationName} failed after ${maxRetries + 1} attempts`);
+  };
+
   const loadSectionData = async (sectionId: SectionId) => {
     const sectionDef = SECTIONS.find(s => s.id === sectionId);
     if (!sectionDef) return;
     
     try {
       setError(null);
-      const timeout = 8000; // 8 second timeout
+      const timeout = 15000; // Increased to 15 seconds for initial load
       
       // Load only data needed for this section
       if (sectionId === 'home') {
         setContentLoading(true);
         try {
           const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Content loading timeout')), timeout)
+            setTimeout(() => reject(new Error('Content loading timeout after 15 seconds')), timeout)
           );
           
-          // Only load content for home section's content sections
-          const content = await Promise.race([
-            getContentBySections(sectionDef.contentSections),
-            timeoutPromise
-          ]);
+          // Only load content for home section's content sections with retry
+          const content = await loadWithRetry(
+            () => Promise.race([
+              getContentBySections(sectionDef.contentSections),
+              timeoutPromise
+            ]),
+            2,
+            'Content loading'
+          );
           
           // Merge with existing sections (don't overwrite other sections)
           setSections(prev => {
@@ -289,10 +328,18 @@ const ContentManagement: React.FC = () => {
           }
         } catch (contentError: any) {
           console.error('Error loading content:', contentError);
-          if (contentError?.code === 'failed-precondition' || contentError?.message?.includes('index')) {
+          const errorMsg = contentError?.message || 'Unknown error';
+          
+          if (contentError?.code === 'failed-precondition' || errorMsg.includes('index')) {
             setError('Firestore index required. Please check the browser console for index creation link.');
-          } else if (!contentError?.message?.includes('timeout')) {
-            setError('Failed to load content: ' + (contentError.message || 'Unknown error'));
+          } else if (errorMsg.includes('timeout')) {
+            setError('Content loading timed out. The database may be slow. You can try again or continue with cached data.');
+          } else if (contentError?.code === 'permission-denied' || contentError?.code === 'PERMISSION_DENIED') {
+            setError('Permission denied. Check Firestore security rules to ensure admin access is allowed.');
+          } else if (contentError?.code === 'unavailable' || errorMsg.includes('network')) {
+            setError('Unable to connect to Firestore. Check your internet connection and try again.');
+          } else {
+            setError('Failed to load content: ' + errorMsg);
           }
         } finally {
           setContentLoading(false);
@@ -301,33 +348,49 @@ const ContentManagement: React.FC = () => {
         setMembersLoading(true);
         setSectionsLoading(true);
         
-        // Load team members
+        // Load team members with retry
         const loadMembers = async () => {
           try {
             const timeoutPromise = new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('Team members loading timeout')), timeout)
+              setTimeout(() => reject(new Error('Team members loading timeout after 15 seconds')), timeout)
             );
             
-            const members = await Promise.race([getAllTeamMembers(), timeoutPromise]);
+            const members = await loadWithRetry(
+              () => Promise.race([getAllTeamMembers(), timeoutPromise]),
+              2,
+              'Team members loading'
+            );
             setTeamMembers(members);
           } catch (memberError: any) {
             console.error('Error loading team members:', memberError);
-            if (!memberError?.message?.includes('timeout')) {
-              console.warn('Failed to load team members: ' + (memberError.message || 'Unknown error'));
+            const errorMsg = memberError?.message || 'Unknown error';
+            
+            if (memberError?.code === 'permission-denied' || memberError?.code === 'PERMISSION_DENIED') {
+              console.warn('Permission denied loading team members. Check Firestore security rules.');
+            } else if (errorMsg.includes('timeout')) {
+              console.warn('Team members loading timed out. Continuing with empty list.');
+            } else if (memberError?.code === 'unavailable' || errorMsg.includes('network')) {
+              console.warn('Network error loading team members. Check internet connection.');
+            } else {
+              console.warn('Failed to load team members: ' + errorMsg);
             }
           } finally {
             setMembersLoading(false);
           }
         };
         
-        // Load language sections
+        // Load language sections with retry
         const loadLangSections = async () => {
           try {
             const timeoutPromise = new Promise<never>((_, reject) =>
-              setTimeout(() => reject(new Error('Language sections loading timeout')), timeout)
+              setTimeout(() => reject(new Error('Language sections loading timeout after 15 seconds')), timeout)
             );
             
-            const langSections = await Promise.race([getAllLanguageSections(), timeoutPromise]);
+            const langSections = await loadWithRetry(
+              () => Promise.race([getAllLanguageSections(), timeoutPromise]),
+              2,
+              'Language sections loading'
+            );
             setLanguageSections(langSections);
             
             // Expand first language section by default
@@ -336,8 +399,16 @@ const ContentManagement: React.FC = () => {
             }
           } catch (langError: any) {
             console.error('Error loading language sections:', langError);
-            if (!langError?.message?.includes('timeout')) {
-              console.warn('Could not load language sections:', langError);
+            const errorMsg = langError?.message || 'Unknown error';
+            
+            if (langError?.code === 'permission-denied' || langError?.code === 'PERMISSION_DENIED') {
+              console.warn('Permission denied loading language sections. Check Firestore security rules.');
+            } else if (errorMsg.includes('timeout')) {
+              console.warn('Language sections loading timed out. Continuing with empty list.');
+            } else if (langError?.code === 'unavailable' || errorMsg.includes('network')) {
+              console.warn('Network error loading language sections. Check internet connection.');
+            } else {
+              console.warn('Could not load language sections: ' + errorMsg);
             }
           } finally {
             setSectionsLoading(false);
@@ -349,14 +420,18 @@ const ContentManagement: React.FC = () => {
         setContentLoading(true);
         try {
           const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Content loading timeout')), timeout)
+            setTimeout(() => reject(new Error('Content loading timeout after 15 seconds')), timeout)
           );
           
-          // Only load content for this section
-          const content = await Promise.race([
-            getContentBySections(sectionDef.contentSections),
-            timeoutPromise
-          ]);
+          // Only load content for this section with retry
+          const content = await loadWithRetry(
+            () => Promise.race([
+              getContentBySections(sectionDef.contentSections),
+              timeoutPromise
+            ]),
+            2,
+            'Content loading'
+          );
           
           // Merge with existing sections
           setSections(prev => {
@@ -365,15 +440,23 @@ const ContentManagement: React.FC = () => {
           });
         } catch (contentError: any) {
           console.error('Error loading content:', contentError);
-          if (!contentError?.message?.includes('timeout')) {
-            setError('Failed to load content: ' + (contentError.message || 'Unknown error'));
+          const errorMsg = contentError?.message || 'Unknown error';
+          
+          if (contentError?.code === 'permission-denied' || contentError?.code === 'PERMISSION_DENIED') {
+            setError('Permission denied. Check Firestore security rules.');
+          } else if (errorMsg.includes('timeout')) {
+            setError('Content loading timed out. Try again or continue with cached data.');
+          } else if (contentError?.code === 'unavailable' || errorMsg.includes('network')) {
+            setError('Unable to connect to Firestore. Check your internet connection.');
+          } else {
+            setError('Failed to load content: ' + errorMsg);
           }
         } finally {
           setContentLoading(false);
         }
       }
       
-      // Mark this section as loaded
+      // Mark this section as loaded (even if some data failed)
       setLoadedSections(prev => new Set([...prev, sectionId]));
       
     } catch (err: any) {
@@ -745,6 +828,32 @@ const ContentManagement: React.FC = () => {
     return JSON.stringify(item.value, null, 2);
   };
 
+  // Helper function to get content value by section and key
+  const getContent = (section: string, key: string, defaultValue: string = ''): string => {
+    const sectionData = sections.find(s => s.section === section);
+    if (!sectionData) return defaultValue;
+    const item = sectionData.items.find(i => i.key === key && i.isActive !== false);
+    if (!item) return defaultValue;
+    if (typeof item.value === 'string') return item.value;
+    return defaultValue;
+  };
+
+  // Helper function to get content item by section and key
+  const getContentItem = (section: string, key: string): ContentItem | null => {
+    const sectionData = sections.find(s => s.section === section);
+    if (!sectionData) return null;
+    return sectionData.items.find(i => i.key === key) || null;
+  };
+
+  // Helper function to get content for a specific section (for Programs/Contact editors)
+  const getContentForSection = (sectionId: SectionId): ContentItem[] => {
+    const sectionDef = SECTIONS.find(s => s.id === sectionId);
+    if (!sectionDef) return [];
+    return sections
+      .filter(s => sectionDef.contentSections.includes(s.section))
+      .flatMap(s => s.items);
+  };
+
   const handleValueChange = (value: string) => {
     if (!editingItem) return;
     
@@ -791,8 +900,31 @@ const ContentManagement: React.FC = () => {
             color: '#dc2626',
             borderRadius: '8px',
             marginBottom: '20px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '10px',
           }}>
-            {error}
+            <span>{error}</span>
+            <button
+              onClick={() => {
+                setError(null);
+                setLoadedSections(prev => {
+                  const updated = new Set(prev);
+                  updated.delete(activeSection);
+                  return updated;
+                });
+                loadSectionData(activeSection);
+              }}
+              className="btn btn-small btn-secondary"
+              style={{
+                padding: '6px 12px',
+                fontSize: '0.875rem',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              Retry
+            </button>
           </div>
         )}
 
@@ -1010,6 +1142,228 @@ const ContentManagement: React.FC = () => {
                 >
                   {saving ? 'Saving...' : 'Save'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Home Section Editor */}
+        {activeSection === 'home' && (
+          <div style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '12px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+            padding: '30px',
+            marginBottom: '20px',
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ marginTop: 0, color: '#002B4D', margin: 0 }}>Home Page Editor</h2>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {contentLoading && (
+                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
+                )}
+                {!contentLoading && sections.length === 0 && (
+                  <button
+                    onClick={() => {
+                      setLoadedSections(prev => {
+                        const updated = new Set(prev);
+                        updated.delete('home');
+                        return updated;
+                      });
+                      loadSectionData('home');
+                    }}
+                    className="btn btn-small btn-secondary"
+                    style={{ fontSize: '0.875rem' }}
+                  >
+                    Retry Loading
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            {/* Hero Section Preview */}
+            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, color: '#002B4D' }}>Hero Section</h3>
+                <button
+                  onClick={() => {
+                    const item = getContentItem('hero', 'title') || {
+                      section: 'hero',
+                      key: 'title',
+                      value: '',
+                      type: 'text',
+                      order: 0,
+                      isActive: true
+                    };
+                    handleEdit(item);
+                  }}
+                  className="btn btn-small btn-primary"
+                >
+                  Edit Hero
+                </button>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+                <h1 style={{ fontSize: '2.5rem', color: '#002B4D', marginBottom: '10px' }}>
+                  {getContent('hero', 'title', 'Discover The Compassion Course')}
+                </h1>
+                <p style={{ fontSize: '1.25rem', color: '#6b7280', marginBottom: '20px' }}>
+                  {getContent('hero', 'subtitle', 'Changing lives in over 120 Countries')}
+                </p>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn btn-primary" style={{ pointerEvents: 'none' }}>
+                    {getContent('hero', 'ctaPrimary', 'Learn More About The Course')}
+                  </button>
+                  <button className="btn btn-secondary" style={{ pointerEvents: 'none' }}>
+                    {getContent('hero', 'ctaSecondary', 'Watch an Interactive Introduction')}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Hero Stats Section */}
+            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, color: '#002B4D' }}>Hero Stats</h3>
+                <button
+                  onClick={() => {
+                    const item = getContentItem('hero-stats', 'stat1-title') || {
+                      section: 'hero-stats',
+                      key: 'stat1-title',
+                      value: '',
+                      type: 'text',
+                      order: 0,
+                      isActive: true
+                    };
+                    handleEdit(item);
+                  }}
+                  className="btn btn-small btn-primary"
+                >
+                  Edit Stats
+                </button>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+                <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+                  <h4 style={{ color: '#002B4D', marginBottom: '10px' }}>
+                    {getContent('hero-stats', 'stat1-title', 'Global Leader')}
+                  </h4>
+                  <p style={{ color: '#6b7280', fontSize: '0.9rem' }} dangerouslySetInnerHTML={renderHTML(
+                    getContent('hero-stats', 'stat1-description', 'Compassion Course is an internationally recognized...')
+                  )} />
+                </div>
+                <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+                  <h4 style={{ color: '#002B4D', marginBottom: '10px' }}>
+                    {getContent('hero-stats', 'stat2-title', 'Leading-Edge Methodology')}
+                  </h4>
+                  <p style={{ color: '#6b7280', fontSize: '0.9rem' }} dangerouslySetInnerHTML={renderHTML(
+                    getContent('hero-stats', 'stat2-description', 'Our industry-leading approach...')
+                  )} />
+                </div>
+                <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+                  <h4 style={{ color: '#002B4D', marginBottom: '10px' }}>
+                    {getContent('hero-stats', 'stat3-title', 'Individualized Impact')}
+                  </h4>
+                  <p style={{ color: '#6b7280', fontSize: '0.9rem' }} dangerouslySetInnerHTML={renderHTML(
+                    getContent('hero-stats', 'stat3-description', 'Designed to make a unique difference...')
+                  )} />
+                </div>
+              </div>
+            </div>
+
+            {/* Programs Section */}
+            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, color: '#002B4D' }}>Programs Section</h3>
+                <button
+                  onClick={() => {
+                    const item = getContentItem('programs', 'title') || {
+                      section: 'programs',
+                      key: 'title',
+                      value: '',
+                      type: 'text',
+                      order: 0,
+                      isActive: true
+                    };
+                    handleEdit(item);
+                  }}
+                  className="btn btn-small btn-primary"
+                >
+                  Edit Programs
+                </button>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+                <h2 style={{ color: '#002B4D', marginBottom: '15px' }}>
+                  {getContent('programs', 'title', 'After The Compassion Course - A World of Possibilities')}
+                </h2>
+                <p style={{ color: '#6b7280' }} dangerouslySetInnerHTML={renderHTML(
+                  getContent('programs', 'description', 'Discover a world of possibilities...')
+                )} />
+              </div>
+            </div>
+
+            {/* Testimonials Section */}
+            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, color: '#002B4D' }}>Testimonials Section</h3>
+                <button
+                  onClick={() => {
+                    const item = getContentItem('testimonials', 'title') || {
+                      section: 'testimonials',
+                      key: 'title',
+                      value: '',
+                      type: 'text',
+                      order: 0,
+                      isActive: true
+                    };
+                    handleEdit(item);
+                  }}
+                  className="btn btn-small btn-primary"
+                >
+                  Edit Testimonials
+                </button>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+                <h2 style={{ color: '#002B4D', marginBottom: '15px' }}>
+                  {getContent('testimonials', 'title', 'What People Say')}
+                </h2>
+              </div>
+            </div>
+
+            {/* CTA Section */}
+            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                <h3 style={{ margin: 0, color: '#002B4D' }}>Call to Action Section</h3>
+                <button
+                  onClick={() => {
+                    const item = getContentItem('cta', 'title') || {
+                      section: 'cta',
+                      key: 'title',
+                      value: '',
+                      type: 'text',
+                      order: 0,
+                      isActive: true
+                    };
+                    handleEdit(item);
+                  }}
+                  className="btn btn-small btn-primary"
+                >
+                  Edit CTA
+                </button>
+              </div>
+              <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
+                <h2 style={{ color: '#002B4D', marginBottom: '15px' }}>
+                  {getContent('cta', 'title', 'Ready to Transform Your Life?')}
+                </h2>
+                <p style={{ color: '#6b7280', marginBottom: '20px' }} dangerouslySetInnerHTML={renderHTML(
+                  getContent('cta', 'description', 'Join thousands of participants worldwide...')
+                )} />
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <button className="btn btn-primary" style={{ pointerEvents: 'none' }}>
+                    {getContent('cta', 'buttonPrimary', 'Enroll Now')}
+                  </button>
+                  <button className="btn btn-secondary" style={{ pointerEvents: 'none' }}>
+                    {getContent('cta', 'buttonSecondary', 'Explore Programs')}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1550,9 +1904,27 @@ const ContentManagement: React.FC = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ marginTop: 0, color: '#002B4D', margin: 0 }}>Programs Page Editor</h2>
-              {contentLoading && (
-                <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
-              )}
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {contentLoading && (
+                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
+                )}
+                {!contentLoading && getContentForSection('programs').length === 0 && (
+                  <button
+                    onClick={() => {
+                      setLoadedSections(prev => {
+                        const updated = new Set(prev);
+                        updated.delete('programs');
+                        return updated;
+                      });
+                      loadSectionData('programs');
+                    }}
+                    className="btn btn-small btn-secondary"
+                    style={{ fontSize: '0.875rem' }}
+                  >
+                    Retry Loading
+                  </button>
+                )}
+              </div>
             </div>
             <p style={{ color: '#6b7280', marginBottom: '20px' }}>
               Edit content for the Programs page. Add or edit content items below.
@@ -1601,9 +1973,27 @@ const ContentManagement: React.FC = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ marginTop: 0, color: '#002B4D', margin: 0 }}>Contact Page Editor</h2>
-              {contentLoading && (
-                <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
-              )}
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {contentLoading && (
+                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
+                )}
+                {!contentLoading && getContentForSection('contact').length === 0 && (
+                  <button
+                    onClick={() => {
+                      setLoadedSections(prev => {
+                        const updated = new Set(prev);
+                        updated.delete('contact');
+                        return updated;
+                      });
+                      loadSectionData('contact');
+                    }}
+                    className="btn btn-small btn-secondary"
+                    style={{ fontSize: '0.875rem' }}
+                  >
+                    Retry Loading
+                  </button>
+                )}
+              </div>
             </div>
             <p style={{ color: '#6b7280', marginBottom: '20px' }}>
               Edit content for the Contact page. Add or edit content items below.

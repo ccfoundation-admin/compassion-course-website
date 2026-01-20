@@ -119,6 +119,9 @@ export const getContentBySections = async (sectionNames: string[]): Promise<Cont
   try {
     if (sectionNames.length === 0) return [];
     
+    const startTime = Date.now();
+    console.log(`📊 Fetching content for sections: ${sectionNames.join(', ')}`);
+    
     const contentRef = collection(db, 'content');
     // Query for specific sections - use 'in' operator (max 10 sections per query)
     const queries = [];
@@ -145,6 +148,9 @@ export const getContentBySections = async (sectionNames: string[]): Promise<Cont
         } as ContentItem);
       });
     });
+    
+    const queryTime = Date.now() - startTime;
+    console.log(`📊 Fetched ${items.length} content items in ${queryTime}ms`);
     
     // Sort in memory: first by section, then by order
     items.sort((a, b) => {
@@ -319,6 +325,9 @@ export const getTeamMembers = async (): Promise<TeamMember[]> => {
  */
 export const getAllTeamMembers = async (): Promise<TeamMember[]> => {
   try {
+    const startTime = Date.now();
+    console.log('📊 Fetching all team members...');
+    
     const teamRef = collection(db, 'teamMembers');
     // Add limit for safety - most sites won't have more than 500 team members
     const q = query(
@@ -327,6 +336,9 @@ export const getAllTeamMembers = async (): Promise<TeamMember[]> => {
     );
     
     const snapshot = await getDocs(q);
+    const queryTime = Date.now() - startTime;
+    console.log(`📊 Fetched ${snapshot.docs.length} team members in ${queryTime}ms`);
+    
     const members = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
@@ -446,6 +458,9 @@ export const hardDeleteTeamMember = async (id: string): Promise<void> => {
  */
 export const getAllLanguageSections = async (): Promise<TeamLanguageSection[]> => {
   try {
+    const startTime = Date.now();
+    console.log('📊 Fetching all language sections...');
+    
     const sectionsRef = collection(db, 'teamLanguageSections');
     // Add limit for safety - most sites won't have more than 50 language sections
     const q = query(
@@ -454,6 +469,9 @@ export const getAllLanguageSections = async (): Promise<TeamLanguageSection[]> =
     );
     
     const snapshot = await getDocs(q);
+    const queryTime = Date.now() - startTime;
+    console.log(`📊 Fetched ${snapshot.docs.length} language sections in ${queryTime}ms`);
+    
     const sections = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
