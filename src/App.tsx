@@ -28,6 +28,7 @@ import LoginPage from './pages/admin/LoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import WebcastManagement from './pages/admin/WebcastManagement'
 import AdminManagement from './pages/admin/AdminManagement'
+import ContentManagement from './pages/admin/ContentManagement'
 
 import './App.css'
 
@@ -96,6 +97,11 @@ function App() {
               <Route path="/admin/manage" element={
                 <ProtectedRoute>
                   <AdminManagement />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/content" element={
+                <ProtectedRoute>
+                  <ContentManagement />
                 </ProtectedRoute>
               } />
             </Routes>

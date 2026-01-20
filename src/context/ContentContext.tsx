@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, where } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
+import { ContentItem, getContentBySection } from '../services/contentService';
 
 interface ContentContextType {
-  content: any;
+  content: { [section: string]: { [key: string]: ContentItem } };
+  getContent: (section: string, key: string, defaultValue?: string) => string;
   boardMembers: any[];
   programs: any[];
   events: any[];
@@ -22,12 +24,24 @@ export const useContent = () => {
 };
 
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [content, setContent] = useState<any>({});
+  const [content, setContent] = useState<{ [section: string]: { [key: string]: ContentItem } }>({});
   const [boardMembers, setBoardMembers] = useState<any[]>([]);
   const [programs, setPrograms] = useState<any[]>([]);
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Helper function to get content value
+  const getContent = (section: string, key: string, defaultValue: string = ''): string => {
+    const sectionContent = content[section];
+    if (!sectionContent) return defaultValue;
+    
+    const item = sectionContent[key];
+    if (!item) return defaultValue;
+    
+    if (typeof item.value === 'string') return item.value;
+    return defaultValue;
+  };
 
   useEffect(() => {
     const unsubscribes: (() => void)[] = [];
@@ -41,6 +55,41 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
         console.warn('Firebase db not initialized, skipping content listeners');
         return;
       }
+
+      // Listen to general website content
+      const contentQuery = query(
+        collection(db, 'content'),
+        where('isActive', '==', true),
+        orderBy('section', 'asc'),
+        orderBy('order', 'asc')
+      );
+      const unsubscribeContent = onSnapshot(
+        contentQuery,
+        (snapshot) => {
+          const contentItems = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data(),
+            createdAt: doc.data().createdAt?.toDate(),
+            updatedAt: doc.data().updatedAt?.toDate(),
+          })) as ContentItem[];
+          
+          // Organize content by section and key
+          const organizedContent: { [section: string]: { [key: string]: ContentItem } } = {};
+          contentItems.forEach(item => {
+            if (!organizedContent[item.section]) {
+              organizedContent[item.section] = {};
+            }
+            organizedContent[item.section][item.key] = item;
+          });
+          
+          setContent(organizedContent);
+        },
+        (error) => {
+          console.error('Error listening to content:', error);
+          setError('Failed to load content');
+        }
+      );
+      unsubscribes.push(unsubscribeContent);
 
       // Listen to board members
       const boardQuery = query(collection(db, 'boardMembers'), orderBy('order', 'asc'));
@@ -98,6 +147,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const value = {
     content,
+    getContent,
     boardMembers,
     programs,
     events,

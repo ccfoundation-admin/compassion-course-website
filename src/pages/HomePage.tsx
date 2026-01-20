@@ -2,8 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import AnimatedText from '../components/AnimatedText';
+import { useContent } from '../context/ContentContext';
+import { renderHTML } from '../utils/contentUtils';
 
 const HomePage: React.FC = () => {
+  const { getContent } = useContent();
   const heroSectionRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
@@ -41,27 +44,44 @@ const HomePage: React.FC = () => {
       <section id="home" className="hero" ref={heroSectionRef}>
         <div className="hero-container">
           <div className="hero-content">
-            <h1 className="hero-title">Discover The Compassion Course</h1>
-            <p className="hero-subtitle">Changing lives in over 120 Countries</p>
+            <h1 className="hero-title">
+              {getContent('hero', 'title', 'Discover The Compassion Course')}
+            </h1>
+            <p className="hero-subtitle">
+              {getContent('hero', 'subtitle', 'Changing lives in over 120 Countries')}
+            </p>
             <AnimatedText />
 
             <div className="hero-buttons">
-              <a href="#learn-more" className="btn-primary">Learn More About The Course</a>
-              <a href="#introduction" className="btn-secondary">Watch an Interactive Introduction</a>
+              <a href="#learn-more" className="btn-primary">
+                {getContent('hero', 'ctaPrimary', 'Learn More About The Course')}
+              </a>
+              <a href="#introduction" className="btn-secondary">
+                {getContent('hero', 'ctaSecondary', 'Watch an Interactive Introduction')}
+              </a>
             </div>
           </div>
           <div className="hero-stats">
             <div className="stat-item">
-              <h3>Global Leader</h3>
-              <p>Compassion Course is an internationally recognized personal and professional growth, training, and development company with a community of more than 30,000 participants.</p>
+              <h3>{getContent('hero-stats', 'stat1-title', 'Global Leader')}</h3>
+              <p dangerouslySetInnerHTML={renderHTML(
+                getContent('hero-stats', 'stat1-description', 
+                  'Compassion Course is an internationally recognized personal and professional growth, training, and development company with a community of more than 30,000 participants.')
+              )} />
             </div>
             <div className="stat-item">
-              <h3>Leading-Edge Methodology</h3>
-              <p>Our industry-leading approach enables people to both produce extraordinary results and enhance the quality of their lives through our proprietary technology.</p>
+              <h3>{getContent('hero-stats', 'stat2-title', 'Leading-Edge Methodology')}</h3>
+              <p dangerouslySetInnerHTML={renderHTML(
+                getContent('hero-stats', 'stat2-description',
+                  'Our industry-leading approach enables people to both produce extraordinary results and enhance the quality of their lives through our proprietary technology.')
+              )} />
             </div>
             <div className="stat-item">
-              <h3>Individualized Impact</h3>
-              <p>Designed to make a unique difference for each participant, independent surveys show <em>"94% of participants agree The Compassion Course made a profound and lasting difference in their lives."</em></p>
+              <h3>{getContent('hero-stats', 'stat3-title', 'Individualized Impact')}</h3>
+              <p dangerouslySetInnerHTML={renderHTML(
+                getContent('hero-stats', 'stat3-description',
+                  'Designed to make a unique difference for each participant, independent surveys show <em>"94% of participants agree The Compassion Course made a profound and lasting difference in their lives."</em>')
+              )} />
             </div>
           </div>
         </div>
@@ -70,10 +90,13 @@ const HomePage: React.FC = () => {
       {/* Programs Section */}
       <section id="programs" className="programs">
         <div className="container">
-          <h2 className="section-title">After The Compassion Course - A World of Possibilities</h2>
-          <p className="section-description">
-            Discover a world of possibilities where you continue to expand your power, effectiveness, and self-expression; where you can make a difference; or where you can participate with our Global Community – delivered in various formats and all designed to empower you to impact what you care about most.
-          </p>
+          <h2 className="section-title">
+            {getContent('programs', 'title', 'After The Compassion Course - A World of Possibilities')}
+          </h2>
+          <p className="section-description" dangerouslySetInnerHTML={renderHTML(
+            getContent('programs', 'description',
+              'Discover a world of possibilities where you continue to expand your power, effectiveness, and self-expression; where you can make a difference; or where you can participate with our Global Community – delivered in various formats and all designed to empower you to impact what you care about most.')
+          )} />
           
           <div className="programs-grid">
             <div className="program-card">
@@ -118,7 +141,9 @@ const HomePage: React.FC = () => {
       {/* Testimonials Section */}
       <section id="testimonials" className="testimonials">
         <div className="container">
-          <h2 className="section-title">What People Say</h2>
+          <h2 className="section-title">
+            {getContent('testimonials', 'title', 'What People Say')}
+          </h2>
           <div className="testimonials-grid">
             <div className="testimonial-card">
               <div className="testimonial-content">
@@ -164,16 +189,19 @@ const HomePage: React.FC = () => {
         <div className="container">
           <div className="about-content">
             <div className="about-text">
-              <h2>About the Compassion Course</h2>
-              <p>Changing Lives for 14 Years, with more than 30,000 Participants, in over 120 Countries, in 20 Languages.</p>
+              <h2>{getContent('about', 'title', 'About the Compassion Course')}</h2>
+              <p dangerouslySetInnerHTML={renderHTML(
+                getContent('about', 'description',
+                  'Changing Lives for 14 Years, with more than 30,000 Participants, in over 120 Countries, in 20 Languages.')
+              )} />
               <div className="about-stats">
                 <div className="stat">
-                  <h3>30,000+</h3>
-                  <p>Participants</p>
+                  <h3>{getContent('about', 'stat1-value', '30,000+')}</h3>
+                  <p>{getContent('about', 'stat1-label', 'Participants')}</p>
                 </div>
                 <div className="stat">
-                  <h3>120+</h3>
-                  <p>Countries</p>
+                  <h3>{getContent('about', 'stat2-value', '120+')}</h3>
+                  <p>{getContent('about', 'stat2-label', 'Countries')}</p>
                 </div>
               </div>
             </div>
@@ -190,11 +218,18 @@ const HomePage: React.FC = () => {
       <section id="register" className="cta">
         <div className="container">
           <div className="cta-content">
-            <h2>Ready to Transform Your Life?</h2>
-            <p>Join thousands of others who have discovered their potential through the Compassion Course.</p>
+            <h2>{getContent('cta', 'title', 'Ready to Transform Your Life?')}</h2>
+            <p dangerouslySetInnerHTML={renderHTML(
+              getContent('cta', 'description',
+                'Join thousands of others who have discovered their potential through the Compassion Course.')
+            )} />
             <div className="cta-buttons">
-              <a href="#schedule" className="btn-primary">Check out our Course Schedule</a>
-              <Link to="/contact" className="btn-secondary">Contact Us Today</Link>
+              <a href="#schedule" className="btn-primary">
+                {getContent('cta', 'buttonPrimary', 'Check out our Course Schedule')}
+              </a>
+              <Link to="/contact" className="btn-secondary">
+                {getContent('cta', 'buttonSecondary', 'Contact Us Today')}
+              </Link>
             </div>
           </div>
         </div>
