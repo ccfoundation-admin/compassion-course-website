@@ -603,23 +603,48 @@ const ContentManagement: React.FC = () => {
   };
 
   const handleSaveLanguageSection = async () => {
-    if (!editingLanguageSection || !user?.email) return;
+    if (!editingLanguageSection || !user?.email) {
+      setError('Missing required information. Please ensure you are logged in.');
+      return;
+    }
+
+    // Validate name is not empty
+    if (!editingLanguageSection.name || editingLanguageSection.name.trim() === '') {
+      setError('Section name is required. Please enter a name for the language section.');
+      return;
+    }
 
     try {
       setSaving(true);
       setError(null);
+      console.log('💾 Saving language section:', editingLanguageSection);
       
       await saveLanguageSection(editingLanguageSection, user.email);
+      console.log('✅ Language section saved successfully');
       setSuccess('Language section saved successfully!');
       
-      await loadContent();
+      // Refresh the about section data to show the new language section
+      setLoadedSections(prev => {
+        const updated = new Set(prev);
+        updated.delete('about');
+        return updated;
+      });
+      await loadSectionData('about');
       
       setTimeout(() => {
         setEditingLanguageSection(null);
         setSuccess(null);
       }, 1500);
     } catch (err: any) {
-      setError('Failed to save language section: ' + err.message);
+      console.error('❌ Error saving language section:', err);
+      const errorMessage = err?.message || 'Unknown error occurred';
+      if (err?.code === 'permission-denied' || err?.code === 'PERMISSION_DENIED') {
+        setError('Permission denied. Check Firestore security rules to ensure admin access is allowed.');
+      } else if (err?.code === 'unavailable' || errorMessage.includes('network')) {
+        setError('Network error. Please check your internet connection and try again.');
+      } else {
+        setError('Failed to save language section: ' + errorMessage);
+      }
     } finally {
       setSaving(false);
     }
@@ -640,13 +665,16 @@ const ContentManagement: React.FC = () => {
   };
 
   const handleAddNewLanguageSection = () => {
-    setEditingLanguageSection({
+    console.log('🔄 Adding new language section...');
+    const newSection: TeamLanguageSection = {
       name: '',
       order: languageSections.length,
       isActive: true,
-    });
+    };
+    setEditingLanguageSection(newSection);
     setError(null);
     setSuccess(null);
+    console.log('✅ editingLanguageSection state set:', newSection);
   };
 
   const toggleLanguageSection = (sectionId: string) => {
@@ -1510,25 +1538,38 @@ const ContentManagement: React.FC = () => {
 
         {/* Language Section Edit Modal */}
         {editingLanguageSection && (
-          <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000,
-          }}>
-            <div style={{
-              backgroundColor: '#ffffff',
-              borderRadius: '12px',
-              padding: '30px',
-              maxWidth: '500px',
-              width: '90%',
-            }}>
+          <div 
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 1000,
+            }}
+            onClick={(e) => {
+              // Close modal when clicking backdrop
+              if (e.target === e.currentTarget) {
+                handleCancelEditLanguageSection();
+              }
+            }}
+          >
+            <div 
+              style={{
+                backgroundColor: '#ffffff',
+                borderRadius: '12px',
+                padding: '30px',
+                maxWidth: '500px',
+                width: '90%',
+                maxHeight: '90vh',
+                overflow: 'auto',
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
               <h2 style={{ marginTop: 0, color: '#002B4D' }}>
                 {editingLanguageSection.id ? 'Edit Language Section' : 'Add Language Section'}
               </h2>
@@ -1540,15 +1581,21 @@ const ContentManagement: React.FC = () => {
                 <input
                   type="text"
                   value={editingLanguageSection.name}
-                  onChange={(e) => setEditingLanguageSection({ ...editingLanguageSection, name: e.target.value })}
-                  placeholder="e.g., English Team"
+                  onChange={(e) => setEditingLanguageSection({ ...editingLanguageSection, name: e.target.value.trim() })}
+                  placeholder="e.g., English Team, Spanish Team, German Team"
+                  required
                   style={{
                     width: '100%',
                     padding: '10px',
-                    border: '1px solid #d1d5db',
+                    border: editingLanguageSection.name === '' ? '1px solid #dc2626' : '1px solid #d1d5db',
                     borderRadius: '6px',
                   }}
                 />
+                {editingLanguageSection.name === '' && (
+                  <p style={{ color: '#dc2626', fontSize: '0.875rem', marginTop: '4px' }}>
+                    Section name is required
+                  </p>
+                )}
               </div>
 
               <div style={{ marginBottom: '20px', display: 'flex', gap: '20px' }}>

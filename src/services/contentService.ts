@@ -521,27 +521,40 @@ export const getLanguageSections = async (): Promise<TeamLanguageSection[]> => {
 export const saveLanguageSection = async (
   section: TeamLanguageSection,
   updatedBy: string
-): Promise<void> => {
+): Promise<TeamLanguageSection> => {
   try {
     const sectionsRef = collection(db, 'teamLanguageSections');
     
     if (section.id) {
+      // Update existing section
       const docRef = doc(sectionsRef, section.id);
       await updateDoc(docRef, {
-        ...section,
+        name: section.name,
+        order: section.order ?? 0,
+        isActive: section.isActive !== undefined ? section.isActive : true,
         updatedAt: Timestamp.now(),
         updatedBy,
       });
+      return { ...section, updatedAt: new Date() };
     } else {
+      // Create new section
       const docRef = doc(sectionsRef);
-      await setDoc(docRef, {
-        ...section,
+      const newSectionData = {
+        name: section.name.trim(),
+        order: section.order ?? 0,
+        isActive: section.isActive !== undefined ? section.isActive : true,
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
         updatedBy,
-        isActive: section.isActive !== undefined ? section.isActive : true,
-        order: section.order ?? 0,
-      });
+      };
+      await setDoc(docRef, newSectionData);
+      console.log('✅ New language section created with ID:', docRef.id);
+      return {
+        ...section,
+        id: docRef.id,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
     }
   } catch (error) {
     console.error('Error saving language section:', error);
