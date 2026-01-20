@@ -211,16 +211,23 @@ const ContentManagement: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Load content, team members, and language sections separately to handle errors independently
+      // Load all data in parallel for better performance
+      const [contentResult, membersResult, langSectionsResult] = await Promise.allSettled([
+        getAllContent(),
+        getAllTeamMembers(),
+        getAllLanguageSections()
+      ]);
+      
       let content: ContentSection[] = [];
       let members: TeamMember[] = [];
       let langSections: TeamLanguageSection[] = [];
       
-      try {
-        content = await getAllContent();
-      } catch (contentError: any) {
+      // Handle content result
+      if (contentResult.status === 'fulfilled') {
+        content = contentResult.value;
+      } else {
+        const contentError = contentResult.reason;
         console.error('Error loading content:', contentError);
-        // Check if it's an index error
         if (contentError?.code === 'failed-precondition' || contentError?.message?.includes('index')) {
           setError('Firestore index required. Please check the browser console for index creation link, or contact support.');
         } else {
@@ -228,26 +235,27 @@ const ContentManagement: React.FC = () => {
         }
       }
       
-      try {
-        members = await getAllTeamMembers();
-      } catch (memberError: any) {
+      // Handle team members result
+      if (membersResult.status === 'fulfilled') {
+        members = membersResult.value;
+      } else {
+        const memberError = membersResult.reason;
         console.error('Error loading team members:', memberError);
-        // Don't fail completely if team members fail to load
         if (memberError?.code === 'failed-precondition' || memberError?.message?.includes('index')) {
           console.warn('Team members index may be missing, but continuing...');
         } else {
-          // Only show error if content also failed
           if (content.length === 0) {
             setError('Failed to load content and team members: ' + (memberError.message || 'Unknown error'));
           }
         }
       }
       
-      try {
-        langSections = await getAllLanguageSections();
-      } catch (langError: any) {
+      // Handle language sections result
+      if (langSectionsResult.status === 'fulfilled') {
+        langSections = langSectionsResult.value;
+      } else {
+        const langError = langSectionsResult.reason;
         console.error('Error loading language sections:', langError);
-        // If no language sections exist yet, that's okay - we'll start with empty
         if (langError?.code !== 'failed-precondition') {
           console.warn('Could not load language sections:', langError);
         }
@@ -684,17 +692,33 @@ const ContentManagement: React.FC = () => {
           </div>
         )}
 
-        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
           <Link to="/admin" style={{ color: '#002B4D', textDecoration: 'none' }}>
             ← Back to Dashboard
           </Link>
-          <button
-            onClick={() => setShowTeamMembers(!showTeamMembers)}
-            className="btn btn-primary"
-            style={{ marginLeft: 'auto' }}
-          >
-            {showTeamMembers ? 'Hide Team Members' : 'Manage Team Members'}
-          </button>
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => {
+                setShowTeamMembers(true);
+                // Scroll to top if needed
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="btn btn-primary"
+              style={{
+                backgroundColor: showTeamMembers ? '#002B4D' : '#6b7280',
+              }}
+            >
+              {showTeamMembers ? '✓ About Us' : 'About Us'}
+            </button>
+            {showTeamMembers && (
+              <button
+                onClick={() => setShowTeamMembers(false)}
+                className="btn btn-secondary"
+              >
+                View General Content
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Edit Modal */}
