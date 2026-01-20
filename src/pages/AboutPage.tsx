@@ -23,7 +23,8 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Don't hide the image - show a placeholder or keep the space
+                    e.currentTarget.style.opacity = '0.3';
                   }}
                 />
                 <div className="team-member-info">
@@ -46,7 +47,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -69,7 +72,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -97,7 +102,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -121,7 +128,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -148,7 +157,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -171,7 +182,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -189,7 +202,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -211,7 +226,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -235,7 +252,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -259,7 +278,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
@@ -279,7 +300,9 @@ const AboutPage: React.FC = () => {
                   loading="lazy"
                   onError={(e) => {
                     console.error('Failed to load image:', e.currentTarget.src);
-                    e.currentTarget.style.display = 'none';
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
                   }}
                 />
                 <div className="team-member-info">
