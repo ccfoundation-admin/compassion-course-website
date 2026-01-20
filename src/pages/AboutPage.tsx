@@ -96,7 +96,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team-photos/gabriele-vana.jpg" 
+                  src="/team/GabrieleVana.png" 
                   alt="Gabriele Vana"
                   className="team-member-photo"
                   loading="lazy"
@@ -151,7 +151,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team-photos/shahinaz-el-hennawi.jpg" 
+                  src="/team/ShahinazElHennawi.png" 
                   alt="Shahinaz El Hennawi"
                   className="team-member-photo"
                   loading="lazy"
@@ -176,7 +176,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/logo-TM.jpg" 
+                  src="/team/KholoudSaid.png" 
                   alt="Kholoud Said"
                   className="team-member-photo"
                   loading="lazy"
@@ -196,7 +196,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/logo-TM.jpg" 
+                  src="/team/YasmineArafa.png" 
                   alt="Yasmine Arafa"
                   className="team-member-photo"
                   loading="lazy"
@@ -220,7 +220,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team-photos/celeste-de-vita.jpg" 
+                  src="/team/CelesteDeVita.png" 
                   alt="Celeste De Vita"
                   className="team-member-photo"
                   loading="lazy"
@@ -246,7 +246,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team-photos/angelica-maeireizo-tokeshi.png" 
+                  src="/team/AngelicaMaeireizoTokeshi.png" 
                   alt="Angélica Maeireizo·Tokeshi"
                   className="team-member-photo"
                   loading="lazy"
@@ -315,6 +315,18 @@ const AboutPage: React.FC = () => {
 
             <div className="team-member">
               <div className="team-member-header">
+                <img 
+                  src="/team/IgorSavitsky.png" 
+                  alt="Igor Savitsky"
+                  className="team-member-photo"
+                  loading="lazy"
+                  onError={(e) => {
+                    console.error('Failed to load image:', e.currentTarget.src);
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
+                  }}
+                />
                 <div className="team-member-info">
                   <h3>Igor Savitsky</h3>
                 </div>
@@ -329,6 +341,18 @@ const AboutPage: React.FC = () => {
             
             <div className="team-member">
               <div className="team-member-header">
+                <img 
+                  src="/team/AgnesKowalski.png" 
+                  alt="Agnes Kowalski"
+                  className="team-member-photo"
+                  loading="lazy"
+                  onError={(e) => {
+                    console.error('Failed to load image:', e.currentTarget.src);
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
+                  }}
+                />
                 <div className="team-member-info">
                   <h3>Agnes Kowalski</h3>
                   <p className="team-role"><em>Editor and proofreader</em></p>
@@ -341,6 +365,18 @@ const AboutPage: React.FC = () => {
 
             <div className="team-member">
               <div className="team-member-header">
+                <img 
+                  src="/team/AdamKusio.png" 
+                  alt="Adam Kusio"
+                  className="team-member-photo"
+                  loading="lazy"
+                  onError={(e) => {
+                    console.error('Failed to load image:', e.currentTarget.src);
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
+                  }}
+                />
                 <div className="team-member-info">
                   <h3>Adam Kusio</h3>
                   <p className="team-role"><em>Coordinator of the Polish edition of the Polish Compassion Course</em></p>
@@ -355,6 +391,18 @@ const AboutPage: React.FC = () => {
 
             <div className="team-member">
               <div className="team-member-header">
+                <img 
+                  src="/team/MagdalenaMacinska.png" 
+                  alt="Magdalena Macińska"
+                  className="team-member-photo"
+                  loading="lazy"
+                  onError={(e) => {
+                    console.error('Failed to load image:', e.currentTarget.src);
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
+                  }}
+                />
                 <div className="team-member-info">
                   <h3>Magdalena Macińska</h3>
                   <p className="team-role"><em>Translator</em></p>
@@ -374,6 +422,18 @@ const AboutPage: React.FC = () => {
             
             <div className="team-member">
               <div className="team-member-header">
+                <img 
+                  src="/team/SaraNuytemans.png" 
+                  alt="Sara Nuytemans"
+                  className="team-member-photo"
+                  loading="lazy"
+                  onError={(e) => {
+                    console.error('Failed to load image:', e.currentTarget.src);
+                    // Keep image visible but show error state
+                    e.currentTarget.style.border = '2px solid red';
+                    e.currentTarget.alt = 'Image failed to load: ' + e.currentTarget.src;
+                  }}
+                />
                 <div className="team-member-info">
                   <h3>Sara Nuytemans</h3>
                   <p className="team-role"><em>Translator, trainer, supervisor and coordinator of the Dutch course Mededogen Als Weg.</em></p>
