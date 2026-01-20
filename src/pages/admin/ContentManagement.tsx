@@ -220,6 +220,9 @@ const ContentManagement: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [languageSections, setLanguageSections] = useState<TeamLanguageSection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [contentLoading, setContentLoading] = useState(true);
+  const [membersLoading, setMembersLoading] = useState(true);
+  const [sectionsLoading, setSectionsLoading] = useState(true);
   const [editingItem, setEditingItem] = useState<ContentItem | null>(null);
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null);
   const [editingLanguageSection, setEditingLanguageSection] = useState<TeamLanguageSection | null>(null);
@@ -249,79 +252,105 @@ const ContentManagement: React.FC = () => {
   const loadContent = async () => {
     try {
       setLoading(true);
+      setContentLoading(true);
+      setMembersLoading(true);
+      setSectionsLoading(true);
       setError(null);
       
-      // Load all data in parallel for better performance
-      const [contentResult, membersResult, langSectionsResult] = await Promise.allSettled([
-        getAllContent(),
-        getAllTeamMembers(),
-        getAllLanguageSections()
+      // Show UI immediately, load data progressively
+      setLoading(false);
+      
+      // Load data with timeouts to prevent hanging
+      const timeout = 10000; // 10 second timeout
+      
+      // Load content (needed for home section)
+      const loadContentData = async () => {
+        try {
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Content loading timeout')), timeout)
+          );
+          
+          const content = await Promise.race([getAllContent(), timeoutPromise]);
+          setSections(content);
+          
+          // Expand first section by default for home section
+          if (activeSection === 'home' && content.length > 0) {
+            const homeSections = content.filter(s => SECTIONS.find(sec => sec.id === 'home')?.contentSections.includes(s.section));
+            if (homeSections.length > 0) {
+              setExpandedSections(new Set([homeSections[0].section]));
+            }
+          }
+        } catch (contentError: any) {
+          console.error('Error loading content:', contentError);
+          if (contentError?.code === 'failed-precondition' || contentError?.message?.includes('index')) {
+            setError('Firestore index required. Please check the browser console for index creation link, or contact support.');
+          } else if (!contentError?.message?.includes('timeout')) {
+            setError('Failed to load content: ' + (contentError.message || 'Unknown error'));
+          }
+        } finally {
+          setContentLoading(false);
+        }
+      };
+      
+      // Load team members (needed for about section)
+      const loadMembersData = async () => {
+        try {
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Team members loading timeout')), timeout)
+          );
+          
+          const members = await Promise.race([getAllTeamMembers(), timeoutPromise]);
+          setTeamMembers(members);
+        } catch (memberError: any) {
+          console.error('Error loading team members:', memberError);
+          if (memberError?.code === 'failed-precondition' || memberError?.message?.includes('index')) {
+            console.warn('Team members index may be missing, but continuing...');
+          } else if (!memberError?.message?.includes('timeout')) {
+            console.warn('Failed to load team members: ' + (memberError.message || 'Unknown error'));
+          }
+        } finally {
+          setMembersLoading(false);
+        }
+      };
+      
+      // Load language sections (needed for about section)
+      const loadSectionsData = async () => {
+        try {
+          const timeoutPromise = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('Language sections loading timeout')), timeout)
+          );
+          
+          const langSections = await Promise.race([getAllLanguageSections(), timeoutPromise]);
+          setLanguageSections(langSections);
+          
+          // Expand first language section by default if viewing about section
+          if (activeSection === 'about' && langSections.length > 0) {
+            setExpandedLanguageSections(new Set([langSections[0].id || '']));
+          }
+        } catch (langError: any) {
+          console.error('Error loading language sections:', langError);
+          if (langError?.code !== 'failed-precondition' && !langError?.message?.includes('timeout')) {
+            console.warn('Could not load language sections:', langError);
+          }
+        } finally {
+          setSectionsLoading(false);
+        }
+      };
+      
+      // Load all data in parallel but don't wait for all
+      Promise.allSettled([
+        loadContentData(),
+        loadMembersData(),
+        loadSectionsData()
       ]);
       
-      let content: ContentSection[] = [];
-      let members: TeamMember[] = [];
-      let langSections: TeamLanguageSection[] = [];
-      
-      // Handle content result
-      if (contentResult.status === 'fulfilled') {
-        content = contentResult.value;
-      } else {
-        const contentError = contentResult.reason;
-        console.error('Error loading content:', contentError);
-        if (contentError?.code === 'failed-precondition' || contentError?.message?.includes('index')) {
-          setError('Firestore index required. Please check the browser console for index creation link, or contact support.');
-        } else {
-          setError('Failed to load content: ' + (contentError.message || 'Unknown error'));
-        }
-      }
-      
-      // Handle team members result
-      if (membersResult.status === 'fulfilled') {
-        members = membersResult.value;
-      } else {
-        const memberError = membersResult.reason;
-        console.error('Error loading team members:', memberError);
-        if (memberError?.code === 'failed-precondition' || memberError?.message?.includes('index')) {
-          console.warn('Team members index may be missing, but continuing...');
-        } else {
-          if (content.length === 0) {
-            setError('Failed to load content and team members: ' + (memberError.message || 'Unknown error'));
-          }
-        }
-      }
-      
-      // Handle language sections result
-      if (langSectionsResult.status === 'fulfilled') {
-        langSections = langSectionsResult.value;
-      } else {
-        const langError = langSectionsResult.reason;
-        console.error('Error loading language sections:', langError);
-        if (langError?.code !== 'failed-precondition') {
-          console.warn('Could not load language sections:', langError);
-        }
-      }
-      
-      setSections(content);
-      setTeamMembers(members);
-      setLanguageSections(langSections);
-      
-      // Expand first language section by default if viewing about section
-      if (activeSection === 'about' && langSections.length > 0) {
-        setExpandedLanguageSections(new Set([langSections[0].id || '']));
-      }
-      
-      // Expand first section by default for home section
-      if (activeSection === 'home' && content.length > 0) {
-        const homeSections = content.filter(s => SECTIONS.find(sec => sec.id === 'home')?.contentSections.includes(s.section));
-        if (homeSections.length > 0) {
-          setExpandedSections(new Set([homeSections[0].section]));
-        }
-      }
     } catch (err: any) {
       console.error('Unexpected error loading content:', err);
       setError('Failed to load content: ' + (err.message || 'Unknown error'));
-    } finally {
       setLoading(false);
+      setContentLoading(false);
+      setMembersLoading(false);
+      setSectionsLoading(false);
     }
   };
 
@@ -703,15 +732,7 @@ const ContentManagement: React.FC = () => {
     navigate('/admin/login-4f73b2c');
   };
 
-  if (loading) {
-    return (
-      <div className="admin-dashboard">
-        <div className="admin-content">
-          <p>Loading content...</p>
-        </div>
-      </div>
-    );
-  }
+  // Show UI immediately, don't block on loading
 
   return (
     <div className="admin-dashboard">
@@ -966,6 +987,9 @@ const ContentManagement: React.FC = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ margin: 0, color: '#002B4D' }}>About Us - Team Members</h2>
+              {(membersLoading || sectionsLoading) && (
+                <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading team data...</span>
+              )}
               <div style={{ display: 'flex', gap: '10px' }}>
                 <button
                   onClick={handleAddNewLanguageSection}
@@ -1485,7 +1509,12 @@ const ContentManagement: React.FC = () => {
             padding: '30px',
             marginBottom: '20px',
           }}>
-            <h2 style={{ marginTop: 0, color: '#002B4D', marginBottom: '20px' }}>Programs Page Editor</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ marginTop: 0, color: '#002B4D', margin: 0 }}>Programs Page Editor</h2>
+              {contentLoading && (
+                <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
+              )}
+            </div>
             <p style={{ color: '#6b7280', marginBottom: '20px' }}>
               Edit content for the Programs page. Add or edit content items below.
             </p>
@@ -1531,7 +1560,12 @@ const ContentManagement: React.FC = () => {
             padding: '30px',
             marginBottom: '20px',
           }}>
-            <h2 style={{ marginTop: 0, color: '#002B4D', marginBottom: '20px' }}>Contact Page Editor</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <h2 style={{ marginTop: 0, color: '#002B4D', margin: 0 }}>Contact Page Editor</h2>
+              {contentLoading && (
+                <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
+              )}
+            </div>
             <p style={{ color: '#6b7280', marginBottom: '20px' }}>
               Edit content for the Contact page. Add or edit content items below.
             </p>
