@@ -17,7 +17,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/ThomBond.png" 
+                  src="/Team/ThomBond.png" 
                   alt="Thom Bond"
                   className="team-member-photo"
                   loading="lazy"
@@ -41,7 +41,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/AntonioEspinoza.png" 
+                  src="/Team/AntonioEspinoza.png" 
                   alt="Antonio Espinoza"
                   className="team-member-photo"
                   loading="lazy"
@@ -66,7 +66,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/DoreenPoulin.png" 
+                  src="/Team/DoreenPoulin.png" 
                   alt="Doreen Poulin"
                   className="team-member-photo"
                   loading="lazy"
@@ -96,7 +96,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/GabrieleVana.png" 
+                  src="/Team/GabrieleVana.png" 
                   alt="Gabriele Vana"
                   className="team-member-photo"
                   loading="lazy"
@@ -122,7 +122,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/SabineBends.png" 
+                  src="/Team/SabineBends.png" 
                   alt="Sabine Bends"
                   className="team-member-photo"
                   loading="lazy"
@@ -151,7 +151,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/ShahinazElHennawi.png" 
+                  src="/Team/ShahinazElHennawi.png" 
                   alt="Shahinaz El Hennawi"
                   className="team-member-photo"
                   loading="lazy"
@@ -176,7 +176,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/KholoudSaid.png" 
+                  src="/Team/KholoudSaid.png" 
                   alt="Kholoud Said"
                   className="team-member-photo"
                   loading="lazy"
@@ -196,7 +196,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/YasmineArafa.png" 
+                  src="/Team/YasmineArafa.png" 
                   alt="Yasmine Arafa"
                   className="team-member-photo"
                   loading="lazy"
@@ -220,7 +220,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/CelesteDeVita.png" 
+                  src="/Team/CelesteDeVita.png" 
                   alt="Celeste De Vita"
                   className="team-member-photo"
                   loading="lazy"
@@ -246,7 +246,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/AngelicaMaeireizoTokeshi.png" 
+                  src="/Team/AngelicaMaeireizoTokeshi.png" 
                   alt="Angélica Maeireizo·Tokeshi"
                   className="team-member-photo"
                   loading="lazy"
@@ -272,7 +272,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/LeticiaPenteado.png" 
+                  src="/Team/LeticiaPenteado.png" 
                   alt="Leticia Penteado"
                   className="team-member-photo"
                   loading="lazy"
@@ -294,7 +294,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/DianadeHollanda.png" 
+                  src="/Team/DianadeHollanda.png" 
                   alt="Diana de Hollanda"
                   className="team-member-photo"
                   loading="lazy"
@@ -316,7 +316,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/IgorSavitsky.png" 
+                  src="/Team/IgorSavitsky.png" 
                   alt="Igor Savitsky"
                   className="team-member-photo"
                   loading="lazy"
@@ -342,7 +342,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/AgnesKowalski.png" 
+                  src="/Team/AgnesKowalski.png" 
                   alt="Agnes Kowalski"
                   className="team-member-photo"
                   loading="lazy"
@@ -366,7 +366,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/AdamKusio.png" 
+                  src="/Team/AdamKusio.png" 
                   alt="Adam Kusio"
                   className="team-member-photo"
                   loading="lazy"
@@ -392,7 +392,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/MagdalenaMacinska.png" 
+                  src="/Team/MagdalenaMacinska.png" 
                   alt="Magdalena Macińska"
                   className="team-member-photo"
                   loading="lazy"
@@ -423,7 +423,7 @@ const AboutPage: React.FC = () => {
             <div className="team-member">
               <div className="team-member-header">
                 <img 
-                  src="/team/SaraNuytemans.png" 
+                  src="/Team/SaraNuytemans.png" 
                   alt="Sara Nuytemans"
                   className="team-member-photo"
                   loading="lazy"
