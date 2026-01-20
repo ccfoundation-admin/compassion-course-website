@@ -295,7 +295,9 @@ const ContentManagement: React.FC = () => {
     if (!sectionDef) return;
     
     try {
+      // Always clear error when switching sections
       setError(null);
+      setSuccess(null);
       const timeout = 15000; // Increased to 15 seconds for initial load
       
       // Load only data needed for this section
@@ -348,6 +350,9 @@ const ContentManagement: React.FC = () => {
         setMembersLoading(true);
         setSectionsLoading(true);
         
+        let membersError: string | null = null;
+        let sectionsError: string | null = null;
+        
         // Load team members with retry
         const loadMembers = async () => {
           try {
@@ -361,18 +366,23 @@ const ContentManagement: React.FC = () => {
               'Team members loading'
             );
             setTeamMembers(members);
+            membersError = null;
           } catch (memberError: any) {
             console.error('Error loading team members:', memberError);
             const errorMsg = memberError?.message || 'Unknown error';
             
             if (memberError?.code === 'permission-denied' || memberError?.code === 'PERMISSION_DENIED') {
-              console.warn('Permission denied loading team members. Check Firestore security rules.');
+              membersError = 'Permission denied loading team members. Check Firestore security rules.';
+              console.warn(membersError);
             } else if (errorMsg.includes('timeout')) {
-              console.warn('Team members loading timed out. Continuing with empty list.');
+              membersError = 'Team members loading timed out. You can continue working or retry.';
+              console.warn(membersError);
             } else if (memberError?.code === 'unavailable' || errorMsg.includes('network')) {
-              console.warn('Network error loading team members. Check internet connection.');
+              membersError = 'Network error loading team members. Check your internet connection.';
+              console.warn(membersError);
             } else {
-              console.warn('Failed to load team members: ' + errorMsg);
+              membersError = 'Failed to load team members: ' + errorMsg;
+              console.warn(membersError);
             }
           } finally {
             setMembersLoading(false);
@@ -392,6 +402,7 @@ const ContentManagement: React.FC = () => {
               'Language sections loading'
             );
             setLanguageSections(langSections);
+            sectionsError = null;
             
             // Expand first language section by default
             if (langSections.length > 0) {
@@ -402,20 +413,34 @@ const ContentManagement: React.FC = () => {
             const errorMsg = langError?.message || 'Unknown error';
             
             if (langError?.code === 'permission-denied' || langError?.code === 'PERMISSION_DENIED') {
-              console.warn('Permission denied loading language sections. Check Firestore security rules.');
+              sectionsError = 'Permission denied loading language sections. Check Firestore security rules.';
+              console.warn(sectionsError);
             } else if (errorMsg.includes('timeout')) {
-              console.warn('Language sections loading timed out. Continuing with empty list.');
+              sectionsError = 'Language sections loading timed out. You can continue working or retry.';
+              console.warn(sectionsError);
             } else if (langError?.code === 'unavailable' || errorMsg.includes('network')) {
-              console.warn('Network error loading language sections. Check internet connection.');
+              sectionsError = 'Network error loading language sections. Check your internet connection.';
+              console.warn(sectionsError);
             } else {
-              console.warn('Could not load language sections: ' + errorMsg);
+              sectionsError = 'Could not load language sections: ' + errorMsg;
+              console.warn(sectionsError);
             }
           } finally {
             setSectionsLoading(false);
           }
         };
         
-        Promise.allSettled([loadMembers(), loadLangSections()]);
+        // Load both in parallel
+        await Promise.allSettled([loadMembers(), loadLangSections()]);
+        
+        // Set error message only if both failed, or show specific messages
+        if (membersError && sectionsError) {
+          setError(`Failed to load About Us data: ${membersError} ${sectionsError}`);
+        } else if (membersError) {
+          setError(`Team members: ${membersError} Language sections loaded successfully.`);
+        } else if (sectionsError) {
+          setError(`Language sections: ${sectionsError} Team members loaded successfully.`);
+        }
       } else if (sectionId === 'programs' || sectionId === 'contact') {
         setContentLoading(true);
         try {
