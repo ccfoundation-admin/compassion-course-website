@@ -614,31 +614,58 @@ const ContentManagement: React.FC = () => {
       return;
     }
 
+    // Helper function to add timeout to async operations
+    const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number, operationName: string): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) =>
+          setTimeout(() => reject(new Error(`${operationName} timed out after ${timeoutMs}ms`)), timeoutMs)
+        )
+      ]);
+    };
+
     try {
       setSaving(true);
       setError(null);
       console.log('💾 Saving language section:', editingLanguageSection);
       
-      await saveLanguageSection(editingLanguageSection, user.email);
+      // Save with timeout (10 seconds)
+      const saveTimeout = 10000;
+      await withTimeout(
+        saveLanguageSection(editingLanguageSection, user.email),
+        saveTimeout,
+        'Save language section'
+      );
+      
       console.log('✅ Language section saved successfully');
       setSuccess('Language section saved successfully!');
       
-      // Refresh the about section data to show the new language section
+      // Close modal and show success immediately
+      setTimeout(() => {
+        setEditingLanguageSection(null);
+        setSuccess(null);
+      }, 1500);
+      
+      // Refresh in background (non-blocking) - don't wait for it
       setLoadedSections(prev => {
         const updated = new Set(prev);
         updated.delete('about');
         return updated;
       });
-      await loadSectionData('about');
       
-      setTimeout(() => {
-        setEditingLanguageSection(null);
-        setSuccess(null);
-      }, 1500);
+      // Refresh in background without blocking
+      loadSectionData('about').catch((refreshError: any) => {
+        console.warn('⚠️ Background refresh failed (non-blocking):', refreshError);
+        // Don't show error to user - they can manually refresh if needed
+      });
+      
     } catch (err: any) {
       console.error('❌ Error saving language section:', err);
       const errorMessage = err?.message || 'Unknown error occurred';
-      if (err?.code === 'permission-denied' || err?.code === 'PERMISSION_DENIED') {
+      
+      if (errorMessage.includes('timed out')) {
+        setError('Save operation timed out. The section may have been saved. Please refresh the page to check, or try again.');
+      } else if (err?.code === 'permission-denied' || err?.code === 'PERMISSION_DENIED') {
         setError('Permission denied. Check Firestore security rules to ensure admin access is allowed.');
       } else if (err?.code === 'unavailable' || errorMessage.includes('network')) {
         setError('Network error. Please check your internet connection and try again.');
@@ -646,6 +673,7 @@ const ContentManagement: React.FC = () => {
         setError('Failed to save language section: ' + errorMessage);
       }
     } finally {
+      // Always reset saving state, even if operations hang
       setSaving(false);
     }
   };
@@ -1396,10 +1424,25 @@ const ContentManagement: React.FC = () => {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2 style={{ margin: 0, color: '#002B4D' }}>About Us - Team Members</h2>
-              {(membersLoading || sectionsLoading) && (
-                <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading team data...</span>
-              )}
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                {(membersLoading || sectionsLoading) && (
+                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading team data...</span>
+                )}
+                <button
+                  onClick={() => {
+                    setLoadedSections(prev => {
+                      const updated = new Set(prev);
+                      updated.delete('about');
+                      return updated;
+                    });
+                    loadSectionData('about');
+                  }}
+                  className="btn btn-small btn-secondary"
+                  style={{ fontSize: '0.875rem' }}
+                  disabled={membersLoading || sectionsLoading}
+                >
+                  ↻ Refresh
+                </button>
                 <button
                   onClick={handleAddNewLanguageSection}
                   className="btn btn-secondary"
