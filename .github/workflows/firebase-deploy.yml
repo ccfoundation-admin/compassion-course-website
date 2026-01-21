@@ -50,4 +50,4 @@ jobs:
           project_id: compassion-course-websit-937d6
 
       - name: Deploy to Firebase
-        run: firebase deploy --only hosting --project compassion-course-websit-937d6
+        run: firebase deploy --only hosting,storage --project compassion-course-websit-937d6

@@ -42,7 +42,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { useNavigate } from 'react-router-dom';
 import { useContent } from '../../context/ContentContext';
-import { renderHTML } from '../../utils/contentUtils';
+import { renderHTML, ensureTeamSuffix } from '../../utils/contentUtils';
 
 // Section definitions
 type SectionId = 'home' | 'about' | 'programs' | 'contact';
@@ -652,12 +652,19 @@ const ContentManagement: React.FC = () => {
     try {
       setSaving(true);
       setError(null);
-      console.log('💾 Saving language section:', editingLanguageSection);
+      
+      // Normalize the name to ensure it has "Team" suffix
+      const normalizedSection = {
+        ...editingLanguageSection,
+        name: ensureTeamSuffix(editingLanguageSection.name)
+      };
+      
+      console.log('💾 Saving language section:', normalizedSection);
       
       // Save with timeout (10 seconds)
       const saveTimeout = 10000;
       await withTimeout(
-        saveLanguageSection(editingLanguageSection, user.email),
+        saveLanguageSection(normalizedSection, user.email),
         saveTimeout,
         'Save language section'
       );
@@ -741,8 +748,14 @@ const ContentManagement: React.FC = () => {
   };
 
   const getMembersForSection = (sectionName: string): TeamMember[] => {
+    // Normalize the section name for matching
+    const normalizedName = ensureTeamSuffix(sectionName);
     return teamMembers
-      .filter(m => m.teamSection === sectionName && m.isActive !== false)
+      .filter(m => {
+        // Match if teamSection equals either the original or normalized name (for backward compatibility)
+        const memberSection = m.teamSection || '';
+        return (memberSection === sectionName || memberSection === normalizedName) && m.isActive !== false;
+      })
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   };
 
@@ -1517,7 +1530,7 @@ const ContentManagement: React.FC = () => {
                         </span>
                         <div>
                           <h3 style={{ margin: 0, color: '#002B4D', fontSize: '1.1rem' }}>
-                            {langSection.name}
+                            {ensureTeamSuffix(langSection.name)}
                             {!langSection.isActive && (
                               <span style={{
                                 fontSize: '0.75rem',

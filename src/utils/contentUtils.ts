@@ -11,3 +11,13 @@ export const renderHTML = (html: string): { __html: string } => {
     }),
   };
 };
+
+/**
+ * Ensure language section name ends with "Team" suffix
+ * @param name - The language section name
+ * @returns The name with "Team" suffix appended if not already present
+ */
+export const ensureTeamSuffix = (name: string): string => {
+  const trimmed = name.trim();
+  return trimmed.endsWith('Team') ? trimmed : `${trimmed} Team`;
+};

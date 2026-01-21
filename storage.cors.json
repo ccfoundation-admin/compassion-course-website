@@ -1,0 +1,13 @@
+[
+  {
+    "origin": [
+      "https://compassion-course-websit-937d6.firebaseapp.com",
+      "https://compassioncf.com",
+      "http://localhost:5173",
+      "http://localhost:5174"
+    ],
+    "method": ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"],
+    "maxAgeSeconds": 3600,
+    "responseHeader": ["Content-Type", "Authorization"]
+  }
+]

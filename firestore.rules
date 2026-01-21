@@ -1,0 +1,239 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check if user is admin by UID
+    function isAdmin() {
+      return request.auth != null && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    // Helper function to check if user is admin by email
+    // Note: Firebase Auth tokens provide emails in lowercase, and admin docs are stored in lowercase
+    function isAdminByEmail() {
+      return request.auth != null && 
+             request.auth.token.email != null &&
+             exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+    
+    // Helper function to check if user is admin (either by UID or email)
+    function isAdminUser() {
+      return isAdmin() || isAdminByEmail();
+    }
+    
+    // Helper function to check if user owns a resource
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Helper function to check if email is in trusted admin list
+    function isTrustedAdminEmail() {
+      return request.auth != null && 
+             request.auth.token.email != null &&
+             request.auth.token.email == 'info@compassioncf.com';
+    }
+    
+    // ============================================
+    // WEBSITE CONTENT (Public read, Admin write)
+    // ============================================
+    
+    // Content collection - readable by all, writable by admins
+    match /content/{contentId} {
+      allow read: if true; // Public read access
+      allow write: if isAdminUser();
+    }
+    
+    // Team members - readable by all, writable by admins
+    match /teamMembers/{memberId} {
+      allow read: if true; // Public read access
+      allow write: if isAdminUser();
+    }
+    
+    // Language sections - readable by all, writable by admins
+    match /teamLanguageSections/{sectionId} {
+      allow read: if true; // Public read access
+      allow write: if isAdminUser();
+    }
+    
+    // Board members collection
+    match /boardMembers/{memberId} {
+      allow read: if true;
+      allow write: if isAdminUser();
+    }
+    
+    // Programs collection
+    match /programs/{programId} {
+      allow read: if true;
+      allow write: if isAdminUser();
+    }
+    
+    // Events collection
+    match /events/{eventId} {
+      allow read: if true;
+      allow write: if isAdminUser();
+    }
+    
+    // ============================================
+    // ADMIN MANAGEMENT
+    // ============================================
+    
+    // Admins collection - allow creating for trusted emails or first admin
+    match /admins/{adminId} {
+      // Allow read if user is admin
+      allow read: if isAdminUser();
+      
+      // Allow create if:
+      // 1. User is already an admin, OR
+      // 2. Email matches trusted admin email list, OR
+      // 3. Creating document for own UID (self-creation allowed for trusted emails)
+      allow create: if request.auth != null && 
+        (isAdminUser() || 
+         isTrustedAdminEmail() || 
+         (adminId == request.auth.uid && isTrustedAdminEmail()));
+      
+      // Allow update and delete only if user is admin
+      allow update, delete: if isAdminUser();
+    }
+    
+    // ============================================
+    // USER PROFILES (Users can read/write their own, admins can read/write all)
+    // ============================================
+    
+    match /userProfiles/{userId} {
+      allow read: if request.auth != null && (isOwner(userId) || isAdminUser());
+      allow create: if request.auth != null && isOwner(userId);
+      allow update: if request.auth != null && (isOwner(userId) || isAdminUser());
+      allow delete: if isAdminUser();
+    }
+    
+    // ============================================
+    // ORGANIZATIONS (Members can read, owners/admins can write)
+    // ============================================
+    
+    match /organizations/{orgId} {
+      allow read: if request.auth != null; // Authenticated users can read
+      allow write: if isAdminUser(); // Only admins can create/update/delete for now
+      // TODO: Add owner-based write rules when organization ownership is implemented
+    }
+    
+    // ============================================
+    // WEBCASTS (Public read, Admin/Org owner write)
+    // ============================================
+    
+    match /webcasts/{webcastId} {
+      allow read: if true; // Public read access
+      allow write: if isAdminUser(); // Only admins can create/update/delete for now
+      // TODO: Add org owner write rules when implemented
+    }
+    
+    match /webcastSessions/{sessionId} {
+      allow read: if request.auth != null; // Authenticated users can read their sessions
+      allow create: if request.auth != null; // Users can create their own sessions
+      allow update: if request.auth != null; // Users can update their own sessions
+      allow delete: if isAdminUser(); // Only admins can delete
+    }
+    
+    // ============================================
+    // COURSES & LEARNING (Authenticated users)
+    // ============================================
+    
+    match /courses/{courseId} {
+      allow read: if request.auth != null; // Authenticated users can read
+      allow write: if isAdminUser(); // Only admins can create/update/delete
+    }
+    
+    match /modules/{moduleId} {
+      allow read: if request.auth != null;
+      allow write: if isAdminUser();
+    }
+    
+    match /lessons/{lessonId} {
+      allow read: if request.auth != null;
+      allow write: if isAdminUser();
+    }
+    
+    match /enrollments/{enrollmentId} {
+      allow read: if request.auth != null && (
+        isOwner(resource.data.userId) || isAdminUser()
+      );
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        isOwner(resource.data.userId) || isAdminUser()
+      );
+      allow delete: if isAdminUser();
+    }
+    
+    // ============================================
+    // COMMUNITY & SOCIAL (Authenticated users)
+    // ============================================
+    
+    match /communities/{communityId} {
+      allow read: if request.auth != null;
+      allow write: if isAdminUser(); // Only admins for now
+      // TODO: Add owner-based write rules
+    }
+    
+    match /spaces/{spaceId} {
+      allow read: if request.auth != null;
+      allow write: if isAdminUser();
+    }
+    
+    match /posts/{postId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        isOwner(resource.data.authorId) || isAdminUser()
+      );
+      allow delete: if request.auth != null && (
+        isOwner(resource.data.authorId) || isAdminUser()
+      );
+    }
+    
+    match /comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        isOwner(resource.data.authorId) || isAdminUser()
+      );
+      allow delete: if request.auth != null && (
+        isOwner(resource.data.authorId) || isAdminUser()
+      );
+    }
+    
+    match /memberships/{membershipId} {
+      allow read: if request.auth != null && (
+        isOwner(resource.data.userId) || isAdminUser()
+      );
+      allow create: if request.auth != null;
+      allow update: if isAdminUser();
+      allow delete: if request.auth != null && (
+        isOwner(resource.data.userId) || isAdminUser()
+      );
+    }
+    
+    // ============================================
+    // CHAT & MESSAGING (Authenticated users)
+    // ============================================
+    
+    match /chats/{chatId} {
+      allow read: if request.auth != null && (
+        request.auth.uid in resource.data.participants || isAdminUser()
+      );
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        request.auth.uid in resource.data.participants || isAdminUser()
+      );
+      allow delete: if isAdminUser();
+    }
+    
+    match /messages/{messageId} {
+      allow read: if request.auth != null; // Users can read messages in chats they're part of
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        isOwner(resource.data.senderId) || isAdminUser()
+      );
+      allow delete: if request.auth != null && (
+        isOwner(resource.data.senderId) || isAdminUser()
+      );
+    }
+  }
+}

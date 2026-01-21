@@ -173,8 +173,15 @@ export const getContentBySections = async (sectionNames: string[]): Promise<Cont
       section,
       items: sections[section] || [],
     }));
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching content by sections:', error);
+    // Check for specific error codes
+    if (error?.code === 'permission-denied' || error?.code === 'PERMISSION_DENIED') {
+      console.error('❌ PERMISSION DENIED: Firestore security rules may not be deployed. Run: firebase deploy --only firestore:rules');
+      const permissionError: any = new Error('Permission denied. Firestore security rules may not be deployed. Please deploy rules with: firebase deploy --only firestore:rules');
+      permissionError.code = 'permission-denied';
+      throw permissionError;
+    }
     throw error;
   }
 };
@@ -355,8 +362,15 @@ export const getAllTeamMembers = async (): Promise<TeamMember[]> => {
     });
     
     return members;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching all team members:', error);
+    // Check for specific error codes
+    if (error?.code === 'permission-denied' || error?.code === 'PERMISSION_DENIED') {
+      console.error('❌ PERMISSION DENIED: Firestore security rules may not be deployed. Run: firebase deploy --only firestore:rules');
+      const permissionError: any = new Error('Permission denied. Firestore security rules may not be deployed. Please deploy rules with: firebase deploy --only firestore:rules');
+      permissionError.code = 'permission-denied';
+      throw permissionError;
+    }
     throw error;
   }
 };
@@ -483,8 +497,15 @@ export const getAllLanguageSections = async (): Promise<TeamLanguageSection[]> =
     sections.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     
     return sections;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching language sections:', error);
+    // Check for specific error codes
+    if (error?.code === 'permission-denied' || error?.code === 'PERMISSION_DENIED') {
+      console.error('❌ PERMISSION DENIED: Firestore security rules may not be deployed. Run: firebase deploy --only firestore:rules');
+      const permissionError: any = new Error('Permission denied. Firestore security rules may not be deployed. Please deploy rules with: firebase deploy --only firestore:rules');
+      permissionError.code = 'permission-denied';
+      throw permissionError;
+    }
     throw error;
   }
 };

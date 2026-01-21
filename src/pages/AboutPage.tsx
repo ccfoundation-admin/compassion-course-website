@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import { getTeamMembers, getLanguageSections, TeamMember, TeamLanguageSection } from '../services/contentService';
+import { ensureTeamSuffix } from '../utils/contentUtils';
 
 const AboutPage: React.FC = () => {
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
@@ -46,8 +47,11 @@ const AboutPage: React.FC = () => {
   // Use language sections order, filter to only sections that have members or are explicitly shown
   const sortedSections = languageSections
     .filter(section => {
-      // Show section if it has members or if we want to show empty sections
-      return membersBySection[section.name] && membersBySection[section.name].length > 0;
+      // Check both original and normalized names for backward compatibility
+      const normalizedName = ensureTeamSuffix(section.name);
+      const hasMembers = (membersBySection[section.name] && membersBySection[section.name].length > 0) ||
+                         (membersBySection[normalizedName] && membersBySection[normalizedName].length > 0);
+      return hasMembers;
     })
     .map(section => section.name);
 
@@ -100,11 +104,16 @@ const AboutPage: React.FC = () => {
             </div>
           )}
 
-          {!loading && !error && sortedSections.map((sectionName) => (
+          {!loading && !error && sortedSections.map((sectionName) => {
+            // Get members for this section (check both original and normalized names)
+            const normalizedName = ensureTeamSuffix(sectionName);
+            const sectionMembers = membersBySection[sectionName] || membersBySection[normalizedName] || [];
+            
+            return (
             <div key={sectionName} className="team-section">
-              <h2 className="team-section-title">{sectionName}</h2>
+              <h2 className="team-section-title">{ensureTeamSuffix(sectionName)}</h2>
               
-              {membersBySection[sectionName].map((member) => (
+              {sectionMembers.map((member) => (
                 <div key={member.id} className="team-member">
                   <div className="team-member-header">
                     <img 
@@ -132,7 +141,8 @@ const AboutPage: React.FC = () => {
                 </div>
               ))}
             </div>
-          ))}
+            );
+          })}
         </div>
       </section>
     </Layout>
