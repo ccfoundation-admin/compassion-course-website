@@ -49,19 +49,17 @@ jobs:
         with:
           project_id: compassion-course-websit-937d6
 
-      - name: Authenticate Firebase CLI
-        id: firebase-auth
+      - name: Setup Firebase Authentication
         run: |
           echo "Setting up Firebase authentication..."
           if [ -n "${{ secrets.FIREBASE_TOKEN }}" ]; then
             echo "✅ Using Firebase token for authentication"
-            echo "token=${{ secrets.FIREBASE_TOKEN }}" >> $GITHUB_OUTPUT
           else
             echo "Using service account for Firebase authentication"
-            # Generate access token from gcloud (already authenticated by google-github-actions/auth)
-            FIREBASE_TOKEN=$(gcloud auth print-access-token)
-            echo "✅ Access token generated"
-            echo "token=$FIREBASE_TOKEN" >> $GITHUB_OUTPUT
+            # Create service account key file from secret
+            echo "${{ secrets.GCP_SA_KEY_JSON }}" > $HOME/serviceAccountKey.json
+            chmod 600 $HOME/serviceAccountKey.json
+            echo "✅ Service account key file created at $HOME/serviceAccountKey.json"
           fi
           # Set Firebase project
           firebase use compassion-course-websit-937d6 || firebase use --add compassion-course-websit-937d6
@@ -69,4 +67,13 @@ jobs:
       - name: Deploy to Firebase
         run: |
           echo "🚀 Deploying to Firebase..."
-          firebase deploy --only hosting,storage --project compassion-course-websit-937d6 --token "${{ steps.firebase-auth.outputs.token }}"
+          if [ -n "${{ secrets.FIREBASE_TOKEN }}" ]; then
+            echo "Using Firebase token authentication"
+            firebase deploy --only hosting,storage --project compassion-course-websit-937d6 --token "${{ secrets.FIREBASE_TOKEN }}"
+          else
+            echo "Using service account authentication with GOOGLE_APPLICATION_CREDENTIALS"
+            export GOOGLE_APPLICATION_CREDENTIALS="$HOME/serviceAccountKey.json"
+            echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+            ls -la $HOME/serviceAccountKey.json || echo "Service account key file not found!"
+            firebase deploy --only hosting,storage --project compassion-course-websit-937d6
+          fi
