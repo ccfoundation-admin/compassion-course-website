@@ -49,5 +49,24 @@ jobs:
         with:
           project_id: compassion-course-websit-937d6
 
+      - name: Authenticate Firebase CLI
+        id: firebase-auth
+        run: |
+          echo "Setting up Firebase authentication..."
+          if [ -n "${{ secrets.FIREBASE_TOKEN }}" ]; then
+            echo "✅ Using Firebase token for authentication"
+            echo "token=${{ secrets.FIREBASE_TOKEN }}" >> $GITHUB_OUTPUT
+          else
+            echo "Using service account for Firebase authentication"
+            # Generate access token from gcloud (already authenticated by google-github-actions/auth)
+            FIREBASE_TOKEN=$(gcloud auth print-access-token)
+            echo "✅ Access token generated"
+            echo "token=$FIREBASE_TOKEN" >> $GITHUB_OUTPUT
+          fi
+          # Set Firebase project
+          firebase use compassion-course-websit-937d6 || firebase use --add compassion-course-websit-937d6
+
       - name: Deploy to Firebase
-        run: firebase deploy --only hosting,storage --project compassion-course-websit-937d6
+        run: |
+          echo "🚀 Deploying to Firebase..."
+          firebase deploy --only hosting,storage --project compassion-course-websit-937d6 --token "${{ steps.firebase-auth.outputs.token }}"
