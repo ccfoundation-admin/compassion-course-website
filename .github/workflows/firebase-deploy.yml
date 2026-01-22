@@ -51,29 +51,21 @@ jobs:
 
       - name: Setup Firebase Authentication
         run: |
-          echo "Setting up Firebase authentication..."
-          if [ -n "${{ secrets.FIREBASE_TOKEN }}" ]; then
-            echo "✅ Using Firebase token for authentication"
-          else
-            echo "Using service account for Firebase authentication"
-            # Create service account key file from secret
-            echo "${{ secrets.GCP_SA_KEY_JSON }}" > $HOME/serviceAccountKey.json
-            chmod 600 $HOME/serviceAccountKey.json
-            echo "✅ Service account key file created at $HOME/serviceAccountKey.json"
-          fi
+          echo "Setting up Firebase authentication with service account..."
+          # Create service account key file from secret
+          SERVICE_ACCOUNT_KEY_PATH="${{ github.workspace }}/serviceAccountKey.json"
+          echo "${{ secrets.GCP_SA_KEY_JSON }}" > "$SERVICE_ACCOUNT_KEY_PATH"
+          chmod 600 "$SERVICE_ACCOUNT_KEY_PATH"
+          echo "✅ Service account key file created at $SERVICE_ACCOUNT_KEY_PATH"
           # Set Firebase project
           firebase use compassion-course-websit-937d6 || firebase use --add compassion-course-websit-937d6
 
       - name: Deploy to Firebase
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/serviceAccountKey.json
         run: |
           echo "🚀 Deploying to Firebase..."
-          if [ -n "${{ secrets.FIREBASE_TOKEN }}" ]; then
-            echo "Using Firebase token authentication"
-            firebase deploy --only hosting,storage --project compassion-course-websit-937d6 --token "${{ secrets.FIREBASE_TOKEN }}"
-          else
-            echo "Using service account authentication with GOOGLE_APPLICATION_CREDENTIALS"
-            export GOOGLE_APPLICATION_CREDENTIALS="$HOME/serviceAccountKey.json"
-            echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
-            ls -la $HOME/serviceAccountKey.json || echo "Service account key file not found!"
-            firebase deploy --only hosting,storage --project compassion-course-websit-937d6
-          fi
+          echo "Using service account authentication with GOOGLE_APPLICATION_CREDENTIALS"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$GOOGLE_APPLICATION_CREDENTIALS"
+          ls -la "$GOOGLE_APPLICATION_CREDENTIALS" || echo "Service account key file not found!"
+          firebase deploy --only hosting,storage --project compassion-course-websit-937d6
