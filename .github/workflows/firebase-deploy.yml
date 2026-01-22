@@ -80,6 +80,29 @@ jobs:
           # Set Firebase project (without requiring login)
           firebase use compassion-course-websit-937d6 --non-interactive || firebase use --add compassion-course-websit-937d6 --non-interactive
 
+      - name: Check and Enable Required APIs
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/serviceAccountKey.json
+        run: |
+          echo "🔧 Checking Firebase Storage API status..."
+          SERVICE_ACCOUNT_KEY_PATH="${{ github.workspace }}/serviceAccountKey.json"
+          # Activate service account
+          gcloud auth activate-service-account --key-file="$SERVICE_ACCOUNT_KEY_PATH"
+          # Check if API is enabled
+          if gcloud services list --enabled --project=compassion-course-websit-937d6 --filter="name:firebasestorage.googleapis.com" --format="value(name)" | grep -q firebasestorage; then
+            echo "✅ Firebase Storage API is already enabled"
+          else
+            echo "⚠️ Firebase Storage API is not enabled"
+            echo "Attempting to enable (may fail if service account lacks Service Usage Admin role)..."
+            gcloud services enable firebasestorage.googleapis.com --project=compassion-course-websit-937d6 || {
+              echo "❌ Could not enable API automatically"
+              echo "📝 Please enable it manually:"
+              echo "   1. Go to https://console.cloud.google.com/apis/library/firebasestorage.googleapis.com?project=compassion-course-websit-937d6"
+              echo "   2. Click 'Enable'"
+              echo "   OR grant Service Usage Admin role to the service account"
+            }
+          fi
+
       - name: Deploy to Firebase
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/serviceAccountKey.json
