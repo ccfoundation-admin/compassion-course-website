@@ -66,6 +66,66 @@ ls -la .github/workflows/firebase-deploy.yml
 git log --oneline -5
 ```
 
+## Firebase API Key Issues
+
+### Error: "auth/api-key-not-valid.-please-pass-a-valid-api-key."
+
+This error means Firebase can't validate your API key. Common causes:
+
+1. **API Key Not Set in GitHub Secrets**
+   - Go to GitHub → Your Repo → Settings → Secrets and variables → Actions
+   - Verify `VITE_FIREBASE_API_KEY` exists and is correct
+   - The API key should start with `AIza` and be about 39 characters long
+
+2. **API Key Has Domain Restrictions**
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Select project: `compassion-course-websit-937d6`
+   - Go to APIs & Services → Credentials
+   - Find your API key (the one used in Firebase)
+   - Click on it to edit
+   - Under "Application restrictions", check:
+     - If set to "HTTP referrers", ensure these domains are added:
+       - `compassion-course-websit-937d6.firebaseapp.com/*`
+       - `compassion-course-websit-937d6.web.app/*`
+       - `compassioncf.com/*` (if using custom domain)
+       - `localhost:*` (for development)
+     - If set to "None", that's fine
+   - Under "API restrictions", ensure these APIs are enabled:
+     - Firebase Authentication API
+     - Firebase Realtime Database API (if using)
+     - Cloud Firestore API
+     - Firebase Storage API
+   - Save changes
+
+3. **API Key Deleted or Disabled**
+   - Check if the API key still exists in Google Cloud Console
+   - If deleted, you'll need to:
+     - Go to Firebase Console → Project Settings → General
+     - Copy the Web API Key
+     - Update it in GitHub Secrets
+
+4. **Build-Time Environment Variables Not Passed**
+   - Check the GitHub Actions workflow logs
+   - Verify the build step includes all `VITE_FIREBASE_*` environment variables
+   - The API key must be available at build time (Vite embeds it in the bundle)
+
+### How to Get the Correct API Key:
+
+1. Go to [Firebase Console](https://console.firebase.google.com/)
+2. Select project: `compassion-course-websit-937d6`
+3. Click the gear icon → Project Settings
+4. Scroll to "Your apps" section
+5. Find your web app (or create one if it doesn't exist)
+6. Copy the "Web API Key" (starts with `AIza`)
+7. Update `VITE_FIREBASE_API_KEY` in GitHub Secrets
+
+### Verify API Key in Deployed Site:
+
+1. Open browser console on the deployed site
+2. Look for log message: `🔧 Firebase config:`
+3. Check if `apiKey` shows a value (first 10 chars) or `MISSING`
+4. If `MISSING`, the environment variable wasn't set during build
+
 ## Google Sign-In Issues
 
 ### Common Problems:

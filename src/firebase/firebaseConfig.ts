@@ -31,6 +31,12 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
     VITE_FIREBASE_PROJECT_ID: !!firebaseConfig.projectId,
     VITE_FIREBASE_AUTH_DOMAIN: !!firebaseConfig.authDomain
   });
+  throw new Error('Firebase configuration is incomplete. Check environment variables.');
+}
+
+// Validate API key format (Firebase API keys typically start with 'AIza')
+if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('AIza')) {
+  console.warn('⚠️ API key format looks unusual. Firebase API keys typically start with "AIza"');
 }
 
 const app = initializeApp(firebaseConfig);
