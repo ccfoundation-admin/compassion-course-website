@@ -7,7 +7,11 @@ const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user, isAdmin, loading: authLoading, login, signInWithGoogle } = useAuth();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetMessage, setResetMessage] = useState('');
+  const { user, isAdmin, loading: authLoading, login, signInWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   // Redirect to admin dashboard when admin status is confirmed
@@ -76,15 +80,52 @@ const LoginPage: React.FC = () => {
       // Navigation will be handled by useEffect
     } catch (error: any) {
       console.error('Google sign-in error:', error);
-      if (error.code === 'auth/popup-closed-by-user') {
+      // Use the error message from AuthContext (which provides specific messages)
+      // or fall back to code-based messages
+      if (error.message) {
+        setError(error.message);
+      } else if (error.code === 'auth/popup-closed-by-user') {
         setError('Sign-in was cancelled.');
       } else if (error.code === 'auth/popup-blocked') {
         setError('Popup was blocked. Please allow popups for this site.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        setError('This domain is not authorized for Google sign-in. Please contact the administrator.');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        setError('Google sign-in is not enabled. Please contact the administrator.');
       } else {
         setError(error.message || 'Failed to sign in with Google. Please try again.');
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetMessage('');
+    setResetLoading(true);
+
+    try {
+      await resetPassword(resetEmail);
+      setResetMessage('Password reset email sent! Please check your inbox and follow the instructions to reset your password.');
+      setResetEmail('');
+      setTimeout(() => {
+        setShowForgotPassword(false);
+        setResetMessage('');
+      }, 3000);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      if (error.code === 'auth/user-not-found') {
+        setResetMessage('No account found with this email address.');
+      } else if (error.code === 'auth/invalid-email') {
+        setResetMessage('Invalid email address format.');
+      } else if (error.code === 'auth/too-many-requests') {
+        setResetMessage('Too many requests. Please try again later.');
+      } else {
+        setResetMessage(error.message || 'Failed to send password reset email. Please try again.');
+      }
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -120,6 +161,79 @@ const LoginPage: React.FC = () => {
             {loading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+        <div style={{ marginTop: '15px', textAlign: 'center' }}>
+          <button
+            type="button"
+            onClick={() => {
+              setShowForgotPassword(true);
+              setError('');
+              setResetMessage('');
+            }}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: '#0066cc',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              fontSize: '14px'
+            }}
+          >
+            Forgot password?
+          </button>
+        </div>
+        {showForgotPassword && (
+          <div style={{
+            marginTop: '20px',
+            padding: '20px',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            backgroundColor: '#f9f9f9'
+          }}>
+            <h3 style={{ marginTop: 0, marginBottom: '15px' }}>Reset Password</h3>
+            {resetMessage && (
+              <div style={{
+                padding: '10px',
+                marginBottom: '15px',
+                borderRadius: '4px',
+                backgroundColor: resetMessage.includes('sent') ? '#d4edda' : '#f8d7da',
+                color: resetMessage.includes('sent') ? '#155724' : '#721c24'
+              }}>
+                {resetMessage}
+              </div>
+            )}
+            <form onSubmit={handleForgotPassword}>
+              <div className="form-group">
+                <label htmlFor="resetEmail">Email</label>
+                <input
+                  type="email"
+                  id="resetEmail"
+                  value={resetEmail}
+                  onChange={(e) => setResetEmail(e.target.value)}
+                  required
+                  className="form-input"
+                  placeholder="Enter your email address"
+                />
+              </div>
+              <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                <button type="submit" disabled={resetLoading} className="btn btn-primary" style={{ flex: 1 }}>
+                  {resetLoading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForgotPassword(false);
+                    setResetEmail('');
+                    setResetMessage('');
+                  }}
+                  className="btn btn-secondary"
+                  style={{ flex: 1 }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
         <button 
           type="button" 
           onClick={handleGoogleSignIn} 

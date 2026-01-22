@@ -8,7 +8,8 @@ import {
   getIdTokenResult,
   signInWithPopup,
   GoogleAuthProvider,
-  RecaptchaVerifier
+  RecaptchaVerifier,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
@@ -26,6 +27,7 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, recaptchaVerifier?: RecaptchaVerifier) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -284,8 +286,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     try {
       const provider = new GoogleAuthProvider();
+      // Add custom parameters for better OAuth experience
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      
       const userCredential = await signInWithPopup(auth, provider);
       console.log('Google sign-in successful:', userCredential.user.email);
+      
+      // Auto-create admin document if email is in admin list
+      if (userCredential.user.email && ADMIN_EMAILS.includes(userCredential.user.email)) {
+        console.log('🔄 Admin email detected via Google sign-in, ensuring admin document exists...');
+        await createAdminDocument(userCredential.user);
+      }
       
       // Auto-create user profile
       try {
@@ -306,6 +319,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return userCredential;
     } catch (error: any) {
       console.error('Google sign-in error:', error);
+      
+      // Provide more specific error messages
+      if (error.code === 'auth/popup-closed-by-user') {
+        throw new Error('Sign-in was cancelled. Please try again.');
+      } else if (error.code === 'auth/popup-blocked') {
+        throw new Error('Popup was blocked. Please allow popups for this site and try again.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        throw new Error('This domain is not authorized for Google sign-in. Please contact the administrator.');
+      } else if (error.code === 'auth/operation-not-allowed') {
+        throw new Error('Google sign-in is not enabled. Please contact the administrator.');
+      } else if (error.code === 'auth/network-request-failed') {
+        throw new Error('Network error. Please check your internet connection and try again.');
+      }
+      
+      throw error;
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+      console.log('Password reset email sent to:', email);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
       throw error;
     }
   };
@@ -321,6 +358,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     signInWithGoogle,
+    resetPassword,
     logout
   };
 
