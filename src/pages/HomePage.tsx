@@ -8,6 +8,7 @@ import { renderHTML } from '../utils/contentUtils';
 const HomePage: React.FC = () => {
   const { getContent } = useContent();
   const heroSectionRef = useRef<HTMLElement>(null);
+  const chatbotContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Initialize hero background image
@@ -38,51 +39,43 @@ const HomePage: React.FC = () => {
     };
   }, []);
 
-  // Load ElevenLabs chatbot script
+  // Load ElevenLabs chatbot script and create widget
   useEffect(() => {
     // Check if script is already loaded
-    if (document.querySelector('script[data-elevenlabs-chatbot]')) {
+    const existingScript = document.querySelector('script[src="https://unpkg.com/@elevenlabs/convai-widget-embed"]');
+    if (existingScript || !chatbotContainerRef.current) {
       return;
     }
 
-    // ============================================
-    // ELEVENLABS CHATBOT CONFIGURATION
-    // ============================================
-    // Replace the configuration below with your actual ElevenLabs embed code
-    // You can find this in your ElevenLabs dashboard under your Conversational AI agent
-    
-    // Option 1: If your embed code is a script URL with attributes
-    // Uncomment and update these lines with your values:
-    /*
+    // Load the ElevenLabs widget script
     const script = document.createElement('script');
-    script.src = 'YOUR_ELEVENLABS_SCRIPT_URL_HERE';
-    script.setAttribute('data-conversational-ai-id', 'YOUR_AGENT_ID_HERE');
-    script.setAttribute('data-elevenlabs-chatbot', 'true');
+    script.src = 'https://unpkg.com/@elevenlabs/convai-widget-embed';
     script.async = true;
-    script.defer = true;
-    document.head.appendChild(script);
-    */
-
-    // Option 2: If your embed code includes inline initialization
-    // You can add it here or create a separate function to initialize the widget
-    // Example:
-    /*
-    const initElevenLabsChatbot = () => {
-      // Paste your ElevenLabs initialization code here
-      // This might include window.elevenlabs or similar global object initialization
+    script.type = 'text/javascript';
+    script.setAttribute('data-elevenlabs-chatbot', 'true');
+    
+    // Create the custom element after script loads
+    script.onload = () => {
+      if (chatbotContainerRef.current) {
+        // Clear any existing content
+        chatbotContainerRef.current.innerHTML = '';
+        // Create the custom element
+        const chatbotElement = document.createElement('elevenlabs-convai');
+        chatbotElement.setAttribute('agent-id', 'agent_0301kaf26r60eqkr3x8qe2v8wdq0');
+        chatbotContainerRef.current.appendChild(chatbotElement);
+      }
     };
-    initElevenLabsChatbot();
-    */
-
-    // Option 3: If you have a complete script tag from ElevenLabs
-    // You can use dangerouslySetInnerHTML or create the script element with all attributes
-    // Make sure to include all data attributes and configuration from your embed code
+    
+    document.head.appendChild(script);
 
     // Cleanup function
     return () => {
-      const existingScript = document.querySelector('script[data-elevenlabs-chatbot]');
-      if (existingScript) {
-        existingScript.remove();
+      const scriptToRemove = document.querySelector('script[src="https://unpkg.com/@elevenlabs/convai-widget-embed"]');
+      if (scriptToRemove) {
+        scriptToRemove.remove();
+      }
+      if (chatbotContainerRef.current) {
+        chatbotContainerRef.current.innerHTML = '';
       }
     };
   }, []);
@@ -300,50 +293,8 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* ElevenLabs Chatbot Placeholder - Replace with actual embed code when available */}
-      <div
-        id="elevenlabs-chatbot-container"
-        style={{
-          position: 'fixed',
-          bottom: '20px',
-          right: '20px',
-          zIndex: 1000,
-          cursor: 'pointer'
-        }}
-        onClick={() => {
-          alert('Chatbot placeholder - ElevenLabs code will be added here');
-        }}
-      >
-        <div
-          style={{
-            width: '60px',
-            height: '60px',
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.4)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
-          }}
-        >
-          <i 
-            className="fas fa-comments" 
-            style={{
-              color: '#ffffff',
-              fontSize: '24px'
-            }}
-          />
-        </div>
-      </div>
+      {/* ElevenLabs Chatbot Widget */}
+      <div ref={chatbotContainerRef}></div>
     </Layout>
   );
 };
