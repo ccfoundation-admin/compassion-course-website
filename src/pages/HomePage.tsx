@@ -38,6 +38,55 @@ const HomePage: React.FC = () => {
     };
   }, []);
 
+  // Load ElevenLabs chatbot script
+  useEffect(() => {
+    // Check if script is already loaded
+    if (document.querySelector('script[data-elevenlabs-chatbot]')) {
+      return;
+    }
+
+    // ============================================
+    // ELEVENLABS CHATBOT CONFIGURATION
+    // ============================================
+    // Replace the configuration below with your actual ElevenLabs embed code
+    // You can find this in your ElevenLabs dashboard under your Conversational AI agent
+    
+    // Option 1: If your embed code is a script URL with attributes
+    // Uncomment and update these lines with your values:
+    /*
+    const script = document.createElement('script');
+    script.src = 'YOUR_ELEVENLABS_SCRIPT_URL_HERE';
+    script.setAttribute('data-conversational-ai-id', 'YOUR_AGENT_ID_HERE');
+    script.setAttribute('data-elevenlabs-chatbot', 'true');
+    script.async = true;
+    script.defer = true;
+    document.head.appendChild(script);
+    */
+
+    // Option 2: If your embed code includes inline initialization
+    // You can add it here or create a separate function to initialize the widget
+    // Example:
+    /*
+    const initElevenLabsChatbot = () => {
+      // Paste your ElevenLabs initialization code here
+      // This might include window.elevenlabs or similar global object initialization
+    };
+    initElevenLabsChatbot();
+    */
+
+    // Option 3: If you have a complete script tag from ElevenLabs
+    // You can use dangerouslySetInnerHTML or create the script element with all attributes
+    // Make sure to include all data attributes and configuration from your embed code
+
+    // Cleanup function
+    return () => {
+      const existingScript = document.querySelector('script[data-elevenlabs-chatbot]');
+      if (existingScript) {
+        existingScript.remove();
+      }
+    };
+  }, []);
+
   return (
     <Layout>
       {/* Hero Section */}
@@ -250,6 +299,51 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* ElevenLabs Chatbot Placeholder - Replace with actual embed code when available */}
+      <div
+        id="elevenlabs-chatbot-container"
+        style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          zIndex: 1000,
+          cursor: 'pointer'
+        }}
+        onClick={() => {
+          alert('Chatbot placeholder - ElevenLabs code will be added here');
+        }}
+      >
+        <div
+          style={{
+            width: '60px',
+            height: '60px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'transform 0.2s ease, box-shadow 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.1)';
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(0, 0, 0, 0.4)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+          }}
+        >
+          <i 
+            className="fas fa-comments" 
+            style={{
+              color: '#ffffff',
+              fontSize: '24px'
+            }}
+          />
+        </div>
+      </div>
     </Layout>
   );
 };
