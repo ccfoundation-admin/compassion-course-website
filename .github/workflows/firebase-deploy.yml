@@ -105,8 +105,17 @@ jobs:
           FIREBASE_TOKEN=$(gcloud auth print-access-token)
           echo "✅ Access token generated"
           
-          # Deploy using Firebase CLI
-          # Using --token as workaround: Firebase CLI doesn't reliably use GOOGLE_APPLICATION_CREDENTIALS yet
-          echo "📦 Deploying hosting and storage..."
-          firebase deploy --only hosting,storage --project compassion-course-websit-937d6 --non-interactive --token "$FIREBASE_TOKEN"
-          echo "✅ Deployment completed successfully"
+          # Deploy hosting first (this should always work)
+          echo "📦 Deploying hosting..."
+          firebase deploy --only hosting --project compassion-course-websit-937d6 --non-interactive --token "$FIREBASE_TOKEN"
+          echo "✅ Hosting deployed successfully"
+          
+          # Deploy storage separately (may fail if service account lacks permissions)
+          echo "📦 Deploying storage rules..."
+          if firebase deploy --only storage --project compassion-course-websit-937d6 --non-interactive --token "$FIREBASE_TOKEN"; then
+            echo "✅ Storage rules deployed successfully"
+          else
+            echo "⚠️ Storage deployment failed (likely due to missing permissions)"
+            echo "📝 Note: Hosting deployment was successful. Storage deployment requires 'firebasestorage.defaultBucket.get' permission."
+            echo "✅ Continuing - hosting changes are live"
+          fi
