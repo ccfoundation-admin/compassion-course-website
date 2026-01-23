@@ -14,6 +14,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
 import { createUserProfile, getUserProfile } from '../services/userProfileService';
+import { logAuthDiagnostics, isDomainBlockingError, getDomainBlockingErrorMessage } from '../utils/authDiagnostics';
 
 // Temporary fallback admin emails (used when Firestore is offline)
 const ADMIN_EMAILS: string[] = [
@@ -245,6 +246,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return userCredential;
     } catch (error: any) {
       console.error('Firebase login error:', error);
+      
+      // Add detailed diagnostic logging for domain blocking errors
+      if (isDomainBlockingError(error)) {
+        console.error('🚫 DOMAIN BLOCKING ERROR DETECTED');
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        logAuthDiagnostics();
+        console.error('📋 Fix instructions:', getDomainBlockingErrorMessage(error));
+      }
+      
       // Re-throw the error so the LoginPage can handle it
       throw error;
     }
@@ -286,8 +297,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signInWithGoogle = async () => {
     try {
       console.log('🔵 Starting Google sign-in...');
-      console.log('🔵 Current auth domain:', auth.config.authDomain);
-      console.log('🔵 Current origin:', window.location.origin);
+      logAuthDiagnostics();
       
       const provider = new GoogleAuthProvider();
       // Add custom parameters for better OAuth experience
@@ -328,14 +338,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('❌ Error message:', error.message);
       console.error('❌ Full error:', JSON.stringify(error, null, 2));
       
+      // Add detailed diagnostic logging for domain blocking errors
+      if (isDomainBlockingError(error)) {
+        console.error('🚫 DOMAIN BLOCKING ERROR DETECTED');
+        logAuthDiagnostics();
+        console.error('📋 Fix instructions:', getDomainBlockingErrorMessage(error));
+      }
+      
       // Provide more specific error messages
       if (error.code === 'auth/popup-closed-by-user') {
         throw new Error('Sign-in was cancelled. Please try again.');
       } else if (error.code === 'auth/popup-blocked') {
         throw new Error('Popup was blocked. Please allow popups for this site and try again.');
-      } else if (error.code === 'auth/unauthorized-domain') {
+      } else if (error.code === 'auth/unauthorized-domain' || error.code?.includes('requests-from-referer')) {
         const currentDomain = window.location.hostname;
-        throw new Error(`This domain (${currentDomain}) is not authorized for Google sign-in. Please add it to Firebase Console → Authentication → Settings → Authorized domains.`);
+        throw new Error(`This domain (${currentDomain}) is not authorized for Google sign-in. Please add it to Firebase Console → Authentication → Settings → Authorized domains. See FIX_AUTH_DOMAIN_BLOCKING.md for detailed instructions.`);
       } else if (error.code === 'auth/operation-not-allowed') {
         throw new Error('Google sign-in is not enabled. Please enable it in Firebase Console → Authentication → Sign-in method.');
       } else if (error.code === 'auth/network-request-failed') {
@@ -354,6 +371,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('Password reset email sent to:', email);
     } catch (error: any) {
       console.error('Password reset error:', error);
+      
+      // Add detailed diagnostic logging for domain blocking errors
+      if (isDomainBlockingError(error)) {
+        console.error('🚫 DOMAIN BLOCKING ERROR DETECTED');
+        logAuthDiagnostics();
+        console.error('📋 Fix instructions:', getDomainBlockingErrorMessage(error));
+      }
+      
       throw error;
     }
   };

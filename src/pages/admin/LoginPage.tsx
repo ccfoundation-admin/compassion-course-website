@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { isDomainBlockingError, getAuthDiagnostics } from '../../utils/authDiagnostics';
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -52,8 +53,18 @@ const LoginPage: React.FC = () => {
       await login(email, password);
     } catch (error: any) {
       console.error('Login error:', error);
-      // Provide more specific error messages
-      if (error.code === 'auth/user-not-found') {
+      
+      // Handle domain blocking errors with detailed information
+      if (isDomainBlockingError(error)) {
+        const diagnostics = getAuthDiagnostics();
+        const fixGuideLink = 'https://github.com/ccfoundation-admin/compassion-course-website/blob/main/FIX_AUTH_DOMAIN_BLOCKING.md';
+        setError(
+          `Authentication blocked: This domain (${diagnostics.currentDomain}) is not authorized. ` +
+          `Please authorize it in Firebase Console. ` +
+          `See FIX_AUTH_DOMAIN_BLOCKING.md for step-by-step instructions. ` +
+          `Check the browser console (F12) for detailed diagnostic information.`
+        );
+      } else if (error.code === 'auth/user-not-found') {
         setError('No account found with this email address.');
       } else if (error.code === 'auth/wrong-password') {
         setError('Incorrect password. Please try again.');
@@ -80,18 +91,28 @@ const LoginPage: React.FC = () => {
       // Navigation will be handled by useEffect
     } catch (error: any) {
       console.error('Google sign-in error:', error);
-      // Use the error message from AuthContext (which provides specific messages)
-      // or fall back to code-based messages
-      if (error.message) {
+      
+      // Handle domain blocking errors with detailed information
+      if (isDomainBlockingError(error)) {
+        const diagnostics = getAuthDiagnostics();
+        setError(
+          `Authentication blocked: This domain (${diagnostics.currentDomain}) is not authorized. ` +
+          `Please authorize it in Firebase Console. ` +
+          `See FIX_AUTH_DOMAIN_BLOCKING.md for step-by-step instructions. ` +
+          `Check the browser console (F12) for detailed diagnostic information.`
+        );
+      } else if (error.message) {
+        // Use the error message from AuthContext (which provides specific messages)
         setError(error.message);
       } else if (error.code === 'auth/popup-closed-by-user') {
         setError('Sign-in was cancelled.');
       } else if (error.code === 'auth/popup-blocked') {
         setError('Popup was blocked. Please allow popups for this site.');
       } else if (error.code === 'auth/unauthorized-domain') {
-        setError('This domain is not authorized for Google sign-in. Please contact the administrator.');
+        const diagnostics = getAuthDiagnostics();
+        setError(`This domain (${diagnostics.currentDomain}) is not authorized for Google sign-in. Please add it to Firebase Console → Authentication → Settings → Authorized domains. See FIX_AUTH_DOMAIN_BLOCKING.md for instructions.`);
       } else if (error.code === 'auth/operation-not-allowed') {
-        setError('Google sign-in is not enabled. Please contact the administrator.');
+        setError('Google sign-in is not enabled. Please enable it in Firebase Console → Authentication → Sign-in method.');
       } else {
         setError(error.message || 'Failed to sign in with Google. Please try again.');
       }
@@ -133,7 +154,31 @@ const LoginPage: React.FC = () => {
     <div className="login-page">
       <div className="login-container">
         <h2>Admin Login</h2>
-        {error && <div className="error">{error}</div>}
+        {error && (
+          <div className="error" style={{ 
+            padding: '15px', 
+            marginBottom: '15px',
+            backgroundColor: '#f8d7da',
+            color: '#721c24',
+            borderRadius: '4px',
+            border: '1px solid #f5c6cb'
+          }}>
+            <div style={{ marginBottom: error.includes('FIX_AUTH_DOMAIN_BLOCKING') ? '10px' : '0' }}>
+              {error}
+            </div>
+            {error.includes('FIX_AUTH_DOMAIN_BLOCKING') && (
+              <div style={{ 
+                marginTop: '10px', 
+                padding: '10px', 
+                backgroundColor: '#fff3cd',
+                borderRadius: '4px',
+                fontSize: '14px'
+              }}>
+                <strong>Quick Fix:</strong> Open browser console (F12) for detailed diagnostic information and step-by-step instructions.
+              </div>
+            )}
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
