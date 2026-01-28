@@ -242,15 +242,23 @@ service cloud.firestore {
     
     match /whiteboards/{whiteboardId} {
       allow read: if request.auth != null && (
+        isAdminUser() ||
         resource.data.ownerId == request.auth.uid ||
         (request.auth.token.email != null && request.auth.token.email in resource.data.sharedWith)
       );
-      allow create: if request.auth != null && request.resource.data.ownerId == request.auth.uid;
+      allow create: if request.auth != null && (
+        isAdminUser() ||
+        request.resource.data.ownerId == request.auth.uid
+      );
       allow update: if request.auth != null && (
+        isAdminUser() ||
         resource.data.ownerId == request.auth.uid ||
         (request.auth.token.email != null && request.auth.token.email in resource.data.sharedWith)
       );
-      allow delete: if request.auth != null && resource.data.ownerId == request.auth.uid;
+      allow delete: if request.auth != null && (
+        isAdminUser() ||
+        resource.data.ownerId == request.auth.uid
+      );
     }
   }
 }
