@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { ContentProvider } from './context/ContentContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -32,7 +32,6 @@ import MemberHubPage from './pages/platform/MemberHubPage'
 import LoginPage from './pages/admin/LoginPage'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import WebcastManagement from './pages/admin/WebcastManagement'
-import AdminManagement from './pages/admin/AdminManagement'
 import ContentManagement from './pages/admin/ContentManagement'
 import UserManagement from './pages/admin/UserManagement'
 
@@ -121,11 +120,7 @@ function App() {
                   <WebcastManagement />
                 </ProtectedRoute>
               } />
-              <Route path="/admin/manage" element={
-                <ProtectedRoute>
-                  <AdminManagement />
-                </ProtectedRoute>
-              } />
+              <Route path="/admin/manage" element={<Navigate to="/admin/users" replace />} />
               <Route path="/admin/content" element={
                 <ProtectedRoute>
                   <ContentManagement />

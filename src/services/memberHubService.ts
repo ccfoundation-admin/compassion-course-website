@@ -7,6 +7,8 @@ export interface MemberHubDoc {
   docs?: { label: string; url: string }[];
   driveUrl?: string;
   driveUrls?: string[];
+  externalWhiteboardUrl?: string;
+  externalWhiteboardEmbedUrl?: string;
   updatedAt?: unknown;
 }
 
@@ -24,6 +26,8 @@ export async function getMemberHubConfig(): Promise<MemberHubDoc | null> {
       docs: Array.isArray(data.docs) ? data.docs : undefined,
       driveUrl: data.driveUrl ?? undefined,
       driveUrls: Array.isArray(data.driveUrls) ? data.driveUrls : undefined,
+      externalWhiteboardUrl: data.externalWhiteboardUrl ?? undefined,
+      externalWhiteboardEmbedUrl: data.externalWhiteboardEmbedUrl ?? undefined,
       updatedAt: data.updatedAt,
     };
   } catch (error) {

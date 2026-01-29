@@ -6,6 +6,7 @@ import {
   listWhiteboardsForUser,
   deleteWhiteboard,
 } from '../../services/whiteboardService';
+import { getMemberHubConfig } from '../../services/memberHubService';
 import { Whiteboard } from '../../types/platform';
 
 const cardStyle = {
@@ -26,6 +27,8 @@ const WhiteboardsPage: React.FC = () => {
   const [whiteboards, setWhiteboards] = useState<Whiteboard[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [externalWhiteboardUrl, setExternalWhiteboardUrl] = useState<string | null>(null);
+  const [externalWhiteboardEmbedUrl, setExternalWhiteboardEmbedUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -48,6 +51,21 @@ const WhiteboardsPage: React.FC = () => {
       cancelled = true;
     };
   }, [user?.uid, user?.email]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getMemberHubConfig()
+      .then((config) => {
+        if (!cancelled && config) {
+          if (config.externalWhiteboardUrl) setExternalWhiteboardUrl(config.externalWhiteboardUrl);
+          if (config.externalWhiteboardEmbedUrl) setExternalWhiteboardEmbedUrl(config.externalWhiteboardEmbedUrl);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleDelete = async (e: React.MouseEvent, wb: Whiteboard) => {
     e.preventDefault();
@@ -105,6 +123,53 @@ const WhiteboardsPage: React.FC = () => {
           Create and share whiteboards. Draw lines and add sticky notes; share
           access by email.
         </p>
+
+        {externalWhiteboardUrl && (
+          <div
+            style={{
+              marginBottom: '24px',
+              padding: '16px 20px',
+              background: '#f0f9ff',
+              border: '1px solid #bae6fd',
+              borderRadius: '12px',
+            }}
+          >
+            <a
+              href={externalWhiteboardUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                color: '#002B4D',
+                fontWeight: 600,
+                textDecoration: 'none',
+              }}
+            >
+              Open shared whiteboard →
+            </a>
+            <p style={{ color: '#6b7280', fontSize: '14px', margin: '8px 0 0 0' }}>
+              Opens in a new tab (e.g. Miro, FigJam).
+            </p>
+          </div>
+        )}
+
+        {externalWhiteboardEmbedUrl && (
+          <div style={{ marginBottom: '32px' }}>
+            <h2 style={{ color: '#002B4D', marginBottom: '12px', fontSize: '1.25rem' }}>Shared whiteboard</h2>
+            <iframe
+              src={externalWhiteboardEmbedUrl}
+              title="Shared whiteboard"
+              style={{
+                width: '100%',
+                height: '500px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+              }}
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            />
+          </div>
+        )}
+
+        <h2 style={{ color: '#002B4D', marginBottom: '16px', fontSize: '1.25rem' }}>In-app whiteboards</h2>
 
         {loading ? (
           <p style={{ color: '#6b7280' }}>Loading whiteboards…</p>

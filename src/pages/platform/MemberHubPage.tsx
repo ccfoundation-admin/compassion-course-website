@@ -29,7 +29,12 @@ const MemberHubPage: React.FC = () => {
         if (!cancelled) setConfig(c);
       })
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load resources');
+        if (!cancelled) {
+          setConfig(null);
+          const msg = e instanceof Error ? e.message : 'Failed to load resources';
+          const isPermissionDenied = msg.toLowerCase().includes('permission') || (e && typeof e === 'object' && 'code' in e && (e as { code?: string }).code === 'permission-denied');
+          setError(isPermissionDenied ? 'Resource links could not be loaded. Deploy Firestore rules: run firebase deploy --only firestore:rules (requires Firebase CLI login).' : msg);
+        }
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
