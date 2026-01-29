@@ -1,10 +1,36 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { usePermissions } from '../../context/PermissionsContext';
 import Layout from '../../components/Layout';
+import { PermissionId } from '../../types/permissions';
+
+const CARD_STYLE = {
+  padding: '30px',
+  background: '#ffffff',
+  borderRadius: '12px',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+  textDecoration: 'none',
+  color: '#111827',
+  display: 'block' as const,
+  border: '2px solid transparent',
+  transition: 'all 0.2s',
+};
+
+const PLATFORM_CARDS: { to: string; permissionId: PermissionId; title: string; description: string }[] = [
+  { to: '/platform/communities', permissionId: 'communities', title: 'Communities', description: 'Join communities, participate in discussions, and connect with others.' },
+  { to: '/platform/courses', permissionId: 'courses', title: 'Courses', description: 'Browse and enroll in courses to expand your knowledge.' },
+  { to: '/platform/webcasts', permissionId: 'webcasts', title: 'Webcasts', description: 'Join live webcasts with real-time translation support.' },
+  { to: '/platform/resources', permissionId: 'member_hub', title: 'Member Hub', description: 'Videos, whiteboards, Meet, Docs, and Drive shared with your email.' },
+  { to: '/platform/whiteboards', permissionId: 'whiteboards', title: 'Whiteboards', description: 'Create whiteboards, draw lines, add sticky notes, and share by email.' },
+  { to: '/platform/profile', permissionId: 'profile', title: 'My Profile', description: 'Manage your profile and account settings.' },
+];
 
 const PlatformDashboard: React.FC = () => {
   const { user } = useAuth();
+  const { hasPermission, loading } = usePermissions();
+
+  const visibleCards = PLATFORM_CARDS.filter((card) => hasPermission(card.permissionId));
 
   return (
     <Layout>
@@ -16,180 +42,39 @@ const PlatformDashboard: React.FC = () => {
           Hello, {user?.email}. Explore communities, courses, and webcasts.
         </p>
 
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-          gap: '20px',
-          marginBottom: '40px'
-        }}>
-          <Link 
-            to="/platform/communities"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: '#111827',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Communities</h2>
-            <p style={{ color: '#6b7280' }}>
-              Join communities, participate in discussions, and connect with others.
-            </p>
-          </Link>
-
-          <Link 
-            to="/platform/courses"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: '#111827',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Courses</h2>
-            <p style={{ color: '#6b7280' }}>
-              Browse and enroll in courses to expand your knowledge.
-            </p>
-          </Link>
-
-          <Link 
-            to="/platform/webcasts"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: '#111827',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Webcasts</h2>
-            <p style={{ color: '#6b7280' }}>
-              Join live webcasts with real-time translation support.
-            </p>
-          </Link>
-
-          <Link 
-            to="/platform/resources"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: '#111827',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Member Hub</h2>
-            <p style={{ color: '#6b7280' }}>
-              Videos, whiteboards, Meet, Docs, and Drive shared with your email.
-            </p>
-          </Link>
-
-          <Link 
-            to="/platform/whiteboards"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: '#111827',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Whiteboards</h2>
-            <p style={{ color: '#6b7280' }}>
-              Create whiteboards, draw lines, add sticky notes, and share by email.
-            </p>
-          </Link>
-
-          <Link 
-            to="/platform/profile"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: '#111827',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>My Profile</h2>
-            <p style={{ color: '#6b7280' }}>
-              Manage your profile and account settings.
-            </p>
-          </Link>
-        </div>
+        {loading ? (
+          <p style={{ color: '#6b7280' }}>Loading...</p>
+        ) : visibleCards.length === 0 ? (
+          <p style={{ color: '#6b7280' }}>
+            You don&apos;t have access to any platform features. Contact an administrator if you need access.
+          </p>
+        ) : (
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '20px',
+            marginBottom: '40px',
+          }}>
+            {visibleCards.map((card) => (
+              <Link
+                key={card.permissionId}
+                to={card.to}
+                style={CARD_STYLE}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#002B4D';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>{card.title}</h2>
+                <p style={{ color: '#6b7280' }}>{card.description}</p>
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </Layout>
   );

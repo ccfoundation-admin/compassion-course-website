@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { PermissionsProvider } from './context/PermissionsContext'
 import { ContentProvider } from './context/ContentContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import UserProtectedRoute from './components/UserProtectedRoute'
@@ -34,14 +35,16 @@ import AdminDashboard from './pages/admin/AdminDashboard'
 import WebcastManagement from './pages/admin/WebcastManagement'
 import ContentManagement from './pages/admin/ContentManagement'
 import UserManagement from './pages/admin/UserManagement'
+import RolePermissionsPage from './pages/admin/RolePermissionsPage'
 
 import './App.css'
 
 function App() {
   return (
     <AuthProvider>
-      <ContentProvider>
-        <Router>
+      <PermissionsProvider>
+        <ContentProvider>
+          <Router>
           <div className="App">
             <Routes>
               {/* Public Routes */}
@@ -131,10 +134,16 @@ function App() {
                   <UserManagement />
                 </ProtectedRoute>
               } />
+              <Route path="/admin/role-config" element={
+                <ProtectedRoute>
+                  <RolePermissionsPage />
+                </ProtectedRoute>
+              } />
             </Routes>
           </div>
         </Router>
       </ContentProvider>
+      </PermissionsProvider>
     </AuthProvider>
   )
 }
