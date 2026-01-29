@@ -59,7 +59,7 @@ const PortalPage: React.FC = () => {
             marginTop: '30px'
           }}>
             <Link 
-              to="/platform/communities"
+              to="/portal/circle"
               style={{
                 padding: '30px',
                 background: '#ffffff',
@@ -80,9 +80,9 @@ const PortalPage: React.FC = () => {
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Communities</h2>
+              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Circle Community</h2>
               <p style={{ color: '#6b7280' }}>
-                Join communities, participate in discussions, and connect with others.
+                Connect, learn, and grow with fellow participants.
               </p>
             </Link>
 
@@ -195,34 +195,6 @@ const PortalPage: React.FC = () => {
               <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>My Profile</h2>
               <p style={{ color: '#6b7280' }}>
                 Manage your profile and account settings.
-              </p>
-            </Link>
-
-            <Link 
-              to="/portal/circle"
-              style={{
-                padding: '30px',
-                background: '#ffffff',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                textDecoration: 'none',
-                color: '#111827',
-                display: 'block',
-                border: '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#002B4D';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Circle Community</h2>
-              <p style={{ color: '#6b7280' }}>
-                Connect, learn, and grow with fellow participants.
               </p>
             </Link>
 
