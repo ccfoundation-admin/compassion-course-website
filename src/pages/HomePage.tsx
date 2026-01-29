@@ -98,8 +98,8 @@ const HomePage: React.FC = () => {
               <a href="#learn-more" className="btn-primary">
                 {getContent('hero', 'ctaPrimary', 'Learn More About The Course')}
               </a>
-              <a href="#introduction" className="btn-secondary">
-                {getContent('hero', 'ctaSecondary', 'Watch an Interactive Introduction')}
+              <a href="http://jotform.com/nycnvc" target="_blank" rel="noopener noreferrer" className="btn-primary">
+                {getContent('hero', 'ctaSecondary', 'Register for the Compassion course')}
               </a>
             </div>
           </div>
