@@ -83,6 +83,26 @@ const MemberHubPage: React.FC = () => {
               <p style={{ color: '#6b7280', margin: 0 }}>Create and share whiteboards in the app.</p>
             </Link>
 
+            {config?.externalWhiteboardUrl && (
+              <a
+                href={config.externalWhiteboardUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={cardStyle}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = '#002B4D';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <h2 style={{ color: '#002B4D', marginBottom: '8px' }}>Google Whiteboard</h2>
+                <p style={{ color: '#6b7280', margin: 0 }}>Open the shared whiteboard in a new tab.</p>
+              </a>
+            )}
+
             <Link
               to="/platform/webcasts"
               style={cardStyle}
@@ -204,6 +224,23 @@ const MemberHubPage: React.FC = () => {
                 <p style={{ color: '#6b7280', margin: 0 }}>Shared folder.</p>
               </a>
             ))}
+          </div>
+        )}
+
+        {!loading && config?.externalWhiteboardEmbedUrl && (
+          <div style={{ marginTop: '32px' }}>
+            <h2 style={{ color: '#002B4D', marginBottom: '12px', fontSize: '1.25rem' }}>Shared whiteboard</h2>
+            <iframe
+              src={config.externalWhiteboardEmbedUrl}
+              title="Shared whiteboard"
+              style={{
+                width: '100%',
+                height: '500px',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+              }}
+              sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+            />
           </div>
         )}
 
