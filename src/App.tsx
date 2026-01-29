@@ -17,6 +17,7 @@ import UserLoginPage from './pages/UserLoginPage'
 import UserRegisterPage from './pages/UserRegisterPage'
 import PortalPage from './pages/PortalPage'
 import CirclePage from './pages/CirclePage'
+import CompassionCourseUniversityPage from './pages/CompassionCourseUniversityPage'
 
 // Platform Pages
 import PlatformDashboard from './pages/platform/PlatformDashboard'
@@ -60,6 +61,11 @@ function App() {
               <Route path="/portal/circle" element={
                 <UserProtectedRoute>
                   <CirclePage />
+                </UserProtectedRoute>
+              } />
+              <Route path="/portal/university" element={
+                <UserProtectedRoute>
+                  <CompassionCourseUniversityPage />
                 </UserProtectedRoute>
               } />
               

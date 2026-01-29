@@ -80,14 +80,14 @@ const PortalPage: React.FC = () => {
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Circle Community</h2>
+              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>The Global Compassion Network</h2>
               <p style={{ color: '#6b7280' }}>
-                Connect, learn, and grow with fellow participants.
+                Connect and grow with fellow participants.
               </p>
             </Link>
 
             <Link 
-              to="/platform/courses"
+              to="/portal/university"
               style={{
                 padding: '30px',
                 background: '#ffffff',
@@ -108,111 +108,11 @@ const PortalPage: React.FC = () => {
                 e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Courses</h2>
+              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Compassion Course University</h2>
               <p style={{ color: '#6b7280' }}>
-                Browse and enroll in courses to expand your knowledge.
+                Courses, webcasts, whiteboards, profile, and progress.
               </p>
             </Link>
-
-            <Link 
-              to="/platform/webcasts"
-              style={{
-                padding: '30px',
-                background: '#ffffff',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                textDecoration: 'none',
-                color: '#111827',
-                display: 'block',
-                border: '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#002B4D';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Webcasts</h2>
-              <p style={{ color: '#6b7280' }}>
-                Join live webcasts with real-time translation support.
-              </p>
-            </Link>
-
-            <Link 
-              to="/platform/whiteboards"
-              style={{
-                padding: '30px',
-                background: '#ffffff',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                textDecoration: 'none',
-                color: '#111827',
-                display: 'block',
-                border: '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#002B4D';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Whiteboards</h2>
-              <p style={{ color: '#6b7280' }}>
-                Create whiteboards, draw lines, add sticky notes, and share by email.
-              </p>
-            </Link>
-
-            <Link 
-              to="/platform/profile"
-              style={{
-                padding: '30px',
-                background: '#ffffff',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                textDecoration: 'none',
-                color: '#111827',
-                display: 'block',
-                border: '2px solid transparent',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#002B4D';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>My Profile</h2>
-              <p style={{ color: '#6b7280' }}>
-                Manage your profile and account settings.
-              </p>
-            </Link>
-
-            <div 
-              style={{
-                padding: '30px',
-                background: '#ffffff',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                border: '2px solid transparent',
-                color: '#111827',
-              }}
-            >
-              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Progress Tracking</h2>
-              <p style={{ color: '#6b7280' }}>
-                View your learning progress and achievements
-              </p>
-            </div>
           </div>
         </div>
 
