@@ -14,6 +14,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       return {
         id: docSnap.id,
         ...data,
+        role: data.role ?? 'participant',
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       } as UserProfile;
@@ -49,6 +50,7 @@ export async function createUserProfile(
       name,
       email,
       organizations: [],
+      role: 'participant',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -70,6 +72,7 @@ export async function createUserProfile(
       name,
       email,
       organizations: [],
+      role: 'participant',
       createdAt: profileData.createdAt,
       updatedAt: profileData.updatedAt,
     };
@@ -91,15 +94,13 @@ export async function createUserProfile(
 
 export async function updateUserProfile(
   userId: string,
-  updates: Partial<Pick<UserProfile, 'name' | 'avatar' | 'bio'>>
+  updates: Partial<Pick<UserProfile, 'name' | 'avatar' | 'bio' | 'role'>>
 ): Promise<void> {
   try {
-    // Filter out undefined values - Firestore doesn't allow undefined
     const updateData: any = {
       updatedAt: new Date(),
     };
 
-    // Only include fields that are not undefined, null, or empty string
     if (updates.name !== undefined && updates.name !== null && updates.name !== '') {
       updateData.name = updates.name;
     }
@@ -108,6 +109,9 @@ export async function updateUserProfile(
     }
     if (updates.bio !== undefined && updates.bio !== null && updates.bio !== '') {
       updateData.bio = updates.bio;
+    }
+    if (updates.role !== undefined && (updates.role === 'participant' || updates.role === 'leader')) {
+      updateData.role = updates.role;
     }
 
     const docRef = doc(db, COLLECTION_NAME, userId);
@@ -141,6 +145,26 @@ export async function addOrganizationToProfile(
   }
 }
 
+export async function listUserProfiles(): Promise<UserProfile[]> {
+  try {
+    const profilesRef = collection(db, COLLECTION_NAME);
+    const querySnapshot = await getDocs(profilesRef);
+    return querySnapshot.docs.map(d => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        role: data.role ?? 'participant',
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      } as UserProfile;
+    });
+  } catch (error) {
+    console.error('Error listing user profiles:', error);
+    throw error;
+  }
+}
+
 export async function getUserProfilesByOrganization(
   organizationId: string
 ): Promise<UserProfile[]> {
@@ -149,12 +173,16 @@ export async function getUserProfilesByOrganization(
     const q = query(profilesRef, where('organizations', 'array-contains', organizationId));
     const querySnapshot = await getDocs(q);
     
-    return querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-      createdAt: doc.data().createdAt?.toDate() || new Date(),
-      updatedAt: doc.data().updatedAt?.toDate() || new Date(),
-    })) as UserProfile[];
+    return querySnapshot.docs.map(d => {
+      const data = d.data();
+      return {
+        id: d.id,
+        ...data,
+        role: data.role ?? 'participant',
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      } as UserProfile;
+    });
   } catch (error) {
     console.error('Error getting user profiles by organization:', error);
     throw error;

@@ -7,6 +7,7 @@ export interface UserProfile {
   avatar?: string;
   bio?: string;
   organizations: string[]; // Organization IDs
+  role?: 'participant' | 'leader'; // default 'participant' for new/legacy profiles
   createdAt: Date;
   updatedAt: Date;
 }
