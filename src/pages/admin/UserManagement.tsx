@@ -5,6 +5,8 @@ import { db } from '../../firebase/firebaseConfig';
 import { listUserProfiles, updateUserProfile } from '../../services/userProfileService';
 import { UserProfile } from '../../types/platform';
 
+const GOOGLE_ADMIN_CONSOLE_URL = 'https://admin.google.com';
+
 const UserManagement: React.FC = () => {
   const navigate = useNavigate();
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
@@ -13,6 +15,7 @@ const UserManagement: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [workspaceModalEmail, setWorkspaceModalEmail] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -45,6 +48,18 @@ const UserManagement: React.FC = () => {
 
   const isAdmin = (profile: UserProfile) =>
     adminIds.has(profile.id) || (profile.email && adminIds.has(profile.email.toLowerCase()));
+
+  const openGrantWorkspaceModal = (email: string) => {
+    if (email) {
+      try {
+        navigator.clipboard.writeText(email);
+        setSuccess('Email copied to clipboard.');
+      } catch {
+        setSuccess('');
+      }
+      setWorkspaceModalEmail(email);
+    }
+  };
 
   const setRole = async (userId: string, role: 'participant' | 'leader') => {
     setError('');
@@ -130,6 +145,7 @@ const UserManagement: React.FC = () => {
                     <th style={{ padding: '12px 8px', color: '#002B4D' }}>Name</th>
                     <th style={{ padding: '12px 8px', color: '#002B4D' }}>Role</th>
                     <th style={{ padding: '12px 8px', color: '#002B4D' }}>Actions</th>
+                    <th style={{ padding: '12px 8px', color: '#002B4D' }}>Workspace</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -199,6 +215,25 @@ const UserManagement: React.FC = () => {
                             </button>
                           )}
                         </td>
+                        <td style={{ padding: '12px 8px' }}>
+                          {role === 'leader' && profile.email && (
+                            <button
+                              type="button"
+                              onClick={() => openGrantWorkspaceModal(profile.email!)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '0.875rem',
+                                background: '#002B4D',
+                                color: '#fff',
+                                border: 'none',
+                                borderRadius: '6px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Grant Workspace
+                            </button>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -208,6 +243,74 @@ const UserManagement: React.FC = () => {
           )}
         </div>
       </div>
+
+      {workspaceModalEmail && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setWorkspaceModalEmail(null)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: 420,
+              width: '90%',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ color: '#002B4D', marginBottom: '12px' }}>Invite to Workspace</h3>
+            <p style={{ color: '#374151', marginBottom: '16px', fontSize: '14px' }}>
+              Invite this user in Google Admin Console. Their email has been copied to the clipboard.
+            </p>
+            <p style={{ marginBottom: '16px', padding: '10px', background: '#f3f4f6', borderRadius: '8px', fontFamily: 'monospace', fontSize: '14px' }}>
+              {workspaceModalEmail}
+            </p>
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <a
+                href={GOOGLE_ADMIN_CONSOLE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: '8px 16px',
+                  background: '#002B4D',
+                  color: '#fff',
+                  textDecoration: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                }}
+              >
+                Open Admin Console
+              </a>
+              <button
+                type="button"
+                onClick={() => setWorkspaceModalEmail(null)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#e5e7eb',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
