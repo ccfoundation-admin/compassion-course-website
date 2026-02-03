@@ -702,24 +702,9 @@ p {
     color: white;
 }
 
-.hero-buttons .jotform-popup-button a,
-.hero-buttons #JF_BUTTON a {
-    display: inline-block;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 1rem;
-    font-weight: 600;
-    text-decoration: none;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-.hero-buttons .jotform-popup-button a:hover,
-.hero-buttons #JF_BUTTON a:hover {
-    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
-    transform: translateY(-2px);
+.jotform-inline-container {
+    margin-top: 1.5rem;
+    max-width: 100%;
 }
 
 .hero-stats {

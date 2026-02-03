@@ -101,14 +101,7 @@ const HomePage: React.FC = () => {
               <a href="#learn-more" className="btn-primary">
                 {getContent('hero', 'ctaPrimary', 'Learn More About The Course')}
               </a>
-              <JotformPopup
-                formId={JOTFORM_FORM_ID}
-                buttonText={getContent('hero', 'ctaSecondary', 'Register for the Compassion course')}
-                width={700}
-                height={600}
-                openOnLoad={false}
-                closeOnSubmit={true}
-              />
+              <JotformPopup formId={JOTFORM_FORM_ID} className="jotform-inline-container" />
             </div>
           </div>
           <div className="hero-stats">
