@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { usePermissions } from '../context/PermissionsContext';
 import { useNavigate, Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 
@@ -17,6 +18,7 @@ const cardStyle = {
 
 const CompassionCourseUniversityPage: React.FC = () => {
   const { user, loading } = useAuth();
+  const { role, isAdmin } = usePermissions();
   const navigate = useNavigate();
 
   if (loading) {
@@ -109,23 +111,45 @@ const CompassionCourseUniversityPage: React.FC = () => {
             </p>
           </Link>
 
-          <Link
-            to="/platform/resources"
-            style={cardStyle}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Member Hub</h2>
-            <p style={{ color: '#6b7280' }}>
-              Videos, whiteboards, Meet, Docs, and Drive shared with your email.
-            </p>
-          </Link>
+          {(isAdmin || role === 'leader') && (
+            <Link
+              to="/platform/resources"
+              style={cardStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#002B4D';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Member Hub</h2>
+              <p style={{ color: '#6b7280' }}>
+                Videos, whiteboards, Meet, Docs, and Drive shared with your email.
+              </p>
+            </Link>
+          )}
+
+          {role === 'participant' && (
+            <Link
+              to="/platform/resources"
+              style={cardStyle}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#002B4D';
+                e.currentTarget.style.transform = 'translateY(-2px)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'transparent';
+                e.currentTarget.style.transform = 'translateY(0)';
+              }}
+            >
+              <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Participants</h2>
+              <p style={{ color: '#6b7280' }}>
+                Videos, whiteboards, Meet, Docs, and Drive shared with your email.
+              </p>
+            </Link>
+          )}
 
           <Link
             to="/platform/profile"

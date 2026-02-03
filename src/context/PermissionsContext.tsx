@@ -7,6 +7,8 @@ import { PermissionId } from '../types/permissions';
 interface PermissionsContextType {
   hasPermission: (permissionId: string) => boolean;
   loading: boolean;
+  role: 'leader' | 'participant' | null;
+  isAdmin: boolean;
 }
 
 const PermissionsContext = createContext<PermissionsContextType | undefined>(undefined);
@@ -71,7 +73,7 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     [isAdmin, config, role]
   );
 
-  const value: PermissionsContextType = { hasPermission, loading };
+  const value: PermissionsContextType = { hasPermission, loading, role, isAdmin };
 
   return (
     <PermissionsContext.Provider value={value}>

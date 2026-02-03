@@ -26,11 +26,26 @@ const PLATFORM_CARDS: { to: string; permissionId: PermissionId; title: string; d
   { to: '/platform/profile', permissionId: 'profile', title: 'My Profile', description: 'Manage your profile and account settings.' },
 ];
 
+type CardItem = { to: string; permissionId: string; title: string; description: string };
+
+const PARTICIPANTS_CARD: CardItem = {
+  to: '/platform/resources',
+  permissionId: 'participants',
+  title: 'Participants',
+  description: 'Videos, whiteboards, Meet, Docs, and Drive shared with your email.',
+};
+
 const PlatformDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { hasPermission, loading } = usePermissions();
+  const { hasPermission, loading, role, isAdmin } = usePermissions();
 
-  const visibleCards = PLATFORM_CARDS.filter((card) => hasPermission(card.permissionId));
+  const baseCards = PLATFORM_CARDS.filter((card) => {
+    if (card.permissionId === 'member_hub') {
+      return (isAdmin || role === 'leader') && hasPermission(card.permissionId);
+    }
+    return hasPermission(card.permissionId);
+  });
+  const visibleCards: CardItem[] = role === 'participant' ? [...baseCards, PARTICIPANTS_CARD] : baseCards;
 
   return (
     <Layout>

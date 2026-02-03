@@ -2,8 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import AnimatedText from '../components/AnimatedText';
+import JotformPopup from '../components/JotformPopup';
 import { useContent } from '../context/ContentContext';
 import { renderHTML } from '../utils/contentUtils';
+
+const JOTFORM_FORM_ID = import.meta.env.VITE_JOTFORM_FORM_ID || '260333329475357';
 
 const HomePage: React.FC = () => {
   const { getContent } = useContent();
@@ -98,9 +101,14 @@ const HomePage: React.FC = () => {
               <a href="#learn-more" className="btn-primary">
                 {getContent('hero', 'ctaPrimary', 'Learn More About The Course')}
               </a>
-              <a href="http://jotform.com/nycnvc" target="_blank" rel="noopener noreferrer" className="btn-primary">
-                {getContent('hero', 'ctaSecondary', 'Register for the Compassion course')}
-              </a>
+              <JotformPopup
+                formId={JOTFORM_FORM_ID}
+                buttonText={getContent('hero', 'ctaSecondary', 'Register for the Compassion course')}
+                width={700}
+                height={600}
+                openOnLoad={false}
+                closeOnSubmit={true}
+              />
             </div>
           </div>
           <div className="hero-stats">

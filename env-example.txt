@@ -21,3 +21,8 @@ RATE_LIMIT_MAX_REQUESTS=100
 # File Upload Configuration
 MAX_FILE_SIZE=5242880
 ALLOWED_FILE_TYPES=image/jpeg,image/jpg,image/png,image/gif,image/webp
+
+# Frontend (Vite) - used by the React app
+# Jotform: the Form ID of the form to show in the hero popup (get it from the form URL: form.jotform.com/XXXXXXXXXX)
+# Do NOT put your Jotform login password here; the site only embeds the form by ID.
+VITE_JOTFORM_FORM_ID=260333329475357
