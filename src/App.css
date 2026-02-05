@@ -366,6 +366,17 @@ p {
     z-index: 2;
 }
 
+.hero-logo {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    height: 160px;
+    max-width: 534px;
+    width: auto;
+    object-fit: contain;
+    z-index: 3;
+}
+
 .hero-content {
     text-align: center;
     margin-bottom: 4rem;
