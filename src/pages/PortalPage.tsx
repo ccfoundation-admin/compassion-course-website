@@ -43,8 +43,8 @@ const PortalPage: React.FC = () => {
             onClick={handleLogout}
             className="btn btn-secondary"
             style={{
-              padding: '12px 24px',
-              fontSize: '16px',
+              padding: '6px 12px',
+              fontSize: '13px',
               cursor: 'pointer',
             }}
           >
