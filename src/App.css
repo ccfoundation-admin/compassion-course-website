@@ -262,7 +262,7 @@ p {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 1.25rem;
+    font-size: 0.625rem;
 }
 
 .nav-link:hover {
