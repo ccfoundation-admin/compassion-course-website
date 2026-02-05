@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 interface JotformPopupProps {
   formId: string;
@@ -35,7 +36,7 @@ export default function JotformPopup({ formId, buttonText, className = '' }: Jot
         {buttonText}
       </button>
 
-      {open && (
+      {open && createPortal(
         <div
           className="jotform-modal-overlay"
           onClick={() => setOpen(false)}
@@ -65,7 +66,8 @@ export default function JotformPopup({ formId, buttonText, className = '' }: Jot
               />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
