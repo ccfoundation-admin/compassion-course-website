@@ -90,7 +90,7 @@ const HomePage: React.FC = () => {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              {getContent('hero', 'title', 'Discover The Compassion Course')}
+              {getContent('hero', 'title', 'The Compassion Course')}
             </h1>
             <p className="hero-subtitle">
               {getContent('hero', 'subtitle', 'Changing lives in over 120 Countries')}
