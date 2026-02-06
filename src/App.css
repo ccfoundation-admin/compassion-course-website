@@ -243,6 +243,10 @@ p {
     padding-top: 80px;
 }
 
+.main-content--no-nav {
+    padding-top: 0;
+}
+
 .nav-menu {
     display: flex;
     list-style: none;

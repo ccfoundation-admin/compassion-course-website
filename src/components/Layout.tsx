@@ -12,7 +12,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation }) => {
   return (
     <>
       {!hideNavigation && <Navigation />}
-      <main className="main-content">{children}</main>
+      <main className={hideNavigation ? 'main-content main-content--no-nav' : 'main-content'}>{children}</main>
       <Footer />
     </>
   );
