@@ -239,8 +239,24 @@ const UserManagement: React.FC = () => {
       setAddUserName('');
       await loadData();
     } catch (err: unknown) {
-      const msg = err && typeof err === 'object' && 'message' in err ? String((err as { message?: string }).message) : err instanceof Error ? err.message : 'Failed to add user.';
-      setError(msg);
+      const fb = err as { code?: string; message?: string };
+      const code = fb?.code ?? '';
+      const message = fb?.message ?? (err instanceof Error ? err.message : 'Failed to add user.');
+      if (code === 'functions/not-found' || message.includes('NOT_FOUND') || message.includes('404')) {
+        setError('Add user is not available: Cloud Function "createUserByAdmin" is not deployed. Deploy it with: firebase deploy --only functions (requires Blaze plan).');
+      } else if (code === 'functions/unauthenticated' || message.includes('unauthenticated')) {
+        setError('You must be logged in to add users. Sign in again and try again.');
+      } else if (code === 'functions/permission-denied' || message.includes('permission-denied') || message.includes('Admin only')) {
+        setError('Only admins can add users. Your account may not have admin access.');
+      } else if (code === 'functions/internal' || message === 'internal' || message.toLowerCase().includes('internal')) {
+        setError(
+          message && message !== 'internal'
+            ? message
+            : 'Server error. Check Firebase Console > Functions > Logs for details. Ensure the project has Blaze plan and the default service account can create Auth users and write to Firestore.'
+        );
+      } else {
+        setError(message || 'Failed to add user.');
+      }
     } finally {
       setAddingUser(false);
     }
@@ -337,6 +353,9 @@ const UserManagement: React.FC = () => {
                 Temporary password (show to user once): <strong>{addUserResult.temporaryPassword}</strong>. They must change it on first login.
               </p>
             )}
+            <p style={{ marginTop: '12px', marginBottom: 0, fontSize: '0.75rem', color: '#6b7280' }}>
+              Requires Cloud Function createUserByAdmin. If adding users fails, run: <code style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>firebase deploy --only functions</code> (Blaze plan required).
+            </p>
           </div>
 
           {!loading && profiles.length > 0 && (
