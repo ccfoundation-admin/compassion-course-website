@@ -24,6 +24,16 @@ const UserManagement: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'participant' | 'leader'>('all');
   const [removingId, setRemovingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   useEffect(() => {
     loadData();
@@ -249,60 +259,6 @@ const UserManagement: React.FC = () => {
             marginBottom: '24px',
           }}
         >
-          <h2 style={{ color: '#002B4D', marginBottom: '20px' }}>Grant Admin Rights</h2>
-          <form onSubmit={grantAdmin}>
-            <div style={{ marginBottom: '16px' }}>
-              <label htmlFor="grant-email" style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#374151' }}>
-                Email Address
-              </label>
-              <input
-                type="email"
-                id="grant-email"
-                value={grantEmail}
-                onChange={(e) => setGrantEmail(e.target.value)}
-                placeholder="user@example.com"
-                required
-                style={{
-                  width: '100%',
-                  maxWidth: '400px',
-                  padding: '10px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                }}
-              />
-            </div>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={granting}
-              style={{
-                padding: '10px 20px',
-                background: granting ? '#9ca3af' : '#002B4D',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '8px',
-                fontSize: '14px',
-                fontWeight: 600,
-                cursor: granting ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {granting ? 'Granting...' : 'Grant Admin Rights'}
-            </button>
-          </form>
-          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '16px', marginBottom: 0 }}>
-            Admins are shown with an Admin badge in the table below; you can revoke admin there.
-          </p>
-        </div>
-
-        <div
-          style={{
-            background: '#ffffff',
-            borderRadius: '12px',
-            padding: '24px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-          }}
-        >
           <h2 style={{ color: '#002B4D', marginBottom: '20px' }}>User directory</h2>
 
           {!loading && profiles.length > 0 && (
@@ -345,145 +301,147 @@ const UserManagement: React.FC = () => {
             <p style={{ color: '#6b7280' }}>No users match your search or filter.</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
-                    <th style={{ padding: '12px 8px', color: '#002B4D' }}>Email</th>
-                    <th style={{ padding: '12px 8px', color: '#002B4D' }}>Name</th>
-                    <th style={{ padding: '12px 8px', color: '#002B4D' }}>Role</th>
-                    <th style={{ padding: '12px 8px', color: '#002B4D' }}>Actions</th>
-                    <th style={{ padding: '12px 8px', color: '#002B4D' }}>Workspace</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProfiles.map((profile) => {
-                    const role = profile.role ?? 'participant';
-                    const busy = updatingId === profile.id;
-                    return (
-                      <tr
-                        key={profile.id}
-                        style={{ borderBottom: '1px solid #e5e7eb' }}
-                      >
-                        <td style={{ padding: '12px 8px' }}>{profile.email}</td>
-                        <td style={{ padding: '12px 8px' }}>{profile.name || '—'}</td>
-                        <td style={{ padding: '12px 8px' }}>
-                          <span style={{ textTransform: 'capitalize' }}>{role}</span>
-                          {isAdmin(profile) && (
-                            <span
-                              style={{
-                                marginLeft: '8px',
-                                padding: '2px 8px',
-                                background: '#002B4D',
-                                color: '#fff',
-                                borderRadius: '6px',
-                                fontSize: '0.75rem',
-                              }}
-                            >
-                              Admin
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ padding: '12px 8px' }}>
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                            {role === 'participant' ? (
-                              <button
-                                type="button"
-                                className="btn btn-primary"
-                                disabled={busy}
-                                onClick={() => setRole(profile.id, 'leader')}
-                                style={{
-                                  padding: '6px 12px',
-                                  fontSize: '0.875rem',
-                                  background: busy ? '#9ca3af' : '#002B4D',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: busy ? 'not-allowed' : 'pointer',
-                                }}
-                              >
-                                {busy ? 'Updating...' : 'Make Leader'}
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="btn btn-secondary"
-                                disabled={busy}
-                                onClick={() => setRole(profile.id, 'participant')}
-                                style={{
-                                  padding: '6px 12px',
-                                  fontSize: '0.875rem',
-                                  background: busy ? '#9ca3af' : '#6b7280',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: busy ? 'not-allowed' : 'pointer',
-                                }}
-                              >
-                                {busy ? 'Updating...' : 'Make Participant'}
-                              </button>
-                            )}
-                            {isAdmin(profile) && (
-                              <button
-                                type="button"
-                                disabled={revokingId === profile.id}
-                                onClick={() => revokeAdmin(profile)}
-                                style={{
-                                  padding: '6px 12px',
-                                  fontSize: '0.875rem',
-                                  background: revokingId === profile.id ? '#9ca3af' : '#dc2626',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  cursor: revokingId === profile.id ? 'not-allowed' : 'pointer',
-                                }}
-                              >
-                                {revokingId === profile.id ? 'Revoking...' : 'Revoke admin'}
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              disabled={removingId === profile.id}
-                              onClick={() => removeFromDirectory(profile)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '0.875rem',
-                                background: removingId === profile.id ? '#9ca3af' : '#6b7280',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: removingId === profile.id ? 'not-allowed' : 'pointer',
-                              }}
-                            >
-                              {removingId === profile.id ? 'Removing...' : 'Remove from directory'}
-                            </button>
-                          </div>
-                        </td>
-                        <td style={{ padding: '12px 8px' }}>
-                          {role === 'leader' && profile.email && (
-                            <button
-                              type="button"
-                              onClick={() => openGrantWorkspaceModal(profile.email!)}
-                              style={{
-                                padding: '6px 12px',
-                                fontSize: '0.875rem',
-                                background: '#002B4D',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                cursor: 'pointer',
-                              }}
-                            >
-                              Grant Workspace
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr 1fr minmax(120px, auto) 1fr',
+                  gap: '0 16px',
+                  alignItems: 'center',
+                  borderBottom: '2px solid #e5e7eb',
+                  padding: '12px 8px',
+                  color: '#002B4D',
+                  fontSize: '0.875rem',
+                  fontWeight: 600,
+                }}
+              >
+                <div><input type="checkbox" aria-label="Select all" checked={filteredProfiles.length > 0 && filteredProfiles.every((p) => selectedIds.has(p.id))} onChange={(e) => { const checked = e.target.checked; setSelectedIds(checked ? new Set(filteredProfiles.map((p) => p.id)) : new Set()); }} /></div>
+                <div>Email</div>
+                <div>Name</div>
+                <div>Role</div>
+                <div>Actions</div>
+              </div>
+              {filteredProfiles.map((profile) => {
+                const role = profile.role ?? 'participant';
+                const busy = updatingId === profile.id;
+                const linkStyle: React.CSSProperties = { color: '#002B4D', textDecoration: 'none', fontSize: '0.875rem', cursor: 'pointer', background: 'none', border: 'none', padding: 0 };
+                const linkDangerStyle: React.CSSProperties = { ...linkStyle, color: '#dc2626' };
+                const linkDisabledStyle: React.CSSProperties = { ...linkStyle, color: '#9ca3af', cursor: 'not-allowed' };
+                return (
+                  <div
+                    key={profile.id}
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto 1fr 1fr minmax(120px, auto) 1fr',
+                      gap: '0 16px',
+                      alignItems: 'center',
+                      borderBottom: '1px solid #e5e7eb',
+                      padding: '12px 8px',
+                      transition: 'background 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#f9fafb'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                  >
+                    <div>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${profile.email}`}
+                        checked={selectedIds.has(profile.id)}
+                        onChange={() => toggleSelected(profile.id)}
+                      />
+                    </div>
+                    <div style={{ color: '#111827' }}>{profile.email}</div>
+                    <div style={{ color: '#374151' }}>{profile.name || '—'}</div>
+                    <div>
+                      <span style={{ textTransform: 'capitalize', fontSize: '0.875rem' }}>{role}</span>
+                      {isAdmin(profile) && (
+                        <span style={{ marginLeft: '8px', padding: '2px 8px', background: '#002B4D', color: '#fff', borderRadius: '6px', fontSize: '0.75rem' }}>
+                          Admin
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center' }}>
+                      {role === 'participant' ? (
+                        <button type="button" disabled={busy} onClick={() => setRole(profile.id, 'leader')} style={busy ? linkDisabledStyle : linkStyle} onMouseEnter={(e) => { if (!busy) e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
+                          {busy ? 'Updating...' : 'Make Leader'}
+                        </button>
+                      ) : (
+                        <button type="button" disabled={busy} onClick={() => setRole(profile.id, 'participant')} style={busy ? linkDisabledStyle : linkStyle} onMouseEnter={(e) => { if (!busy) e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
+                          {busy ? 'Updating...' : 'Make Participant'}
+                        </button>
+                      )}
+                      {isAdmin(profile) && (
+                        <button type="button" disabled={revokingId === profile.id} onClick={() => revokeAdmin(profile)} style={revokingId === profile.id ? linkDisabledStyle : linkDangerStyle} onMouseEnter={(e) => { if (revokingId !== profile.id) e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
+                          {revokingId === profile.id ? 'Revoking...' : 'Revoke admin'}
+                        </button>
+                      )}
+                      <button type="button" disabled={removingId === profile.id} onClick={() => removeFromDirectory(profile)} style={removingId === profile.id ? linkDisabledStyle : linkDangerStyle} onMouseEnter={(e) => { if (removingId !== profile.id) e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
+                        {removingId === profile.id ? 'Removing...' : 'Remove from directory'}
+                      </button>
+                      {role === 'leader' && profile.email && (
+                        <button type="button" onClick={() => openGrantWorkspaceModal(profile.email!)} style={linkStyle} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
+                          Grant Workspace
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
+        </div>
+
+        <div
+          style={{
+            background: '#ffffff',
+            borderRadius: '12px',
+            padding: '24px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+          }}
+        >
+          <h2 style={{ color: '#002B4D', marginBottom: '20px' }}>Grant Admin Rights</h2>
+          <form onSubmit={grantAdmin}>
+            <div style={{ marginBottom: '16px' }}>
+              <label htmlFor="grant-email" style={{ display: 'block', marginBottom: '8px', fontWeight: 500, color: '#374151' }}>
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="grant-email"
+                value={grantEmail}
+                onChange={(e) => setGrantEmail(e.target.value)}
+                placeholder="user@example.com"
+                required
+                style={{
+                  width: '100%',
+                  maxWidth: '400px',
+                  padding: '10px 12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                }}
+              />
+            </div>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={granting}
+              style={{
+                padding: '10px 20px',
+                background: granting ? '#9ca3af' : '#002B4D',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 600,
+                cursor: granting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {granting ? 'Granting...' : 'Grant Admin Rights'}
+            </button>
+          </form>
+          <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '16px', marginBottom: 0 }}>
+            Admins are shown with an Admin badge in the directory above; you can revoke admin there.
+          </p>
         </div>
       </div>
 
