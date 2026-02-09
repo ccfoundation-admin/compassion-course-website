@@ -83,8 +83,8 @@ const MemberHubPage: React.FC = () => {
               <p style={{ color: '#6b7280', margin: 0 }}>Create and share whiteboards in the app.</p>
             </Link>
 
-            <a
-              href={import.meta.env.VITE_BACKLOG_URL || 'https://thatagileapp.com/the-compassion-course'}
+            <Link
+              to="/portal/backlog"
               style={cardStyle}
               onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = '#002B4D';
@@ -97,7 +97,7 @@ const MemberHubPage: React.FC = () => {
             >
               <h2 style={{ color: '#002B4D', marginBottom: '8px' }}>Project backlog</h2>
               <p style={{ color: '#6b7280', margin: 0 }}>View and manage the Compassion Course backlog.</p>
-            </a>
+            </Link>
 
             {config?.externalWhiteboardUrl && (
               <a
