@@ -30,6 +30,7 @@ const UserManagement: React.FC = () => {
   const [addUserName, setAddUserName] = useState('');
   const [addingUser, setAddingUser] = useState(false);
   const [addUserResult, setAddUserResult] = useState<{ email: string; temporaryPassword: string } | null>(null);
+  const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
@@ -86,7 +87,7 @@ const UserManagement: React.FC = () => {
     return true;
   });
 
-  const removeFromDirectory = async (profile: UserProfile) => {
+  const removeFromDirectory = async (profile: UserProfile, onSuccess?: () => void) => {
     if (!window.confirm(`Remove ${profile.email || profile.id} from the directory? This deletes their profile; they will no longer appear in the list.`)) return;
     setError('');
     setSuccess('');
@@ -95,6 +96,7 @@ const UserManagement: React.FC = () => {
       await deleteUserProfile(profile.id);
       setSuccess('User removed from directory.');
       await loadData();
+      onSuccess?.();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to remove user';
       setError(message);
@@ -173,7 +175,7 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const revokeAdmin = async (profile: UserProfile) => {
+  const revokeAdmin = async (profile: UserProfile, onSuccess?: () => void) => {
     const email = profile.email?.toLowerCase().trim();
     if (!email) return;
     if (!window.confirm(`Are you sure you want to revoke admin rights from ${profile.email}?`)) return;
@@ -202,6 +204,7 @@ const UserManagement: React.FC = () => {
       }
       setSuccess(`Admin rights revoked from ${profile.email}`);
       await loadData();
+      onSuccess?.();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to revoke admin rights';
       setError(message);
@@ -397,10 +400,6 @@ const UserManagement: React.FC = () => {
               </div>
               {filteredProfiles.map((profile) => {
                 const role = profile.role ?? 'participant';
-                const busy = updatingId === profile.id;
-                const linkStyle: React.CSSProperties = { color: '#002B4D', textDecoration: 'none', fontSize: '0.875rem', cursor: 'pointer', background: 'none', border: 'none', padding: 0 };
-                const linkDangerStyle: React.CSSProperties = { ...linkStyle, color: '#dc2626' };
-                const linkDisabledStyle: React.CSSProperties = { ...linkStyle, color: '#9ca3af', cursor: 'not-allowed' };
                 return (
                   <div
                     key={profile.id}
@@ -434,29 +433,24 @@ const UserManagement: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 12px', alignItems: 'center' }}>
-                      {role === 'participant' ? (
-                        <button type="button" disabled={busy} onClick={() => setRole(profile.id, 'leader')} style={busy ? linkDisabledStyle : linkStyle} onMouseEnter={(e) => { if (!busy) e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
-                          {busy ? 'Updating...' : 'Make Leader'}
-                        </button>
-                      ) : (
-                        <button type="button" disabled={busy} onClick={() => setRole(profile.id, 'participant')} style={busy ? linkDisabledStyle : linkStyle} onMouseEnter={(e) => { if (!busy) e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
-                          {busy ? 'Updating...' : 'Make Participant'}
-                        </button>
-                      )}
-                      {isAdmin(profile) && (
-                        <button type="button" disabled={revokingId === profile.id} onClick={() => revokeAdmin(profile)} style={revokingId === profile.id ? linkDisabledStyle : linkDangerStyle} onMouseEnter={(e) => { if (revokingId !== profile.id) e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
-                          {revokingId === profile.id ? 'Revoking...' : 'Revoke admin'}
-                        </button>
-                      )}
-                      <button type="button" disabled={removingId === profile.id} onClick={() => removeFromDirectory(profile)} style={removingId === profile.id ? linkDisabledStyle : linkDangerStyle} onMouseEnter={(e) => { if (removingId !== profile.id) e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
-                        {removingId === profile.id ? 'Removing...' : 'Remove from directory'}
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => setEditingProfile(profile)}
+                        style={{
+                          color: '#002B4D',
+                          textDecoration: 'none',
+                          fontSize: '0.875rem',
+                          cursor: 'pointer',
+                          background: 'none',
+                          border: 'none',
+                          padding: 0,
+                        }}
+                        onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+                      >
+                        Edit
                       </button>
-                      {role === 'leader' && profile.email && (
-                        <button type="button" onClick={() => openGrantWorkspaceModal(profile.email!)} style={linkStyle} onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }} onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}>
-                          Grant Workspace
-                        </button>
-                      )}
                     </div>
                   </div>
                 );
@@ -519,6 +513,150 @@ const UserManagement: React.FC = () => {
           </p>
         </div>
       </div>
+
+      {editingProfile && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+          }}
+          onClick={() => setEditingProfile(null)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: 420,
+              width: '90%',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 style={{ color: '#002B4D', marginBottom: '12px' }}>Edit user</h3>
+            <p style={{ color: '#374151', marginBottom: '4px', fontSize: '14px' }}>{editingProfile.email}</p>
+            <p style={{ color: '#6b7280', marginBottom: '16px', fontSize: '14px' }}>
+              {editingProfile.name || '—'} · {(editingProfile.role ?? 'participant')}
+              {isAdmin(editingProfile) && (
+                <span style={{ marginLeft: '8px', padding: '2px 8px', background: '#002B4D', color: '#fff', borderRadius: '6px', fontSize: '0.75rem' }}>
+                  Admin
+                </span>
+              )}
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
+              {(editingProfile.role ?? 'participant') === 'participant' ? (
+                <button
+                  type="button"
+                  disabled={updatingId === editingProfile.id}
+                  onClick={() => setRole(editingProfile.id, 'leader')}
+                  style={{
+                    padding: '10px 16px',
+                    background: updatingId === editingProfile.id ? '#9ca3af' : '#002B4D',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    cursor: updatingId === editingProfile.id ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {updatingId === editingProfile.id ? 'Updating...' : 'Make Leader'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={updatingId === editingProfile.id}
+                  onClick={() => setRole(editingProfile.id, 'participant')}
+                  style={{
+                    padding: '10px 16px',
+                    background: updatingId === editingProfile.id ? '#9ca3af' : '#6b7280',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    cursor: updatingId === editingProfile.id ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {updatingId === editingProfile.id ? 'Updating...' : 'Make Participant'}
+                </button>
+              )}
+              {isAdmin(editingProfile) && (
+                <button
+                  type="button"
+                  disabled={revokingId === editingProfile.id}
+                  onClick={() => revokeAdmin(editingProfile, () => setEditingProfile(null))}
+                  style={{
+                    padding: '10px 16px',
+                    background: revokingId === editingProfile.id ? '#9ca3af' : '#dc2626',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    cursor: revokingId === editingProfile.id ? 'not-allowed' : 'pointer',
+                  }}
+                >
+                  {revokingId === editingProfile.id ? 'Revoking...' : 'Revoke admin'}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={removingId === editingProfile.id}
+                onClick={() => removeFromDirectory(editingProfile, () => setEditingProfile(null))}
+                style={{
+                  padding: '10px 16px',
+                  background: removingId === editingProfile.id ? '#9ca3af' : '#dc2626',
+                  color: '#fff',
+                  border: 'none',
+                  borderRadius: '8px',
+                  fontSize: '14px',
+                  cursor: removingId === editingProfile.id ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {removingId === editingProfile.id ? 'Removing...' : 'Remove from directory'}
+              </button>
+              {(editingProfile.role ?? 'participant') === 'leader' && editingProfile.email && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingProfile(null);
+                    openGrantWorkspaceModal(editingProfile.email!);
+                  }}
+                  style={{
+                    padding: '10px 16px',
+                    background: '#002B4D',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                  }}
+                >
+                  Grant Workspace
+                </button>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setEditingProfile(null)}
+              style={{
+                padding: '8px 16px',
+                background: '#e5e7eb',
+                color: '#374151',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                cursor: 'pointer',
+              }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
 
       {workspaceModalEmail && (
         <div
