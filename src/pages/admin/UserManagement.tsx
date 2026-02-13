@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { collection, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase/firebaseConfig';
 import { useAuth } from '../../context/AuthContext';
 import { listUserProfiles, updateUserProfile, deleteUserProfile } from '../../services/userProfileService';
+import { listTeams, getTeam, createTeam, updateTeam, deleteTeam } from '../../services/leadershipTeamsService';
+import { createBoardForTeam } from '../../services/leadershipBoardsService';
 import { UserProfile, PortalRole } from '../../types/platform';
+import type { LeadershipTeam } from '../../types/leadership';
+import AdminLayout from '../../components/AdminLayout';
 
 const GOOGLE_ADMIN_CONSOLE_URL = 'https://admin.google.com';
+
+export type AdminUserTab = 'directory' | 'teams' | 'create';
 
 const UserManagement: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const activeTab: AdminUserTab =
+    tabParam === 'teams' || tabParam === 'create' ? tabParam : 'directory';
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -32,6 +42,20 @@ const UserManagement: React.FC = () => {
   const [addUserResult, setAddUserResult] = useState<{ email: string; temporaryPassword: string } | null>(null);
   const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
 
+  // Team Management tab state
+  const [teams, setTeams] = useState<LeadershipTeam[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [teamProfiles, setTeamProfiles] = useState<UserProfile[]>([]);
+  const [editingTeam, setEditingTeam] = useState<LeadershipTeam | null>(null);
+  const [showCreateTeam, setShowCreateTeam] = useState(false);
+  const [createTeamName, setCreateTeamName] = useState('');
+  const [createTeamMemberIds, setCreateTeamMemberIds] = useState<Set<string>>(new Set());
+  const [editTeamName, setEditTeamName] = useState('');
+  const [editTeamMemberIds, setEditTeamMemberIds] = useState<Set<string>>(new Set());
+  const [teamSaving, setTeamSaving] = useState(false);
+
+  const setTab = (t: AdminUserTab) => setSearchParams(t === 'directory' ? {} : { tab: t });
+
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
       const next = new Set(prev);
@@ -44,6 +68,25 @@ const UserManagement: React.FC = () => {
   useEffect(() => {
     loadData();
   }, []);
+
+  const loadTeams = async () => {
+    setTeamsLoading(true);
+    try {
+      const list = await listTeams();
+      setTeams(list);
+      const profiles = await listUserProfiles();
+      setTeamProfiles(profiles);
+    } catch {
+      setTeams([]);
+      setTeamProfiles([]);
+    } finally {
+      setTeamsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'teams') loadTeams();
+  }, [activeTab]);
 
   const loadData = async () => {
     setLoading(true);
@@ -213,6 +256,42 @@ const UserManagement: React.FC = () => {
     }
   };
 
+  const handleCreateTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = createTeamName.trim();
+    if (!name) return;
+    setTeamSaving(true);
+    try {
+      const team = await createTeam(name, Array.from(createTeamMemberIds));
+      await createBoardForTeam(team.id);
+      setShowCreateTeam(false);
+      setCreateTeamName('');
+      setCreateTeamMemberIds(new Set());
+      await loadTeams();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTeamSaving(false);
+    }
+  };
+
+  const handleUpdateTeam = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTeam) return;
+    const name = editTeamName.trim();
+    if (!name) return;
+    setTeamSaving(true);
+    try {
+      await updateTeam(editingTeam.id, { name, memberIds: Array.from(editTeamMemberIds) });
+      setEditingTeam(null);
+      await loadTeams();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setTeamSaving(false);
+    }
+  };
+
   const createUserByAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -263,21 +342,33 @@ const UserManagement: React.FC = () => {
   };
 
   return (
-    <div className="admin-dashboard">
-      <div className="admin-header">
-        <h1>User Management</h1>
-        <div className="admin-user-info">
-          <button onClick={() => navigate('/admin')} className="btn btn-secondary">
-            ← Back to Dashboard
-          </button>
-        </div>
+    <>
+    <AdminLayout title="User Management">
+      <div style={{ marginBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
+        <nav style={{ display: 'flex', gap: '0' }}>
+          {(['directory', 'teams', 'create'] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              onClick={() => setTab(t)}
+              style={{
+                padding: '12px 20px',
+                background: 'none',
+                border: 'none',
+                borderBottom: activeTab === t ? '3px solid #002B4D' : '3px solid transparent',
+                color: activeTab === t ? '#002B4D' : '#6b7280',
+                fontWeight: activeTab === t ? 600 : 500,
+                cursor: 'pointer',
+                fontSize: '1rem',
+              }}
+            >
+              {t === 'directory' ? 'User Directory' : t === 'teams' ? 'Team Management' : 'Create User'}
+            </button>
+          ))}
+        </nav>
       </div>
-      <div className="admin-content">
-        <p style={{ marginBottom: '20px', color: '#6b7280' }}>
-          Manage user roles: Viewer, Contributor, Manager, and Admin. Only admins can change roles.
-        </p>
 
-        {error && (
+      {error && (
           <div
             style={{
               padding: '12px',
@@ -307,6 +398,7 @@ const UserManagement: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'directory' && (
         <div
           style={{
             background: '#ffffff',
@@ -317,46 +409,9 @@ const UserManagement: React.FC = () => {
           }}
         >
           <h2 style={{ color: '#002B4D', marginBottom: '20px' }}>User directory</h2>
-
-          <div style={{ marginBottom: '20px', padding: '16px', background: '#f9fafb', borderRadius: '8px' }}>
-            <h3 style={{ fontSize: '1rem', color: '#002B4D', marginBottom: '12px' }}>Add user</h3>
-            <form onSubmit={createUserByAdmin} style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
-              <div>
-                <label htmlFor="add-user-email" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Email</label>
-                <input
-                  id="add-user-email"
-                  type="email"
-                  value={addUserEmail}
-                  onChange={(e) => { setAddUserEmail(e.target.value); setAddUserResult(null); }}
-                  placeholder="user@example.com"
-                  required
-                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', minWidth: '200px' }}
-                />
-              </div>
-              <div>
-                <label htmlFor="add-user-name" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Name (optional)</label>
-                <input
-                  id="add-user-name"
-                  type="text"
-                  value={addUserName}
-                  onChange={(e) => setAddUserName(e.target.value)}
-                  placeholder="Display name"
-                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', minWidth: '160px' }}
-                />
-              </div>
-              <button type="submit" className="btn btn-primary" disabled={addingUser} style={{ padding: '8px 16px', fontSize: '14px' }}>
-                {addingUser ? 'Adding...' : 'Add user'}
-              </button>
-            </form>
-            {addUserResult && (
-              <p style={{ marginTop: '12px', marginBottom: 0, fontSize: '0.875rem', color: '#166534', fontWeight: 500 }}>
-                Temporary password (show to user once): <strong>{addUserResult.temporaryPassword}</strong>. They must change it on first login.
-              </p>
-            )}
-            <p style={{ marginTop: '12px', marginBottom: 0, fontSize: '0.75rem', color: '#6b7280' }}>
-              Requires Cloud Function createUserByAdmin. If adding users fails, run: <code style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>firebase deploy --only functions</code> (Blaze plan required).
-            </p>
-          </div>
+          <p style={{ marginBottom: '20px', color: '#6b7280', fontSize: '0.9rem' }}>
+            Manage user roles: Viewer, Contributor, Manager, and Admin. Only admins can change roles.
+          </p>
 
           {!loading && profiles.length > 0 && (
             <div style={{ marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
@@ -479,7 +534,96 @@ const UserManagement: React.FC = () => {
             </div>
           )}
         </div>
+        )}
 
+        {activeTab === 'create' && (
+        <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', maxWidth: '560px' }}>
+          <h2 style={{ color: '#002B4D', marginBottom: '16px' }}>Create User</h2>
+          <p style={{ marginBottom: '20px', color: '#6b7280', fontSize: '0.9rem' }}>
+            Add a new user by email. They will receive a temporary password and must change it on first login.
+          </p>
+          <form onSubmit={createUserByAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div>
+              <label htmlFor="add-user-email" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Email</label>
+              <input
+                id="add-user-email"
+                type="email"
+                value={addUserEmail}
+                onChange={(e) => { setAddUserEmail(e.target.value); setAddUserResult(null); }}
+                placeholder="user@example.com"
+                required
+                style={{ width: '100%', maxWidth: '400px', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+              />
+            </div>
+            <div>
+              <label htmlFor="add-user-name" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Name (optional)</label>
+              <input
+                id="add-user-name"
+                type="text"
+                value={addUserName}
+                onChange={(e) => setAddUserName(e.target.value)}
+                placeholder="Display name"
+                style={{ width: '100%', maxWidth: '400px', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+              />
+            </div>
+            <button type="submit" className="btn btn-primary" disabled={addingUser} style={{ padding: '10px 20px', fontSize: '14px', alignSelf: 'flex-start' }}>
+              {addingUser ? 'Adding...' : 'Add user'}
+            </button>
+          </form>
+          {addUserResult && (
+            <p style={{ marginTop: '16px', marginBottom: 0, fontSize: '0.875rem', color: '#166534', fontWeight: 500 }}>
+              Temporary password (show to user once): <strong>{addUserResult.temporaryPassword}</strong>. They must change it on first login.
+            </p>
+          )}
+          <p style={{ marginTop: '16px', marginBottom: 0, fontSize: '0.75rem', color: '#6b7280' }}>
+            Requires Cloud Function createUserByAdmin. If adding users fails, run: <code style={{ background: '#f3f4f6', padding: '2px 6px', borderRadius: '4px' }}>firebase deploy --only functions</code> (Blaze plan required).
+          </p>
+        </div>
+        )}
+
+        {activeTab === 'teams' && (
+        <div style={{ marginBottom: '24px' }}>
+          {teamsLoading ? (
+            <p style={{ color: '#6b7280' }}>Loading teams…</p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                <h2 style={{ color: '#002B4D', margin: 0 }}>Teams</h2>
+                <button
+                  type="button"
+                  onClick={() => { setShowCreateTeam(true); setCreateTeamName(''); setCreateTeamMemberIds(new Set()); }}
+                  className="btn btn-primary"
+                >
+                  Create team
+                </button>
+              </div>
+              {teams.length === 0 ? (
+                <p style={{ color: '#6b7280' }}>No teams yet. Create one to get started.</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 120px', gap: '16px', alignItems: 'center', borderBottom: '2px solid #e5e7eb', padding: '12px 8px', color: '#002B4D', fontSize: '0.875rem', fontWeight: 600 }}>
+                    <div>Name</div>
+                    <div>Members</div>
+                    <div>Actions</div>
+                  </div>
+                  {teams.map((t) => (
+                    <div key={t.id} style={{ display: 'grid', gridTemplateColumns: '1fr auto 120px', gap: '16px', alignItems: 'center', borderBottom: '1px solid #e5e7eb', padding: '12px 8px' }}>
+                      <div style={{ fontWeight: 500 }}>{t.name}</div>
+                      <div style={{ color: '#6b7280', fontSize: '0.875rem' }}>{t.memberIds.length}</div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button type="button" className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => { setEditingTeam(t); setEditTeamName(t.name); setEditTeamMemberIds(new Set(t.memberIds)); }}>Edit</button>
+                        <button type="button" style={{ padding: '6px 12px', fontSize: '0.8rem', background: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }} onClick={async () => { if (!window.confirm(`Delete team "${t.name}"?`)) return; setTeamSaving(true); try { await deleteTeam(t.id); await loadTeams(); } catch (e) { console.error(e); } finally { setTeamSaving(false); }}} disabled={teamSaving}>Delete</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        )}
+
+        {activeTab === 'directory' && (
         <div
           style={{
             background: '#ffffff',
@@ -533,7 +677,8 @@ const UserManagement: React.FC = () => {
             Admins are shown with an Admin badge in the directory above; you can revoke admin there.
           </p>
         </div>
-      </div>
+        )}
+    </AdminLayout>
 
       {editingProfile && (
         <div
@@ -734,7 +879,65 @@ const UserManagement: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+
+      {showCreateTeam && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowCreateTeam(false)}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', maxWidth: 480, width: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ color: '#002B4D', marginBottom: '16px' }}>Create team</h3>
+            <form onSubmit={handleCreateTeam}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, color: '#374151' }}>Team name</label>
+                <input type="text" value={createTeamName} onChange={(e) => setCreateTeamName(e.target.value)} placeholder="e.g. Product Team" required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, color: '#374151' }}>Members</label>
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px' }}>
+                  {teamProfiles.map((p) => (
+                    <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={createTeamMemberIds.has(p.id)} onChange={() => setCreateTeamMemberIds((prev) => { const next = new Set(prev); if (next.has(p.id)) next.delete(p.id); else next.add(p.id); return next; })} />
+                      <span>{p.name || p.email || p.id}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="submit" className="btn btn-primary" disabled={teamSaving}>{teamSaving ? 'Creating…' : 'Create'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowCreateTeam(false)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {editingTeam && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setEditingTeam(null)}>
+          <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', maxWidth: 480, width: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.15)' }} onClick={(e) => e.stopPropagation()}>
+            <h3 style={{ color: '#002B4D', marginBottom: '16px' }}>Edit team</h3>
+            <form onSubmit={handleUpdateTeam}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, color: '#374151' }}>Team name</label>
+                <input type="text" value={editTeamName} onChange={(e) => setEditTeamName(e.target.value)} required style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px' }} />
+              </div>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', marginBottom: '6px', fontWeight: 500, color: '#374151' }}>Members</label>
+                <div style={{ maxHeight: '200px', overflowY: 'auto', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '8px' }}>
+                  {teamProfiles.map((p) => (
+                    <label key={p.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '4px 0', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={editTeamMemberIds.has(p.id)} onChange={() => setEditTeamMemberIds((prev) => { const next = new Set(prev); if (next.has(p.id)) next.delete(p.id); else next.add(p.id); return next; })} />
+                      <span>{p.name || p.email || p.id}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button type="submit" className="btn btn-primary" disabled={teamSaving}>{teamSaving ? 'Saving…' : 'Save'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setEditingTeam(null)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

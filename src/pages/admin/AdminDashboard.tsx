@@ -1,12 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { getUpcomingWebcasts } from '../../services/webcastService';
+import AdminLayout from '../../components/AdminLayout';
 
 const AdminDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
   const [upcomingCount, setUpcomingCount] = useState(0);
   const [liveCount, setLiveCount] = useState(0);
 
@@ -24,147 +21,60 @@ const AdminDashboard: React.FC = () => {
     }
   };
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/admin/login-4f73b2c');
+  const cardStyle = {
+    padding: '24px',
+    background: '#ffffff',
+    borderRadius: '12px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    textDecoration: 'none' as const,
+    color: 'inherit',
+    display: 'block' as const,
+    border: '2px solid transparent',
+    transition: 'all 0.2s ease',
   };
 
   return (
-    <div className="admin-dashboard">
-      <div className="admin-header">
-        <h1>Admin Dashboard</h1>
-        <div className="admin-user-info">
-          <span>Logged in as: {user?.email}</span>
-          <button onClick={handleLogout} className="btn btn-secondary">Logout</button>
-        </div>
-      </div>
-      <div className="admin-content">
-        <p style={{ marginBottom: '30px' }}>Welcome to the Compassion Course admin dashboard.</p>
-        
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-          gap: '20px',
-          marginBottom: '40px'
-        }}>
+    <AdminLayout title="Admin Dashboard">
+      <p style={{ marginBottom: '24px', color: '#6b7280' }}>Welcome to the Compassion Course admin dashboard.</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '20px' }}>
           <Link
-            to="/admin/webcasts"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
+            to="/admin/users"
+            style={cardStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#002B4D'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}
           >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px', fontSize: '26px' }}>Webcast Management</h2>
-            <p style={{ color: '#6b7280', marginBottom: '15px', fontSize: '22px' }}>
-              Schedule and manage webcasts with Google Meet integration
+            <h2 style={{ color: '#002B4D', marginBottom: '8px', fontSize: '1.25rem' }}>User Management</h2>
+            <p style={{ color: '#6b7280', fontSize: '0.95rem', margin: 0 }}>
+              User directory, team management, and create users.
             </p>
-            <div style={{ display: 'flex', gap: '20px', fontSize: '0.9rem', color: '#6b7280' }}>
+          </Link>
+
+          <Link to="/admin/webcasts" style={cardStyle} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#002B4D'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            <h2 style={{ color: '#002B4D', marginBottom: '8px', fontSize: '1.25rem' }}>Webcast Management</h2>
+            <p style={{ color: '#6b7280', fontSize: '0.95rem', margin: 0 }}>
+              Schedule and manage webcasts with Google Meet integration.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', fontSize: '0.875rem', color: '#6b7280', marginTop: '8px' }}>
               <span><strong>{upcomingCount}</strong> Upcoming</span>
               <span><strong>{liveCount}</strong> Live</span>
             </div>
           </Link>
 
-          <Link
-            to="/admin/content"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px', fontSize: '26px' }}>Content Management</h2>
-            <p style={{ color: '#6b7280', fontSize: '22px' }}>
-              Edit website content, sections, and text dynamically
+          <Link to="/admin/content" style={cardStyle} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#002B4D'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            <h2 style={{ color: '#002B4D', marginBottom: '8px', fontSize: '1.25rem' }}>Content Management</h2>
+            <p style={{ color: '#6b7280', fontSize: '0.95rem', margin: 0 }}>
+              Edit website content, sections, and text dynamically.
             </p>
           </Link>
 
-          <Link
-            to="/admin/role-config"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px', fontSize: '26px' }}>User Type Configuration</h2>
-            <p style={{ color: '#6b7280', fontSize: '22px' }}>
-              Configure which rights Leaders and Participants have
+          <Link to="/admin/role-config" style={cardStyle} onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#002B4D'; e.currentTarget.style.transform = 'translateY(-2px)'; }} onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.transform = 'translateY(0)'; }}>
+            <h2 style={{ color: '#002B4D', marginBottom: '8px', fontSize: '1.25rem' }}>User Type Configuration</h2>
+            <p style={{ color: '#6b7280', fontSize: '0.95rem', margin: 0 }}>
+              Configure which rights Leaders and Participants have.
             </p>
           </Link>
-
-          <Link
-            to="/admin/users"
-            style={{
-              padding: '30px',
-              background: '#ffffff',
-              borderRadius: '12px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              textDecoration: 'none',
-              color: 'inherit',
-              display: 'block',
-              border: '2px solid transparent',
-              transition: 'all 0.2s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = '#002B4D';
-              e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'transparent';
-              e.currentTarget.style.transform = 'translateY(0)';
-            }}
-          >
-            <h2 style={{ color: '#002B4D', marginBottom: '10px', fontSize: '26px' }}>User Management</h2>
-            <p style={{ color: '#6b7280', fontSize: '22px' }}>
-              Manage user roles: Viewer, Contributor, Manager, Admin
-            </p>
-          </Link>
-        </div>
       </div>
-    </div>
+    </AdminLayout>
   );
 };
 
