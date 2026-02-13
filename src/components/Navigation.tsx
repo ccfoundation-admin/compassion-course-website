@@ -50,6 +50,11 @@ const Navigation: React.FC = () => {
               Compass Companions
             </Link>
           </li>
+          {user && (
+            <li className="nav-item">
+              <Link to="/portal" className={`nav-portal-btn ${isActive('/portal') || location.pathname.startsWith('/portal/') ? 'active' : ''}`}>Portal</Link>
+            </li>
+          )}
           <li className="nav-item">
             {user ? (
               <button type="button" className="nav-portal-btn" onClick={handlePortalLogout}>
