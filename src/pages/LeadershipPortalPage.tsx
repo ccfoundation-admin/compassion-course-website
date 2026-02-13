@@ -24,6 +24,7 @@ const LeadershipPortalPage: React.FC = () => {
   const isDashboard = location.pathname === '/portal/leadership/dashboard';
   const isTeams = location.pathname === '/portal/leadership/teams';
   const isBacklog = location.pathname === '/portal/leadership/backlog';
+  const isAdminPortal = location.pathname.startsWith('/admin');
 
   useEffect(() => {
     listTeams().then(setTeams).catch(() => setTeams([]));
@@ -131,6 +132,34 @@ const LeadershipPortalPage: React.FC = () => {
 
           {isAdmin && (
             <Link
+              to="/admin"
+              style={{
+                ...cardStyle,
+                borderColor: isAdminPortal ? '#002B4D' : 'transparent',
+                maxWidth: '280px',
+              }}
+              onMouseEnter={(e) => {
+                if (!isAdminPortal) {
+                  e.currentTarget.style.borderColor = '#002B4D';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isAdminPortal) {
+                  e.currentTarget.style.borderColor = 'transparent';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }
+              }}
+            >
+              <h2 style={{ color: '#002B4D', marginBottom: '6px', fontSize: '1.1rem' }}>Admin portal</h2>
+              <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: 0 }}>
+                User management, team management, create users, webcasts, content.
+              </p>
+            </Link>
+          )}
+
+          {isAdmin && (
+            <Link
               to="/portal/leadership/teams/new"
               style={{ ...cardStyle, maxWidth: '280px' }}
               onMouseEnter={(e) => {
@@ -183,7 +212,7 @@ const LeadershipPortalPage: React.FC = () => {
           }}
         >
           <p style={{ color: '#6b7280', margin: 0 }}>
-            Use the links above to open My Dashboard, Main backlog, Teams, Create team (admins), or User management (admins only).
+            Use the links above to open My Dashboard, Main backlog, Teams, Admin portal (admins), Create team (admins), or User management (admins only).
           </p>
         </div>
 
