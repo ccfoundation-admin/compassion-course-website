@@ -257,5 +257,19 @@ service cloud.firestore {
     match /whiteboards/{whiteboardId} {
       allow read, write: if request.auth != null;
     }
+
+    // ============================================
+    // LEADERSHIP PORTAL (Dashboard, Teams, Work items)
+    // ============================================
+    // Access controlled by app (LeadershipProtectedRoute); any authenticated user may read/write.
+    match /leadershipMessages/{id} {
+      allow read, write: if request.auth != null;
+    }
+    match /leadershipTeams/{id} {
+      allow read, write: if request.auth != null;
+    }
+    match /leadershipWorkItems/{id} {
+      allow read, write: if request.auth != null;
+    }
   }
 }

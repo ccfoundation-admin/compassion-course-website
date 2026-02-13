@@ -5,6 +5,7 @@ import { PermissionsProvider } from './context/PermissionsContext'
 import { ContentProvider } from './context/ContentContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import UserProtectedRoute from './components/UserProtectedRoute'
+import LeadershipProtectedRoute from './components/LeadershipProtectedRoute'
 
 // Public Pages
 import HomePage from './pages/HomePage'
@@ -23,6 +24,8 @@ import BacklogPage from './pages/BacklogPage'
 import CompassionCourseUniversityPage from './pages/CompassionCourseUniversityPage'
 import LibraryPage from './pages/LibraryPage'
 import LeadershipPortalPage from './pages/LeadershipPortalPage'
+import LeadershipDashboardPage from './pages/leadership/LeadershipDashboardPage'
+import TeamKanbanPage from './pages/leadership/TeamKanbanPage'
 
 // Platform Pages
 import UserProfilePage from './pages/platform/UserProfilePage'
@@ -93,9 +96,19 @@ function App() {
                 </UserProtectedRoute>
               } />
               <Route path="/portal/leadership" element={
-                <UserProtectedRoute>
+                <LeadershipProtectedRoute>
                   <LeadershipPortalPage />
-                </UserProtectedRoute>
+                </LeadershipProtectedRoute>
+              } />
+              <Route path="/portal/leadership/dashboard" element={
+                <LeadershipProtectedRoute>
+                  <LeadershipDashboardPage />
+                </LeadershipProtectedRoute>
+              } />
+              <Route path="/portal/leadership/teams" element={
+                <LeadershipProtectedRoute>
+                  <TeamKanbanPage />
+                </LeadershipProtectedRoute>
               } />
               
               {/* Platform Routes */}

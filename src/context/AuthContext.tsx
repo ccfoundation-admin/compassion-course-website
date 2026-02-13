@@ -8,6 +8,8 @@ import {
   getIdTokenResult,
   signInWithPopup,
   GoogleAuthProvider,
+  EmailAuthProvider,
+  linkWithCredential,
   RecaptchaVerifier,
   sendPasswordResetEmail
 } from 'firebase/auth';
@@ -21,6 +23,11 @@ const ADMIN_EMAILS: string[] = [
   'info@compassioncf.com'
 ];
 
+/** True if the user has email/password as a sign-in method (so they can log in with password). */
+export function hasPasswordProvider(user: User | null): boolean {
+  return !!user?.providerData?.some((p) => p.providerId === 'password');
+}
+
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
@@ -28,6 +35,8 @@ interface AuthContextType {
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, recaptchaVerifier?: RecaptchaVerifier) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
+  /** Link email/password to current account (e.g. after Google sign-in). Lets user log in with email/password later. */
+  linkEmailPassword: (password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -365,6 +374,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const linkEmailPassword = async (password: string) => {
+    const currentUser = auth.currentUser;
+    if (!currentUser?.email) {
+      throw new Error('You must be signed in with an email to set a password.');
+    }
+    const credential = EmailAuthProvider.credential(currentUser.email, password);
+    await linkWithCredential(currentUser, credential);
+  };
+
   const resetPassword = async (email: string) => {
     try {
       await sendPasswordResetEmail(auth, email);
@@ -394,6 +412,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     login,
     register,
     signInWithGoogle,
+    linkEmailPassword,
     resetPassword,
     logout
   };

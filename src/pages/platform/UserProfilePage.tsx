@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
+import { useAuth, hasPasswordProvider } from '../../context/AuthContext';
 import { getUserProfile, updateUserProfile } from '../../services/userProfileService';
 import { getUserEnrollments } from '../../services/enrollmentService';
 import { UserProfile } from '../../types/platform';
 import Layout from '../../components/Layout';
 
 const UserProfilePage: React.FC = () => {
-  const { user } = useAuth();
+  const { user, linkEmailPassword } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
@@ -16,6 +16,11 @@ const UserProfilePage: React.FC = () => {
   const [avatar, setAvatar] = useState('');
   const [saving, setSaving] = useState(false);
   const [enrollmentCount, setEnrollmentCount] = useState<number | null>(null);
+  const [setPasswordValue, setSetPasswordValue] = useState('');
+  const [setPasswordConfirm, setSetPasswordConfirm] = useState('');
+  const [setPasswordError, setSetPasswordError] = useState('');
+  const [setPasswordSuccess, setSetPasswordSuccess] = useState(false);
+  const [settingPassword, setSettingPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -215,6 +220,99 @@ const UserProfilePage: React.FC = () => {
             </div>
           </div>
         )}
+
+        <section style={{ marginTop: '40px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
+          <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Sign-in options</h2>
+          {user && hasPasswordProvider(user) ? (
+            <div>
+              <p style={{ color: '#6b7280', marginBottom: '8px' }}>
+                You can sign in with your email and password or with Google.
+              </p>
+              <Link to="/change-password" style={{ color: '#002B4D', fontSize: '14px' }}>Change password</Link>
+            </div>
+          ) : user?.email ? (
+            <div style={{ marginBottom: '16px' }}>
+              <p style={{ color: '#6b7280', marginBottom: '12px' }}>
+                Set a password to also sign in with your email and password.
+              </p>
+              {setPasswordSuccess ? (
+                <p style={{ color: '#16a34a', marginBottom: '8px' }}>
+                  Password set. You can now sign in with your email and password.
+                </p>
+              ) : (
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    setSetPasswordError('');
+                    if (setPasswordValue.length < 6) {
+                      setSetPasswordError('Password must be at least 6 characters.');
+                      return;
+                    }
+                    if (setPasswordValue !== setPasswordConfirm) {
+                      setSetPasswordError('Passwords do not match.');
+                      return;
+                    }
+                    setSettingPassword(true);
+                    try {
+                      await linkEmailPassword(setPasswordValue);
+                      setSetPasswordSuccess(true);
+                      setSetPasswordValue('');
+                      setSetPasswordConfirm('');
+                    } catch (err) {
+                      setSetPasswordError(err instanceof Error ? err.message : 'Failed to set password.');
+                    } finally {
+                      setSettingPassword(false);
+                    }
+                  }}
+                  style={{ maxWidth: '320px' }}
+                >
+                  <div style={{ marginBottom: '10px' }}>
+                    <label htmlFor="set-password" style={{ display: 'block', marginBottom: '4px', fontWeight: 500, color: '#374151' }}>New password</label>
+                    <input
+                      id="set-password"
+                      type="password"
+                      value={setPasswordValue}
+                      onChange={(e) => setSetPasswordValue(e.target.value)}
+                      placeholder="At least 6 characters"
+                      minLength={6}
+                      style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    />
+                  </div>
+                  <div style={{ marginBottom: '10px' }}>
+                    <label htmlFor="set-password-confirm" style={{ display: 'block', marginBottom: '4px', fontWeight: 500, color: '#374151' }}>Confirm password</label>
+                    <input
+                      id="set-password-confirm"
+                      type="password"
+                      value={setPasswordConfirm}
+                      onChange={(e) => setSetPasswordConfirm(e.target.value)}
+                      placeholder="Confirm password"
+                      minLength={6}
+                      style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
+                    />
+                  </div>
+                  {setPasswordError && (
+                    <p style={{ color: '#dc2626', fontSize: '14px', marginBottom: '8px' }}>{setPasswordError}</p>
+                  )}
+                  <button
+                    type="submit"
+                    disabled={settingPassword}
+                    style={{
+                      padding: '8px 16px',
+                      background: settingPassword ? '#9ca3af' : '#002B4D',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      cursor: settingPassword ? 'not-allowed' : 'pointer',
+                    }}
+                  >
+                    {settingPassword ? 'Setting...' : 'Set password'}
+                  </button>
+                </form>
+              )}
+            </div>
+          ) : null}
+        </section>
 
         <section style={{ marginTop: '40px', paddingTop: '24px', borderTop: '1px solid #e5e7eb' }}>
           <h2 style={{ color: '#002B4D', marginBottom: '10px' }}>Progress Tracking</h2>
