@@ -1,8 +1,19 @@
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
-import { UserProfile } from '../types/platform';
+import { UserProfile, PortalRole } from '../types/platform';
 
 const COLLECTION_NAME = 'userProfiles';
+
+const PORTAL_ROLES: PortalRole[] = ['viewer', 'contributor', 'manager', 'admin'];
+
+/** Normalize role for display/use; maps legacy participant/leader to new roles */
+function normalizeProfileRole(raw: unknown): PortalRole {
+  if (typeof raw !== 'string') return 'viewer';
+  if (raw === 'leader') return 'manager';
+  if (raw === 'participant') return 'viewer';
+  if (PORTAL_ROLES.includes(raw as PortalRole)) return raw as PortalRole;
+  return 'viewer';
+}
 
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   try {
@@ -14,7 +25,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
       return {
         id: docSnap.id,
         ...data,
-        role: data.role ?? 'participant',
+        role: normalizeProfileRole(data.role),
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       } as UserProfile;
@@ -50,7 +61,7 @@ export async function createUserProfile(
       name,
       email,
       organizations: [],
-      role: 'participant',
+      role: 'viewer',
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -72,7 +83,7 @@ export async function createUserProfile(
       name,
       email,
       organizations: [],
-      role: 'participant',
+      role: 'viewer',
       createdAt: profileData.createdAt,
       updatedAt: profileData.updatedAt,
     };
@@ -110,7 +121,7 @@ export async function updateUserProfile(
     if (updates.bio !== undefined && updates.bio !== null && updates.bio !== '') {
       updateData.bio = updates.bio;
     }
-    if (updates.role !== undefined && (updates.role === 'participant' || updates.role === 'leader')) {
+    if (updates.role !== undefined && PORTAL_ROLES.includes(updates.role)) {
       updateData.role = updates.role;
     }
     if (updates.mustChangePassword !== undefined) {
@@ -157,7 +168,7 @@ export async function listUserProfiles(): Promise<UserProfile[]> {
       return {
         id: d.id,
         ...data,
-        role: data.role ?? 'participant',
+        role: normalizeProfileRole(data.role),
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       } as UserProfile;
@@ -181,7 +192,7 @@ export async function getUserProfilesByOrganization(
       return {
         id: d.id,
         ...data,
-        role: data.role ?? 'participant',
+        role: normalizeProfileRole(data.role),
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       } as UserProfile;

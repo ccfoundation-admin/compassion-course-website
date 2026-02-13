@@ -7,7 +7,7 @@ export interface UserProfile {
   avatar?: string;
   bio?: string;
   organizations: string[]; // Organization IDs
-  role?: 'participant' | 'leader'; // default 'participant' for new/legacy profiles
+  role?: PortalRole; // default 'viewer' for new/legacy profiles
   mustChangePassword?: boolean; // when true, user must change password on next login
   createdAt: Date;
   updatedAt: Date;
@@ -208,6 +208,9 @@ export interface Whiteboard {
   createdAt: Date;
   updatedAt: Date;
 }
+
+/** Portal user roles: viewer (read-only), contributor, manager, admin (full portal access) */
+export type PortalRole = 'viewer' | 'contributor' | 'manager' | 'admin';
 
 export type UserRole = 'Owner' | 'Admin' | 'Moderator' | 'Member' | 'Guest';
 export type Visibility = 'public' | 'private' | 'paid';

@@ -159,7 +159,7 @@ const AdminDashboard: React.FC = () => {
           >
             <h2 style={{ color: '#002B4D', marginBottom: '10px', fontSize: '26px' }}>User Management</h2>
             <p style={{ color: '#6b7280', fontSize: '22px' }}>
-              Manage user roles: Participant and Leader
+              Manage user roles: Viewer, Contributor, Manager, Admin
             </p>
           </Link>
         </div>

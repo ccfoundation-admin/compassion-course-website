@@ -93,7 +93,7 @@ const CompassionCourseUniversityPage: React.FC = () => {
             </p>
           </Link>
 
-          {(isAdmin || role === 'leader') && (
+          {(isAdmin || role === 'manager' || role === 'admin') && (
             <Link
               to="/portal/backlog"
               style={cardStyle}
@@ -113,7 +113,7 @@ const CompassionCourseUniversityPage: React.FC = () => {
             </Link>
           )}
 
-          {role === 'participant' && (
+          {(role === 'viewer' || role === 'contributor') && (
             <Link
               to="/platform/resources"
               style={cardStyle}

@@ -5,7 +5,7 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase/firebaseConfig';
 import { useAuth } from '../../context/AuthContext';
 import { listUserProfiles, updateUserProfile, deleteUserProfile } from '../../services/userProfileService';
-import { UserProfile } from '../../types/platform';
+import { UserProfile, PortalRole } from '../../types/platform';
 
 const GOOGLE_ADMIN_CONSOLE_URL = 'https://admin.google.com';
 
@@ -23,7 +23,7 @@ const UserManagement: React.FC = () => {
   const [granting, setGranting] = useState(false);
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'all' | 'participant' | 'leader'>('all');
+  const [roleFilter, setRoleFilter] = useState<'all' | PortalRole>('all');
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [addUserEmail, setAddUserEmail] = useState('');
@@ -81,7 +81,7 @@ const UserManagement: React.FC = () => {
       if (!matchEmail && !matchName) return false;
     }
     if (roleFilter !== 'all') {
-      const role = profile.role ?? 'participant';
+      const role = profile.role ?? 'viewer';
       if (role !== roleFilter) return false;
     }
     return true;
@@ -117,7 +117,7 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const setRole = async (userId: string, role: 'participant' | 'leader') => {
+  const setRole = async (userId: string, role: PortalRole) => {
     setError('');
     setSuccess('');
     setUpdatingId(userId);
@@ -274,7 +274,7 @@ const UserManagement: React.FC = () => {
       </div>
       <div className="admin-content">
         <p style={{ marginBottom: '20px', color: '#6b7280' }}>
-          Manage user roles: Participant and Leader. Only admins can change roles.
+          Manage user roles: Viewer, Contributor, Manager, and Admin. Only admins can change roles.
         </p>
 
         {error && (
@@ -375,7 +375,7 @@ const UserManagement: React.FC = () => {
               />
               <select
                 value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value as 'all' | 'participant' | 'leader')}
+                onChange={(e) => setRoleFilter(e.target.value as 'all' | PortalRole)}
                 style={{
                   padding: '8px 12px',
                   border: '1px solid #d1d5db',
@@ -384,8 +384,10 @@ const UserManagement: React.FC = () => {
                 }}
               >
                 <option value="all">All roles</option>
-                <option value="participant">Participant</option>
-                <option value="leader">Leader</option>
+                <option value="viewer">Viewer</option>
+                <option value="contributor">Contributor</option>
+                <option value="manager">Manager</option>
+                <option value="admin">Admin</option>
               </select>
             </div>
           )}
@@ -418,7 +420,7 @@ const UserManagement: React.FC = () => {
                 <div>Actions</div>
               </div>
               {filteredProfiles.map((profile) => {
-                const role = profile.role ?? 'participant';
+                const role = profile.role ?? 'viewer';
                 return (
                   <div
                     key={profile.id}
@@ -560,7 +562,7 @@ const UserManagement: React.FC = () => {
             <h3 style={{ color: '#002B4D', marginBottom: '12px' }}>Edit user</h3>
             <p style={{ color: '#374151', marginBottom: '4px', fontSize: '14px' }}>{editingProfile.email}</p>
             <p style={{ color: '#6b7280', marginBottom: '16px', fontSize: '14px' }}>
-              {editingProfile.name || '—'} · {(editingProfile.role ?? 'participant')}
+              {editingProfile.name || '—'} · {(editingProfile.role ?? 'viewer')}
               {isAdmin(editingProfile) && (
                 <span style={{ marginLeft: '8px', padding: '2px 8px', background: '#002B4D', color: '#fff', borderRadius: '6px', fontSize: '0.75rem' }}>
                   Admin
@@ -568,41 +570,29 @@ const UserManagement: React.FC = () => {
               )}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '20px' }}>
-              {(editingProfile.role ?? 'participant') === 'participant' ? (
-                <button
-                  type="button"
-                  disabled={updatingId === editingProfile.id}
-                  onClick={() => setRole(editingProfile.id, 'leader')}
-                  style={{
-                    padding: '10px 16px',
-                    background: updatingId === editingProfile.id ? '#9ca3af' : '#002B4D',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    cursor: updatingId === editingProfile.id ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {updatingId === editingProfile.id ? 'Updating...' : 'Make Leader'}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={updatingId === editingProfile.id}
-                  onClick={() => setRole(editingProfile.id, 'participant')}
-                  style={{
-                    padding: '10px 16px',
-                    background: updatingId === editingProfile.id ? '#9ca3af' : '#6b7280',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    cursor: updatingId === editingProfile.id ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {updatingId === editingProfile.id ? 'Updating...' : 'Make Participant'}
-                </button>
-              )}
+              <p style={{ fontSize: '0.875rem', fontWeight: 600, color: '#374151', marginBottom: '4px' }}>Portal role</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                {(['viewer', 'contributor', 'manager', 'admin'] as const).map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    disabled={updatingId === editingProfile.id}
+                    onClick={() => setRole(editingProfile.id, r)}
+                    style={{
+                      padding: '8px 14px',
+                      background: (editingProfile.role ?? 'viewer') === r ? '#002B4D' : '#e5e7eb',
+                      color: (editingProfile.role ?? 'viewer') === r ? '#fff' : '#374151',
+                      border: 'none',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      cursor: updatingId === editingProfile.id ? 'not-allowed' : 'pointer',
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
               {isAdmin(editingProfile) && (
                 <button
                   type="button"
@@ -637,7 +627,7 @@ const UserManagement: React.FC = () => {
               >
                 {removingId === editingProfile.id ? 'Removing...' : 'Remove from directory'}
               </button>
-              {(editingProfile.role ?? 'participant') === 'leader' && editingProfile.email && (
+              {(['manager', 'admin'] as const).includes(editingProfile.role ?? 'viewer') && editingProfile.email && (
                 <button
                   type="button"
                   onClick={() => {

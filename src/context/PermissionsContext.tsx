@@ -2,12 +2,12 @@ import React, { createContext, useCallback, useContext, useEffect, useState } fr
 import { useAuth } from './AuthContext';
 import { getRolePermissions } from '../services/rolePermissionsService';
 import { getUserProfile } from '../services/userProfileService';
-import { PermissionId } from '../types/permissions';
+import type { PortalRole } from '../types/platform';
 
 interface PermissionsContextType {
   hasPermission: (permissionId: string) => boolean;
   loading: boolean;
-  role: 'leader' | 'participant' | null;
+  role: PortalRole | null;
   isAdmin: boolean;
 }
 
@@ -23,8 +23,8 @@ export const usePermissions = () => {
 
 export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, isAdmin } = useAuth();
-  const [config, setConfig] = useState<{ leader: string[]; participant: string[] } | null>(null);
-  const [role, setRole] = useState<'leader' | 'participant' | null>(null);
+  const [config, setConfig] = useState<Record<PortalRole, string[]> | null>(null);
+  const [role, setRole] = useState<PortalRole | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -46,13 +46,12 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({ c
       .then(([perms, profile]) => {
         if (cancelled) return;
         setConfig(perms);
-        const r = profile?.role === 'leader' ? 'leader' : 'participant';
-        setRole(r);
+        setRole((profile?.role ?? 'viewer') as PortalRole);
       })
       .catch(() => {
         if (!cancelled) {
-          setConfig({ leader: [], participant: [] });
-          setRole('participant');
+          setConfig({ viewer: [], contributor: [], manager: [], admin: [] });
+          setRole('viewer');
         }
       })
       .finally(() => {

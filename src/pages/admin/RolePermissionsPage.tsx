@@ -4,8 +4,10 @@ import {
   getRolePermissions,
   setRolePermissions,
   RolePermissionsConfig,
+  PORTAL_ROLES,
 } from '../../services/rolePermissionsService';
 import { AVAILABLE_PERMISSIONS } from '../../types/permissions';
+import type { PortalRole } from '../../types/platform';
 
 const RolePermissionsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ const RolePermissionsPage: React.FC = () => {
     }
   };
 
-  const toggle = (role: 'leader' | 'participant', permissionId: string) => {
+  const toggle = (role: PortalRole, permissionId: string) => {
     if (!config) return;
     const list = [...config[role]];
     const idx = list.indexOf(permissionId);
@@ -71,7 +73,7 @@ const RolePermissionsPage: React.FC = () => {
       </div>
       <div className="admin-content">
         <p style={{ marginBottom: '20px', color: '#6b7280' }}>
-          Admins have all rights. Configure which rights Leaders and Participants have below.
+          Platform admins have all rights. Configure which rights each portal role (Viewer, Contributor, Manager, Admin) has below.
         </p>
 
         {error && (
@@ -123,28 +125,24 @@ const RolePermissionsPage: React.FC = () => {
                   <thead>
                     <tr style={{ borderBottom: '2px solid #e5e7eb', textAlign: 'left' }}>
                       <th style={{ padding: '12px 8px', color: '#002B4D' }}>Right</th>
-                      <th style={{ padding: '12px 8px', color: '#002B4D' }}>Leader</th>
-                      <th style={{ padding: '12px 8px', color: '#002B4D' }}>Participant</th>
+                      {PORTAL_ROLES.map((r) => (
+                        <th key={r} style={{ padding: '12px 8px', color: '#002B4D', textTransform: 'capitalize' }}>{r}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody>
                     {AVAILABLE_PERMISSIONS.map((perm) => (
                       <tr key={perm.id} style={{ borderBottom: '1px solid #e5e7eb' }}>
                         <td style={{ padding: '12px 8px' }}>{perm.label}</td>
-                        <td style={{ padding: '12px 8px' }}>
-                          <input
-                            type="checkbox"
-                            checked={config.leader.includes(perm.id)}
-                            onChange={() => toggle('leader', perm.id)}
-                          />
-                        </td>
-                        <td style={{ padding: '12px 8px' }}>
-                          <input
-                            type="checkbox"
-                            checked={config.participant.includes(perm.id)}
-                            onChange={() => toggle('participant', perm.id)}
-                          />
-                        </td>
+                        {PORTAL_ROLES.map((r) => (
+                          <td key={r} style={{ padding: '12px 8px' }}>
+                            <input
+                              type="checkbox"
+                              checked={config[r].includes(perm.id)}
+                              onChange={() => toggle(r, perm.id)}
+                            />
+                          </td>
+                        ))}
                       </tr>
                     ))}
                   </tbody>
