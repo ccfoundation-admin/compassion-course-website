@@ -18,9 +18,9 @@ const cardStyle = {
 
 const PortalPage: React.FC = () => {
   const { user, loading } = useAuth();
-  const { role } = usePermissions();
+  const { role, isAdmin } = usePermissions();
   const navigate = useNavigate();
-  const showLeadership = role === 'manager' || role === 'admin';
+  const showLeadership = role === 'manager' || role === 'admin' || isAdmin;
 
   if (loading) {
     return (
