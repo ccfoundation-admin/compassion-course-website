@@ -84,19 +84,42 @@ const LeadershipPortalPage: React.FC = () => {
     setLoading(true);
     setNotificationsLoading(true);
     let cancelled = false;
-    Promise.all([
+    Promise.allSettled([
       listNotificationsForUser(user.uid, 20),
       listTeamsForUser(user.uid),
       listTeams(),
       listWorkItemsForUser(user.uid),
     ])
-      .then(async ([notifList, teamList, allTeamList, itemList]) => {
+      .then(async (results) => {
         if (cancelled) return;
-        setNotifications(notifList);
-        setTeams(teamList);
-        setAllTeams(allTeamList);
-        let finalItems = itemList;
-        if (itemList.length === 0 && teamList.length > 0) {
+        const r0 = results[0];
+        const r1 = results[1];
+        const r2 = results[2];
+        const r3 = results[3];
+        if (r0.status === 'fulfilled') {
+          setNotifications(r0.value);
+        } else {
+          console.error('Dashboard load item failed:', 0, r0.reason);
+          setNotifications([]);
+        }
+        if (r1.status === 'fulfilled') {
+          setTeams(r1.value);
+        } else {
+          console.error('Dashboard load item failed:', 1, r1.reason);
+          setTeams([]);
+        }
+        if (r2.status === 'fulfilled') {
+          setAllTeams(r2.value);
+        } else {
+          console.error('Dashboard load item failed:', 2, r2.reason);
+          setAllTeams([]);
+        }
+        let finalItems: LeadershipWorkItem[] = r3.status === 'fulfilled' ? r3.value : [];
+        if (r3.status === 'rejected') {
+          console.error('Dashboard load item failed:', 3, r3.reason);
+        }
+        const teamList = r1.status === 'fulfilled' ? r1.value : [];
+        if (finalItems.length === 0 && teamList.length > 0) {
           try {
             const teamItemsArrays = await Promise.all(teamList.map((team) => listWorkItems(team.id)));
             const fromTeams = teamItemsArrays.flat().filter((item) => item.assigneeId === user?.uid);
@@ -104,19 +127,13 @@ const LeadershipPortalPage: React.FC = () => {
             fromTeams.forEach((item) => byId.set(item.id, item));
             finalItems = Array.from(byId.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
           } catch (_) {
-            // keep finalItems as itemList (empty)
+            // keep finalItems as is
           }
         }
         if (!cancelled) setWorkItems(finalItems);
       })
       .catch((err) => {
         console.error('Dashboard load failed:', err);
-        if (!cancelled) {
-          setNotifications([]);
-          setTeams([]);
-          setAllTeams([]);
-          setWorkItems([]);
-        }
       })
       .finally(() => {
         if (!cancelled) {
