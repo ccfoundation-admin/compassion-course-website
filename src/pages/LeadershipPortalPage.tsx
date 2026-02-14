@@ -66,6 +66,7 @@ const LeadershipPortalPage: React.FC = () => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState<UserNotification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(true);
+  const [notificationsLoadFailed, setNotificationsLoadFailed] = useState(false);
   const [teams, setTeams] = useState<LeadershipTeam[]>([]);
   const [allTeams, setAllTeams] = useState<LeadershipTeam[]>([]);
   const [workItems, setWorkItems] = useState<LeadershipWorkItem[]>([]);
@@ -75,6 +76,7 @@ const LeadershipPortalPage: React.FC = () => {
     if (!user?.uid) {
       setNotifications([]);
       setNotificationsLoading(false);
+      setNotificationsLoadFailed(false);
       setTeams([]);
       setAllTeams([]);
       setWorkItems([]);
@@ -98,9 +100,11 @@ const LeadershipPortalPage: React.FC = () => {
         const r3 = results[3];
         if (r0.status === 'fulfilled') {
           setNotifications(r0.value);
+          setNotificationsLoadFailed(false);
         } else {
           console.error('Dashboard load item failed:', 0, r0.reason);
           setNotifications([]);
+          setNotificationsLoadFailed(true);
         }
         if (r1.status === 'fulfilled') {
           setTeams(r1.value);
@@ -202,11 +206,13 @@ const LeadershipPortalPage: React.FC = () => {
                 marginBottom: '24px',
               }}
             >
-              {/* Messages */}
+              {/* My Messages */}
               <div style={widgetStyle}>
-                <h2 style={cardTitleStyle}>Messages</h2>
+                <h2 style={cardTitleStyle}>My Messages</h2>
                 {notificationsLoading ? (
                   <p style={{ ...secondaryTextStyle, margin: 0 }}>Loading…</p>
+                ) : notificationsLoadFailed ? (
+                  <p style={{ ...secondaryTextStyle, margin: 0 }}>Couldn't load messages.</p>
                 ) : notifications.length === 0 ? (
                   <p style={{ ...secondaryTextStyle, margin: 0 }}>No new mentions.</p>
                 ) : (
