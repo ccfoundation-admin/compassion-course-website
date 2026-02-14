@@ -618,7 +618,7 @@ p {
 
 .hero-title-row {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     justify-content: center;
     gap: 1.5rem;
     flex-wrap: wrap;
