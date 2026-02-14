@@ -294,12 +294,9 @@ const LeadershipPortalPage: React.FC = () => {
                       const subtitle = teamName
                         ? `Task · ${teamName}`
                         : `Work item · ${w.status.replace('_', ' ')}`;
-                      const targetUrl = w.teamId
-                        ? `/portal/leadership/teams/${w.teamId}/board`
-                        : '/portal/leadership/teams';
                       return (
                         <li key={w.id} style={{ padding: '6px 0', borderBottom: '1px solid #e5e7eb' }}>
-                          <Link to={targetUrl} style={linkStyle}>
+                          <Link to={`/portal/leadership/tasks/${w.id}`} style={linkStyle}>
                             {w.title}
                           </Link>
                           <span style={{ ...secondaryTextStyle, marginLeft: '6px' }}>({subtitle})</span>
@@ -331,12 +328,9 @@ const LeadershipPortalPage: React.FC = () => {
                         const subtitle = teamName
                           ? `Task · ${teamName}`
                           : `Work item · ${w.status.replace('_', ' ')}`;
-                        const targetUrl = w.teamId
-                          ? `/portal/leadership/teams/${w.teamId}/board`
-                          : '/portal/leadership/teams';
                         return (
                           <li key={w.id} style={{ padding: '6px 0', borderBottom: '1px solid #e5e7eb' }}>
-                            <Link to={targetUrl} style={linkStyle}>
+                            <Link to={`/portal/leadership/tasks/${w.id}`} style={linkStyle}>
                               {w.title}
                             </Link>
                             <span style={{ ...secondaryTextStyle, marginLeft: '6px' }}>({subtitle})</span>

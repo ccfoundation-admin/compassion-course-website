@@ -31,6 +31,7 @@ import LeadershipMainBacklogPage from './pages/leadership/LeadershipMainBacklogP
 import LeadershipTeamPage from './pages/leadership/LeadershipTeamPage'
 import TeamBoardPage from './pages/leadership/TeamBoardPage'
 import TeamBoardSettingsPage from './pages/leadership/TeamBoardSettingsPage'
+import WorkItemDetailPage from './pages/leadership/WorkItemDetailPage'
 // Platform Pages
 import UserProfilePage from './pages/platform/UserProfilePage'
 import WebcastsPage from './pages/platform/WebcastsPage'
@@ -109,6 +110,11 @@ function App() {
               <Route path="/portal/leadership/backlog" element={
                 <LeadershipProtectedRoute>
                   <LeadershipMainBacklogPage />
+                </LeadershipProtectedRoute>
+              } />
+              <Route path="/portal/leadership/tasks/:workItemId" element={
+                <LeadershipProtectedRoute>
+                  <WorkItemDetailPage />
                 </LeadershipProtectedRoute>
               } />
               <Route path="/portal/leadership/teams/new" element={
