@@ -47,9 +47,9 @@ const UserManagement: React.FC = () => {
   const [teamsLoading, setTeamsLoading] = useState(false);
   const [teamProfiles, setTeamProfiles] = useState<UserProfile[]>([]);
   const [editingTeam, setEditingTeam] = useState<LeadershipTeam | null>(null);
-  const [teamSubTab, setTeamSubTab] = useState<'teams' | 'teamsOfTeams'>('teams');
   const [createTeamName, setCreateTeamName] = useState('');
   const [teamSaving, setTeamSaving] = useState(false);
+  const [createTeamError, setCreateTeamError] = useState<string | null>(null);
   const [updatingTeamId, setUpdatingTeamId] = useState<string | null>(null);
   const [editTeamName, setEditTeamName] = useState('');
   const [editTeamMemberIds, setEditTeamMemberIds] = useState<Set<string>>(new Set());
@@ -261,14 +261,22 @@ const UserManagement: React.FC = () => {
     e.preventDefault();
     const name = createTeamName.trim();
     if (!name) return;
+    setCreateTeamError(null);
     setTeamSaving(true);
     try {
       const team = await createTeam(name, []);
-      await createBoardForTeam(team.id);
       setCreateTeamName('');
       await loadTeams();
+      try {
+        await createBoardForTeam(team.id);
+      } catch (boardErr) {
+        console.warn('Team created but board creation failed:', boardErr);
+        setCreateTeamError('Team created, but the board could not be created. You can still use the team; the board may need to be created later.');
+      }
     } catch (err) {
-      console.error(err);
+      const message = err instanceof Error ? err.message : 'Failed to create team. In Firestore, check the teams collection exists and rules allow write for authenticated users.';
+      setCreateTeamError(message);
+      console.error('Create team failed:', err);
     } finally {
       setTeamSaving(false);
     }
@@ -612,60 +620,40 @@ const UserManagement: React.FC = () => {
 
         {activeTab === 'teams' && (
         <div style={{ marginBottom: '24px' }}>
-          <div style={{ marginBottom: '16px', borderBottom: '1px solid #e5e7eb' }}>
-            <nav style={{ display: 'flex', gap: '0' }}>
-              {(['teams', 'teamsOfTeams'] as const).map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setTeamSubTab(st)}
-                  style={{
-                    padding: '10px 16px',
-                    background: 'none',
-                    border: 'none',
-                    borderBottom: teamSubTab === st ? '3px solid #002B4D' : '3px solid transparent',
-                    color: teamSubTab === st ? '#002B4D' : '#6b7280',
-                    fontWeight: teamSubTab === st ? 600 : 500,
-                    cursor: 'pointer',
-                    fontSize: '0.95rem',
-                  }}
-                >
-                  {st === 'teams' ? 'Teams' : 'Teams of Teams'}
-                </button>
-              ))}
-            </nav>
-          </div>
+          <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '16px' }}>
+            Teams are stored in Firestore under the <strong>teams</strong> collection (at the database root). Create a team below.
+          </p>
+          <form onSubmit={handleCreateTeam} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
+            <input
+              type="text"
+              value={createTeamName}
+              onChange={(e) => { setCreateTeamName(e.target.value); setCreateTeamError(null); }}
+              placeholder="Team name"
+              required
+              style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', minWidth: '200px' }}
+            />
+            <button
+              type="submit"
+              disabled={teamSaving}
+              style={{
+                padding: '8px 16px',
+                background: '#e5e7eb',
+                color: '#374151',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: 500,
+                cursor: teamSaving ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {teamSaving ? 'Creating…' : 'Create team'}
+            </button>
+          </form>
+          {createTeamError && (
+            <p style={{ color: '#dc2626', fontSize: '0.9rem', marginBottom: '16px' }}>{createTeamError}</p>
+          )}
 
-          {teamSubTab === 'teams' && (
-            <>
-              <form onSubmit={handleCreateTeam} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-                <input
-                  type="text"
-                  value={createTeamName}
-                  onChange={(e) => setCreateTeamName(e.target.value)}
-                  placeholder="Team name"
-                  required
-                  style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px', minWidth: '200px' }}
-                />
-                <button
-                  type="submit"
-                  disabled={teamSaving}
-                  style={{
-                    padding: '8px 16px',
-                    background: '#e5e7eb',
-                    color: '#374151',
-                    border: 'none',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    cursor: teamSaving ? 'not-allowed' : 'pointer',
-                  }}
-                >
-                  {teamSaving ? 'Creating…' : 'Create team'}
-                </button>
-              </form>
-
-              {teamsLoading ? (
+          {teamsLoading ? (
                 <p style={{ color: '#6b7280' }}>Loading teams…</p>
               ) : teams.length === 0 ? (
                 <p style={{ color: '#6b7280' }}>No teams yet. Create one to get started.</p>
@@ -758,12 +746,6 @@ const UserManagement: React.FC = () => {
                   })}
                 </div>
               )}
-            </>
-          )}
-
-          {teamSubTab === 'teamsOfTeams' && (
-            <p style={{ color: '#6b7280', padding: '24px 0' }}>Teams of Teams coming soon.</p>
-          )}
         </div>
         )}
 

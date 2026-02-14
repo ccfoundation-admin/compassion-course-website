@@ -11,7 +11,7 @@ import {
 import { db } from '../firebase/firebaseConfig';
 import type { LeadershipBoard } from '../types/leadership';
 
-const COLLECTION = 'leadershipBoards';
+const COLLECTION = 'boards';
 
 function toBoard(docSnap: { id: string; data: () => Record<string, unknown> }): LeadershipBoard {
   const d = docSnap.data() ?? {};

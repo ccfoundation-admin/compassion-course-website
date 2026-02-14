@@ -52,10 +52,14 @@ const CreateTeamPage: React.FC = () => {
     setSubmitting(true);
     try {
       const team = await createTeam(trimmed, Array.from(selectedIds));
-      await createBoardForTeam(team.id);
+      try {
+        await createBoardForTeam(team.id);
+      } catch (boardErr) {
+        console.warn('Team created but board creation failed:', boardErr);
+      }
       navigate(`/portal/leadership/teams/${team.id}`, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create team.');
+      setError(err instanceof Error ? err.message : 'Failed to create team. In Firestore, check the teams collection and rules.');
       setSubmitting(false);
     }
   };

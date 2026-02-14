@@ -104,7 +104,7 @@ service cloud.firestore {
     // USER PROFILES (Users can read/write their own, admins can read/write all)
     // ============================================
     
-    match /userProfiles/{userId} {
+    match /users/{userId} {
       allow read: if request.auth != null && (isOwner(userId) || isAdminUser());
       allow create: if request.auth != null && isOwner(userId);
       // Admins can update anything; owners can update without changing role, or set mustChangePassword/updatedAt only
@@ -265,30 +265,33 @@ service cloud.firestore {
     match /leadershipMessages/{id} {
       allow read, write: if request.auth != null;
     }
-    match /leadershipTeams/{id} {
+    match /teams/{id} {
       allow read, write: if request.auth != null;
     }
-    match /leadershipWorkItems/{id} {
+    match /workItems/{id} {
       allow read, write: if request.auth != null;
     }
-    match /leadershipBoards/{id} {
+    match /boards/{id} {
+      allow read, write: if request.auth != null;
+    }
+    match /teamBoardSettings/{id} {
       allow read, write: if request.auth != null;
     }
     // Working agreements: doc id = teamId; allow if user is in team or admin
     match /leadershipWorkingAgreements/{teamId} {
       allow read, write: if request.auth != null && (
-        request.auth.uid in get(/databases/$(database)/documents/leadershipTeams/$(teamId)).data.memberIds
+        request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.memberIds
         || isAdminUser()
       );
     }
     // Team whiteboards: allow if user is in team or admin (create uses request.resource.data.teamId)
     match /leadershipTeamWhiteboards/{whiteboardId} {
       allow read, update, delete: if request.auth != null && (
-        request.auth.uid in get(/databases/$(database)/documents/leadershipTeams/$(resource.data.teamId)).data.memberIds
+        request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.memberIds
         || isAdminUser()
       );
       allow create: if request.auth != null && (
-        request.auth.uid in get(/databases/$(database)/documents/leadershipTeams/$(request.resource.data.teamId)).data.memberIds
+        request.auth.uid in get(/databases/$(database)/documents/teams/$(request.resource.data.teamId)).data.memberIds
         || isAdminUser()
       );
     }

@@ -13,7 +13,7 @@ import {
 import { db } from '../firebase/firebaseConfig';
 import type { LeadershipTeam } from '../types/leadership';
 
-const COLLECTION = 'leadershipTeams';
+const COLLECTION = 'teams';
 
 function toTeam(docSnap: { id: string; data: () => Record<string, unknown> }): LeadershipTeam {
   const d = docSnap.data() ?? {};

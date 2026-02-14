@@ -14,7 +14,7 @@ import {
 import { db } from '../firebase/firebaseConfig';
 import type { LeadershipWorkItem, WorkItemStatus, WorkItemLane, WorkItemComment } from '../types/leadership';
 
-const COLLECTION = 'leadershipWorkItems';
+const COLLECTION = 'workItems';
 
 const VALID_LANES: WorkItemLane[] = ['expedited', 'fixed_date', 'standard', 'intangible'];
 
