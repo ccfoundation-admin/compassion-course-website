@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
-import { getWhiteboard, updateWhiteboard } from '../services/whiteboardService';
+import { getWhiteboard, updateWhiteboard, createWhiteboardWithId } from '../services/whiteboardService';
 import { ExcalidrawShell } from '../components/whiteboard/ExcalidrawShell';
 import type { ExcalidrawAPI } from '../components/whiteboard/ExcalidrawShell';
 
@@ -17,43 +17,53 @@ function normalizeInitialData(canvasState: { elements?: unknown[]; appState?: Re
   return { elements, appState };
 }
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'failed';
+type SaveTrigger = 'none' | 'auto' | 'manual';
+
 const WhiteboardEditorPage: React.FC = () => {
   const { boardId } = useParams<{ boardId: string }>();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, loading: authLoading } = useAuth();
   const [board, setBoard] = useState<Awaited<ReturnType<typeof getWhiteboard>>>(null);
-  const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle');
+  const [lastSaveTrigger, setLastSaveTrigger] = useState<SaveTrigger>('none');
   const [linkCopied, setLinkCopied] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const excalidrawApiRef = useRef<ExcalidrawAPI | null>(null);
-  const initialLoadRef = useRef(true);
+  const suppressChangeRef = useRef(true);
+
+  const isAdminKnown = !authLoading;
+  const canWrite = isLoaded && isAdminKnown && isAdmin === true;
 
   useEffect(() => {
-    if (loading || !board) return;
-    const t = setTimeout(() => {
-      initialLoadRef.current = false;
-    }, 2500);
-    return () => clearTimeout(t);
-  }, [loading, board]);
-
-  useEffect(() => {
-    if (!boardId) return;
+    if (!boardId || !isAdminKnown) return;
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setSaveStatus('idle');
+    setDirty(false);
+    setIsLoaded(false);
+    suppressChangeRef.current = true;
+
     getWhiteboard(boardId)
-      .then((doc) => {
+      .then(async (doc) => {
         if (cancelled) return;
+        if (!doc && isAdmin && user?.uid) {
+          await createWhiteboardWithId(boardId, 'Untitled whiteboard', user.uid);
+          const created = await getWhiteboard(boardId);
+          if (cancelled) return;
+          doc = created;
+        }
         if (!doc) {
           setError('Whiteboard not found.');
           return;
         }
         setBoard(doc);
         setTitle(doc.title);
-        setCanEdit(isAdmin);
       })
       .catch((e) => {
         if (!cancelled) {
@@ -66,39 +76,61 @@ const WhiteboardEditorPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [boardId, isAdmin]);
+  }, [boardId, isAdminKnown, isAdmin, user?.uid]);
 
-  const persistState = useCallback(async () => {
-    if (!board || !boardId || !excalidrawApiRef.current) return;
-    if (!canEdit) return;
-    setSaveStatus('saving');
-    try {
-      const api = excalidrawApiRef.current;
-      const elements = api.getSceneElements();
-      const appState = api.getAppState();
-      await updateWhiteboard(boardId, {
-        canvasState: { elements: [...elements], appState: { ...appState } },
-      });
-      setSaveStatus('saved');
-    } catch (e) {
-      setSaveStatus('error');
-    }
-  }, [board, boardId, canEdit]);
+  useEffect(() => {
+    if (loading || !board) return;
+    const t = setTimeout(() => {
+      suppressChangeRef.current = false;
+      setIsLoaded(true);
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [loading, board]);
+
+  const persistState = useCallback(
+    async (trigger: 'auto' | 'manual') => {
+      if (!board || !boardId || !excalidrawApiRef.current || !canWrite || !dirty) return;
+      setLastSaveTrigger(trigger);
+      setSaveStatus('saving');
+      try {
+        const api = excalidrawApiRef.current;
+        const elements = api.getSceneElements();
+        const appState = api.getAppState();
+        await updateWhiteboard(boardId, {
+          canvasState: { elements: [...elements], appState: { ...appState } },
+        });
+        setSaveStatus('saved');
+        setDirty(false);
+      } catch (e: unknown) {
+        const code = e && typeof e === 'object' && 'code' in e ? String((e as { code: unknown }).code) : '';
+        const message = e instanceof Error ? e.message : String(e);
+        console.error('[Whiteboard] save failed: code=%s message=%s', code, message);
+        setSaveStatus('failed');
+      }
+    },
+    [board, boardId, canWrite, dirty]
+  );
 
   const handleChange = useCallback(() => {
-    if (!canEdit) return;
-    if (initialLoadRef.current) return;
+    if (suppressChangeRef.current || !isLoaded) return;
+    if (!canWrite) return;
+    setDirty(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
-      persistState();
+      persistState('auto');
     }, 1000);
-  }, [canEdit, persistState]);
+  }, [canWrite, isLoaded, persistState]);
+
+  const handleSaveClick = useCallback(() => {
+    if (!canWrite || !dirty) return;
+    persistState('manual');
+  }, [canWrite, dirty, persistState]);
 
   const handleTitleBlur = useCallback(() => {
-    if (!canEdit || !boardId || title === (board?.title ?? '')) return;
+    if (!canWrite || !boardId || title === (board?.title ?? '')) return;
     updateWhiteboard(boardId, { title }).catch(() => {});
-  }, [canEdit, boardId, title, board?.title]);
+  }, [canWrite, boardId, title, board?.title]);
 
   const handleCopyShareableLink = useCallback(() => {
     if (!boardId) return;
@@ -150,7 +182,7 @@ const WhiteboardEditorPage: React.FC = () => {
           <Link to="/whiteboards" style={{ color: '#002B4D', textDecoration: 'none', fontWeight: 500 }}>
             ← Back to Whiteboards
           </Link>
-          {canEdit ? (
+          {canWrite ? (
             <input
               type="text"
               value={title}
@@ -184,11 +216,11 @@ const WhiteboardEditorPage: React.FC = () => {
           >
             {linkCopied ? 'Link copied!' : 'Copy shareable link'}
           </button>
-          {canEdit && (
+          {canWrite && (
             <button
               type="button"
-              onClick={() => persistState()}
-              disabled={saveStatus === 'saving'}
+              onClick={handleSaveClick}
+              disabled={!dirty || saveStatus === 'saving'}
               style={{
                 padding: '6px 12px',
                 background: '#002B4D',
@@ -196,17 +228,17 @@ const WhiteboardEditorPage: React.FC = () => {
                 border: 'none',
                 borderRadius: '6px',
                 fontSize: '0.875rem',
-                cursor: saveStatus === 'saving' ? 'not-allowed' : 'pointer',
+                cursor: !dirty || saveStatus === 'saving' ? 'not-allowed' : 'pointer',
               }}
             >
               Save
             </button>
           )}
-          {canEdit && (
+          {canWrite && (
             <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
               {saveStatus === 'saving' && 'Saving…'}
               {saveStatus === 'saved' && 'Saved'}
-              {saveStatus === 'error' && 'Save failed'}
+              {saveStatus === 'failed' && 'Save failed'}
             </span>
           )}
         </div>
@@ -214,7 +246,7 @@ const WhiteboardEditorPage: React.FC = () => {
       <div style={{ height: 'calc(100vh - 120px)', minHeight: '400px' }}>
         <ExcalidrawShell
           initialData={initialData}
-          viewModeEnabled={!canEdit}
+          viewModeEnabled={!canWrite}
           onReady={(api) => {
             excalidrawApiRef.current = api;
           }}

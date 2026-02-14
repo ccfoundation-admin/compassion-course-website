@@ -83,6 +83,24 @@ export async function createWhiteboard(title: string, ownerId?: string): Promise
   return boardId;
 }
 
+/** Create a whiteboard doc at the given id if it does not exist (e.g. admin opening a missing board). */
+export async function createWhiteboardWithId(
+  boardId: string,
+  title: string,
+  ownerId?: string
+): Promise<void> {
+  const ref = doc(db, COLLECTION, boardId);
+  const snap = await getDoc(ref);
+  if (snap.exists()) return;
+  await setDoc(ref, {
+    title: (title || 'Untitled whiteboard').trim() || 'Untitled whiteboard',
+    ownerId: ownerId ?? '',
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+    canvasState: { elements: [], appState: {} },
+  });
+}
+
 export async function getWhiteboard(boardId: string): Promise<WhiteboardDoc | null> {
   const ref = doc(db, COLLECTION, boardId);
   const snap = await getDoc(ref);
