@@ -439,6 +439,7 @@ p {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    margin-left: 2rem;
 }
 
 .nav-link-portal {

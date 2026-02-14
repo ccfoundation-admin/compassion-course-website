@@ -108,6 +108,18 @@ const Navigation: React.FC = () => {
               Compass Companions
             </Link>
           </li>
+          {user && !isInPortal && (
+            <li className="nav-item">
+              <Link to="/portal" className="nav-link nav-link-portal" onClick={() => setIsMenuOpen(false)}>Portal</Link>
+            </li>
+          )}
+          {!user && (
+            <li className="nav-item">
+              <button type="button" className="nav-link nav-link-portal nav-link-btn" onClick={() => { setIsMenuOpen(false); handleLogInClick(); }}>
+                Portal
+              </button>
+            </li>
+          )}
           {/* Account items in slide-out (mobile only) */}
           <li className="nav-item nav-menu-account-item nav-account-divider">
             <span className="nav-account-divider-line" aria-hidden="true" />
@@ -133,14 +145,6 @@ const Navigation: React.FC = () => {
         </ul>
 
         <div className="nav-right" ref={accountRef}>
-          {user && !isInPortal && (
-            <Link to="/portal" className="nav-link nav-link-portal">Portal</Link>
-          )}
-          {!user && (
-            <button type="button" className="nav-link nav-link-portal nav-link-btn" onClick={handleLogInClick}>
-              Portal
-            </button>
-          )}
           {user && (
             <div className="nav-avatar-wrap">
               {!profileLoading && (
