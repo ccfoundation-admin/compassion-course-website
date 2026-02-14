@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
 import type { LeadershipTeam } from '../types/leadership';
+import { createBoardForTeam } from './leadershipBoardsService';
 
 const COLLECTION = 'teams';
 
@@ -55,6 +56,24 @@ export async function createTeam(name: string, memberIds: string[] = []): Promis
   });
   const snap = await getDoc(ref);
   return toTeam({ id: snap.id, data: () => snap.data() ?? {} });
+}
+
+/** Creates a team and its board (1:1). Retries board creation once on failure. */
+export async function createTeamWithBoard(
+  name: string,
+  memberIds: string[] = []
+): Promise<LeadershipTeam> {
+  const team = await createTeam(name, memberIds);
+  try {
+    await createBoardForTeam(team.id);
+  } catch (err) {
+    try {
+      await createBoardForTeam(team.id);
+    } catch (retryErr) {
+      throw retryErr;
+    }
+  }
+  return team;
 }
 
 export async function updateTeam(

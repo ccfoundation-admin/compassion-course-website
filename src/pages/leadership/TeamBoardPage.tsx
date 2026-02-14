@@ -15,6 +15,7 @@ import {
 import Layout from '../../components/Layout';
 import { listWorkItems, updateWorkItem, createWorkItem } from '../../services/leadershipWorkItemsService';
 import { getTeam } from '../../services/leadershipTeamsService';
+import { getBoardByTeamId, createBoardForTeam } from '../../services/leadershipBoardsService';
 import { getTeamBoardSettings } from '../../services/teamBoardSettingsService';
 import { getUserProfile } from '../../services/userProfileService';
 import TaskForm, { type TaskFormPayload } from '../../components/leadership/TaskForm';
@@ -125,7 +126,15 @@ const TeamBoardPage: React.FC = () => {
     if (!teamId) return;
     setLoading(true);
     Promise.all([listWorkItems(teamId), getTeam(teamId), getTeamBoardSettings(teamId)])
-      .then(([items, team, settings]) => {
+      .then(async ([items, team, settings]) => {
+        const board = await getBoardByTeamId(teamId);
+        if (!board) {
+          try {
+            await createBoardForTeam(teamId);
+          } catch (err) {
+            console.warn('Lazy create board failed:', err);
+          }
+        }
         setWorkItems(items);
         setTeamName(team?.name ?? '');
         setMemberIds(team?.memberIds ?? []);

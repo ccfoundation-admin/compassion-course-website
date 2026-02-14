@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
-import { createTeam } from '../../services/leadershipTeamsService';
-import { createBoardForTeam } from '../../services/leadershipBoardsService';
+import { createTeamWithBoard } from '../../services/leadershipTeamsService';
 import { listUserProfiles } from '../../services/userProfileService';
 import type { UserProfile } from '../../types/platform';
 
@@ -51,12 +50,7 @@ const CreateTeamPage: React.FC = () => {
     }
     setSubmitting(true);
     try {
-      const team = await createTeam(trimmed, Array.from(selectedIds));
-      try {
-        await createBoardForTeam(team.id);
-      } catch (boardErr) {
-        console.warn('Team created but board creation failed:', boardErr);
-      }
+      const team = await createTeamWithBoard(trimmed, Array.from(selectedIds));
       navigate(`/portal/leadership/teams/${team.id}`, { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create team. In Firestore, check the teams collection and rules.');

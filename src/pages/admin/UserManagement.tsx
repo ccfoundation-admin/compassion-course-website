@@ -5,8 +5,7 @@ import { httpsCallable } from 'firebase/functions';
 import { db, functions } from '../../firebase/firebaseConfig';
 import { useAuth } from '../../context/AuthContext';
 import { listUserProfiles, updateUserProfile, deleteUserProfile } from '../../services/userProfileService';
-import { listTeams, getTeam, createTeam, updateTeam, deleteTeam } from '../../services/leadershipTeamsService';
-import { createBoardForTeam } from '../../services/leadershipBoardsService';
+import { listTeams, getTeam, createTeamWithBoard, updateTeam, deleteTeam } from '../../services/leadershipTeamsService';
 import { UserProfile, PortalRole } from '../../types/platform';
 import type { LeadershipTeam } from '../../types/leadership';
 import AdminLayout from '../../components/AdminLayout';
@@ -264,15 +263,9 @@ const UserManagement: React.FC = () => {
     setCreateTeamError(null);
     setTeamSaving(true);
     try {
-      const team = await createTeam(name, []);
+      await createTeamWithBoard(name, []);
       setCreateTeamName('');
       await loadTeams();
-      try {
-        await createBoardForTeam(team.id);
-      } catch (boardErr) {
-        console.warn('Team created but board creation failed:', boardErr);
-        setCreateTeamError('Team created, but the board could not be created. You can still use the team; the board may need to be created later.');
-      }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create team. In Firestore, check the teams collection exists and rules allow write for authenticated users.';
       setCreateTeamError(message);
