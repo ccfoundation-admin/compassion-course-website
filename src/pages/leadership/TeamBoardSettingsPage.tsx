@@ -27,7 +27,6 @@ const TeamBoardSettingsPage: React.FC = () => {
   const [settings, setSettings] = useState<TeamBoardSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [boardMode, setBoardMode] = useState<'scrum' | 'kanban'>('kanban');
   const [visibleLanes, setVisibleLanes] = useState<Set<WorkItemLane>>(new Set(LANE_OPTIONS.map((l) => l.id)));
   const [columnHeaders, setColumnHeaders] = useState<Partial<Record<WorkItemStatus, string>>>({});
   const [saved, setSaved] = useState(false);
@@ -39,7 +38,6 @@ const TeamBoardSettingsPage: React.FC = () => {
       .then(([team, s]) => {
         setTeamName(team?.name ?? '');
         setSettings(s);
-        setBoardMode(s.boardMode ?? 'kanban');
         setVisibleLanes(
           s.visibleLanes && s.visibleLanes.length > 0
             ? new Set(s.visibleLanes)
@@ -71,7 +69,7 @@ const TeamBoardSettingsPage: React.FC = () => {
     setSaved(false);
     try {
       await setTeamBoardSettings(teamId, {
-        boardMode,
+        boardMode: 'kanban',
         visibleLanes: Array.from(visibleLanes),
         columnHeaders: Object.fromEntries(
           COLUMN_KEYS.map((k) => [k, (columnHeaders[k] ?? '').trim() || undefined]).filter(([, v]) => v != null)
@@ -105,6 +103,9 @@ const TeamBoardSettingsPage: React.FC = () => {
           ← Back to board
         </Link>
         <h1 style={{ color: '#002B4D', marginBottom: '8px', fontSize: '1.5rem' }}>Team Board Settings</h1>
+        <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '12px' }}>
+          Configure where your data is stored. Data is stored in your Firebase project.
+        </p>
         <p style={{ color: '#6b7280', fontSize: '0.95rem', marginBottom: '24px' }}>
           Configure this team&apos;s board display. Settings apply only to this team.
         </p>
@@ -118,47 +119,6 @@ const TeamBoardSettingsPage: React.FC = () => {
               <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '16px' }}>
                 Settings below apply only to {teamName || 'this team'}&apos;s board. Other teams are not affected.
               </p>
-
-              <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, color: '#374151' }}>
-                  Board mode:
-                </label>
-                <div style={{ display: 'flex', gap: '0' }}>
-                  <button
-                    type="button"
-                    onClick={() => setBoardMode('scrum')}
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px 0 0 8px',
-                      background: boardMode === 'scrum' ? '#002B4D' : '#fff',
-                      color: boardMode === 'scrum' ? '#fff' : '#374151',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                    }}
-                  >
-                    Scrum
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBoardMode('kanban')}
-                    style={{
-                      padding: '8px 16px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '0 8px 8px 0',
-                      background: boardMode === 'kanban' ? '#002B4D' : '#fff',
-                      color: boardMode === 'kanban' ? '#fff' : '#374151',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                    }}
-                  >
-                    Kanban
-                  </button>
-                </div>
-                <p style={{ fontSize: '0.85rem', color: '#6b7280', marginTop: '6px' }}>
-                  Only Kanban is supported at this time.
-                </p>
-              </div>
 
               <div>
                 <label style={{ display: 'block', marginBottom: '10px', fontWeight: 600, color: '#374151' }}>

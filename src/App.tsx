@@ -26,7 +26,7 @@ import CompassionCourseUniversityPage from './pages/CompassionCourseUniversityPa
 import LibraryPage from './pages/LibraryPage'
 import LeadershipPortalPage from './pages/LeadershipPortalPage'
 import LeadershipDashboardPage from './pages/leadership/LeadershipDashboardPage'
-import TeamKanbanPage from './pages/leadership/TeamKanbanPage'
+import TeamBoardsListPage from './pages/leadership/TeamBoardsListPage'
 import CreateTeamPage from './pages/leadership/CreateTeamPage'
 import LeadershipMainBacklogPage from './pages/leadership/LeadershipMainBacklogPage'
 import LeadershipTeamPage from './pages/leadership/LeadershipTeamPage'
@@ -151,7 +151,7 @@ function App() {
               } />
               <Route path="/portal/leadership/teams" element={
                 <LeadershipProtectedRoute>
-                  <TeamKanbanPage />
+                  <TeamBoardsListPage />
                 </LeadershipProtectedRoute>
               } />
               
