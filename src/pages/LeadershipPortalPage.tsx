@@ -4,7 +4,7 @@ import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { usePermissions } from '../context/PermissionsContext';
 import { listTeamsForUser, listTeams } from '../services/leadershipTeamsService';
-import { listWorkItemsForUser } from '../services/leadershipWorkItemsService';
+import { listWorkItemsForUser, listWorkItems } from '../services/leadershipWorkItemsService';
 import { listNotificationsForUser, markNotificationRead } from '../services/notificationService';
 import type { UserNotification } from '../services/notificationService';
 import type { LeadershipTeam } from '../types/leadership';
@@ -90,15 +90,27 @@ const LeadershipPortalPage: React.FC = () => {
       listTeams(),
       listWorkItemsForUser(user.uid),
     ])
-      .then(([notifList, teamList, allTeamList, itemList]) => {
-        if (!cancelled) {
-          setNotifications(notifList);
-          setTeams(teamList);
-          setAllTeams(allTeamList);
-          setWorkItems(itemList);
+      .then(async ([notifList, teamList, allTeamList, itemList]) => {
+        if (cancelled) return;
+        setNotifications(notifList);
+        setTeams(teamList);
+        setAllTeams(allTeamList);
+        let finalItems = itemList;
+        if (itemList.length === 0 && teamList.length > 0) {
+          try {
+            const teamItemsArrays = await Promise.all(teamList.map((team) => listWorkItems(team.id)));
+            const fromTeams = teamItemsArrays.flat().filter((item) => item.assigneeId === user?.uid);
+            const byId = new Map<string, LeadershipWorkItem>();
+            fromTeams.forEach((item) => byId.set(item.id, item));
+            finalItems = Array.from(byId.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+          } catch (_) {
+            // keep finalItems as itemList (empty)
+          }
         }
+        if (!cancelled) setWorkItems(finalItems);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error('Dashboard load failed:', err);
         if (!cancelled) {
           setNotifications([]);
           setTeams([]);
