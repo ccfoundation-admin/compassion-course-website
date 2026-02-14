@@ -156,6 +156,22 @@ const LeadershipPortalPage: React.FC = () => {
     return m;
   }, [allTeams]);
 
+  const loadNotifications = () => {
+    if (!user?.uid) return;
+    setNotificationsLoading(true);
+    listNotificationsForUser(user.uid, 20)
+      .then((data) => {
+        setNotifications(data);
+        setNotificationsLoadFailed(false);
+      })
+      .catch((err) => {
+        console.error('Notifications load failed:', err);
+        setNotifications([]);
+        setNotificationsLoadFailed(true);
+      })
+      .finally(() => setNotificationsLoading(false));
+  };
+
   const handleNotificationClick = (n: UserNotification) => {
     if (!n.read) {
       markNotificationRead(n.id).catch(() => {});
@@ -212,7 +228,16 @@ const LeadershipPortalPage: React.FC = () => {
                 {notificationsLoading ? (
                   <p style={{ ...secondaryTextStyle, margin: 0 }}>Loading…</p>
                 ) : notificationsLoadFailed ? (
-                  <p style={{ ...secondaryTextStyle, margin: 0 }}>Couldn't load messages.</p>
+                  <>
+                    <p style={{ ...secondaryTextStyle, margin: 0 }}>Couldn't load messages.</p>
+                    <button
+                      type="button"
+                      onClick={loadNotifications}
+                      style={{ ...buttonStyle, marginTop: '12px' }}
+                    >
+                      Try again
+                    </button>
+                  </>
                 ) : notifications.length === 0 ? (
                   <p style={{ ...secondaryTextStyle, margin: 0 }}>No new mentions.</p>
                 ) : (
