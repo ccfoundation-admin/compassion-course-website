@@ -132,8 +132,11 @@ const UserProfilePage: React.FC = () => {
           <div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 600 }}>
-                Name
+                Display name
               </label>
+              <p style={{ fontSize: '14px', color: '#6b7280', marginBottom: '8px' }}>
+                This name is shown next to your avatar in the header.
+              </p>
               <input
                 type="text"
                 value={name}

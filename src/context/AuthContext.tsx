@@ -89,34 +89,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdmin(true);
           setLoading(false); // Set loading to false immediately for admin users
           
-          // Do profile and admin document creation in background (non-blocking)
-          Promise.all([
-            // Ensure user profile exists
-            getUserProfile(user.uid).then(existingProfile => {
-              if (!existingProfile) {
-                return createUserProfile(
-                  user.uid,
-                  user.email || '',
-                  user.displayName || user.email?.split('@')[0] || 'User',
-                  user.photoURL || undefined
-                ).then(() => {
-                  console.log('User profile created on login');
-                });
-              }
-            }).catch(err => {
-              const isOfflineError = err?.code === 'unavailable' || 
-                                    err?.message?.includes('offline');
-              if (!isOfflineError) {
-                console.error('Error ensuring user profile exists:', err);
-              }
-            }),
-            // Create admin document
-            createAdminDocument(user).catch(err => {
-              console.warn('⚠️ Background admin document creation failed (non-blocking):', err);
-            })
-          ]).catch(() => {
-            // Ignore background errors
-          });
+          // Ensure token is attached to requests, then do profile and admin doc creation in background
+          getIdTokenResult(user, true).then(() => {
+            Promise.all([
+              getUserProfile(user.uid).then(existingProfile => {
+                if (!existingProfile) {
+                  return createUserProfile(
+                    user.uid,
+                    user.email || '',
+                    user.displayName || user.email?.split('@')[0] || 'User',
+                    user.photoURL || undefined
+                  ).then(() => {
+                    console.log('User profile created on login');
+                  });
+                }
+              }).catch(err => {
+                const isOfflineError = err?.code === 'unavailable' || 
+                                      err?.message?.includes('offline');
+                if (!isOfflineError) {
+                  console.error('Error ensuring user profile exists:', err);
+                }
+              }),
+              createAdminDocument(user).catch(err => {
+                console.warn('⚠️ Background admin document creation failed (non-blocking):', err);
+              })
+            ]).catch(() => {});
+          }).catch(() => {});
           
           return; // Exit early for admin users
         }
@@ -212,7 +210,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsAdmin(false);
         }
         
-        // Ensure user profile exists in background (non-blocking)
+        // Token already refreshed in checkAdmin(); ensure user profile exists in background (non-blocking)
         getUserProfile(user.uid).then(existingProfile => {
           if (!existingProfile) {
             return createUserProfile(

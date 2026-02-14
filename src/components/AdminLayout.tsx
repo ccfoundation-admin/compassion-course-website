@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface AdminLayoutProps {
@@ -10,6 +10,16 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isDashboard = location.pathname === '/admin';
+
+  const handleBack = () => {
+    if (isDashboard) {
+      navigate('/');
+    } else {
+      navigate('/admin');
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -22,11 +32,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title }) => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button
             type="button"
-            onClick={() => navigate('/admin')}
+            onClick={handleBack}
             className="btn btn-secondary"
             style={{ marginRight: '8px' }}
           >
-            ← Back
+            {isDashboard ? '← Back to site' : '← Back'}
           </button>
           <h1 style={{ margin: 0, fontSize: '1.5rem', color: '#002B4D' }}>
             {title ?? 'Admin'}

@@ -32,6 +32,13 @@ service cloud.firestore {
              request.auth.token.email == 'info@compassioncf.com';
     }
     
+    // Helper: user's profile has portal role manager or admin (for listing userProfiles in Create Team)
+    function isManagerOrAdmin() {
+      return request.auth != null &&
+             exists(/databases/$(database)/documents/userProfiles/$(request.auth.uid)) &&
+             get(/databases/$(database)/documents/userProfiles/$(request.auth.uid)).data.role in ['manager', 'admin'];
+    }
+    
     // ============================================
     // WEBSITE CONTENT (Public read, Admin write)
     // ============================================
@@ -104,8 +111,8 @@ service cloud.firestore {
     // USER PROFILES (Users can read/write their own, admins can read/write all)
     // ============================================
     
-    match /users/{userId} {
-      allow read: if request.auth != null && (isOwner(userId) || isAdminUser());
+    match /userProfiles/{userId} {
+      allow read: if request.auth != null && (isOwner(userId) || isAdminUser() || isManagerOrAdmin());
       allow create: if request.auth != null && isOwner(userId);
       // Admins can update anything; owners can update without changing role, or set mustChangePassword/updatedAt only
       allow update: if request.auth != null && (

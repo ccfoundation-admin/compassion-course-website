@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { AuthModalProvider } from './context/AuthModalContext'
 import { PermissionsProvider } from './context/PermissionsContext'
 import { ContentProvider } from './context/ContentContext'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -60,6 +61,7 @@ function App() {
       <PermissionsProvider>
         <ContentProvider>
           <Router>
+          <AuthModalProvider>
           <div className="App">
             <Routes>
               {/* Public Routes */}
@@ -227,6 +229,7 @@ function App() {
               } />
             </Routes>
           </div>
+          </AuthModalProvider>
         </Router>
       </ContentProvider>
       </PermissionsProvider>

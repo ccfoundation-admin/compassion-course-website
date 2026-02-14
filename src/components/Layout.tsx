@@ -1,6 +1,7 @@
 import React from 'react';
 import Navigation from './Navigation';
 import Footer from './Footer';
+import AuthModal from './AuthModal';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation }) => {
       {!hideNavigation && <Navigation />}
       <main className={hideNavigation ? 'main-content main-content--no-nav' : 'main-content'}>{children}</main>
       <Footer />
+      <AuthModal />
     </>
   );
 };

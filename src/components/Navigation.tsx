@@ -1,12 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAuthModal } from '../context/AuthModalContext';
+import { getUserProfile } from '../services/userProfileService';
+import type { UserProfile } from '../types/platform';
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
+  const { openAuthModal } = useAuthModal();
+
+  useEffect(() => {
+    if (!user || authLoading) {
+      setProfile(null);
+      setProfileLoading(false);
+      return;
+    }
+    setProfileLoading(true);
+    getUserProfile(user.uid)
+      .then(setProfile)
+      .catch(() => setProfile(null))
+      .finally(() => setProfileLoading(false));
+  }, [user?.uid, authLoading]);
 
   const isActive = (path: string) => location.pathname === path;
   const isInPortal = location.pathname === '/portal' || location.pathname.startsWith('/portal/');
@@ -51,6 +70,25 @@ const Navigation: React.FC = () => {
               Compass Companions
             </Link>
           </li>
+          {user && (
+            <li className="nav-item nav-item-avatar">
+              {!profileLoading && (
+                <Link to="/platform/profile" className="nav-avatar-link" aria-label="Your profile">
+                  {profile?.avatar || user.photoURL ? (
+                    <img
+                      src={profile?.avatar || user.photoURL || ''}
+                      alt=""
+                      className="nav-avatar-img"
+                    />
+                  ) : (
+                    <span className="nav-avatar-initial">
+                      {(profile?.name || user.email || '?').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </Link>
+              )}
+            </li>
+          )}
           {user && !isInPortal && (
             <li className="nav-item">
               <Link to="/portal" className="nav-link">Portal</Link>
@@ -62,7 +100,9 @@ const Navigation: React.FC = () => {
                 Logout
               </button>
             ) : (
-              <Link to="/login" className="nav-portal-btn">Portal Login</Link>
+              <button type="button" className="nav-portal-btn" onClick={openAuthModal}>
+                Portal Login
+              </button>
             )}
           </li>
         </ul>
