@@ -2,20 +2,21 @@ import React, { useState, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import {
-  listWhiteboards,
-  createWhiteboard,
-  deleteWhiteboard,
-  DEFAULT_COMPANY_ID,
-} from '../../services/whiteboardService';
+  listBoardsForTeam,
+  createBoard,
+  deleteBoard,
+} from '../../services/whiteboards/whiteboardService';
 import { getTeam } from '../../services/leadershipTeamsService';
 import { useAuth } from '../../context/AuthContext';
-import type { Whiteboard } from '../../types/whiteboard';
+import type { BoardDoc } from '../../services/whiteboards/whiteboardTypes';
+
+const DEFAULT_COMPANY_ID = 'default';
 
 const TeamWhiteboardsListPage: React.FC = () => {
   const { teamId } = useParams<{ teamId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [whiteboards, setWhiteboards] = useState<Whiteboard[]>([]);
+  const [boards, setBoards] = useState<BoardDoc[]>([]);
   const [teamName, setTeamName] = useState('');
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -23,16 +24,13 @@ const TeamWhiteboardsListPage: React.FC = () => {
 
   useEffect(() => {
     if (!teamId) return;
-    Promise.all([
-      listWhiteboards(DEFAULT_COMPANY_ID, teamId),
-      getTeam(teamId),
-    ])
+    Promise.all([listBoardsForTeam(teamId, DEFAULT_COMPANY_ID), getTeam(teamId)])
       .then(([list, team]) => {
-        setWhiteboards(list);
+        setBoards(list);
         setTeamName(team?.name ?? '');
       })
       .catch(() => {
-        setWhiteboards([]);
+        setBoards([]);
         setTeamName('');
       })
       .finally(() => setLoading(false));
@@ -42,11 +40,13 @@ const TeamWhiteboardsListPage: React.FC = () => {
     if (!teamId || !user?.uid) return;
     setCreating(true);
     try {
-      const wb = await createWhiteboard(DEFAULT_COMPANY_ID, user.uid, {
-        teamId,
+      const { boardId } = await createBoard({
+        ownerId: user.uid,
         title: 'Untitled whiteboard',
+        teamId,
+        teamCompanyId: DEFAULT_COMPANY_ID,
       });
-      navigate(`/portal/leadership/teams/${teamId}/whiteboards/${wb.id}`);
+      navigate(`/platform/whiteboards/${boardId}?teamId=${teamId}&companyId=${DEFAULT_COMPANY_ID}`);
     } catch (e) {
       console.error(e);
     } finally {
@@ -54,12 +54,12 @@ const TeamWhiteboardsListPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (wb: Whiteboard) => {
-    if (!window.confirm(`Delete "${wb.title}"?`)) return;
-    setDeletingId(wb.id);
+  const handleDelete = async (board: BoardDoc) => {
+    if (!window.confirm(`Delete "${board.title}"?`)) return;
+    setDeletingId(board.id);
     try {
-      await deleteWhiteboard(DEFAULT_COMPANY_ID, wb.id);
-      setWhiteboards((prev) => prev.filter((w) => w.id !== wb.id));
+      await deleteBoard(board.id);
+      setBoards((prev) => prev.filter((b) => b.id !== board.id));
     } catch (e) {
       console.error(e);
     } finally {
@@ -114,13 +114,13 @@ const TeamWhiteboardsListPage: React.FC = () => {
 
         {loading ? (
           <p style={{ color: '#6b7280' }}>Loading…</p>
-        ) : whiteboards.length === 0 ? (
+        ) : boards.length === 0 ? (
           <p style={{ color: '#6b7280' }}>No whiteboards yet. Create one above.</p>
         ) : (
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-            {whiteboards.map((wb) => (
+            {boards.map((board) => (
               <li
-                key={wb.id}
+                key={board.id}
                 style={{
                   background: '#fff',
                   border: '1px solid #e5e7eb',
@@ -135,14 +135,14 @@ const TeamWhiteboardsListPage: React.FC = () => {
                 }}
               >
                 <Link
-                  to={`/portal/leadership/teams/${teamId}/whiteboards/${wb.id}`}
+                  to={`/platform/whiteboards/${board.id}?teamId=${teamId}&companyId=${DEFAULT_COMPANY_ID}`}
                   style={{ color: '#002B4D', fontWeight: 600, textDecoration: 'none', flex: 1, minWidth: 0 }}
                 >
-                  {wb.title}
+                  {board.title}
                 </Link>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <Link
-                    to={`/portal/leadership/teams/${teamId}/whiteboards/${wb.id}`}
+                    to={`/platform/whiteboards/${board.id}?teamId=${teamId}&companyId=${DEFAULT_COMPANY_ID}`}
                     style={{
                       padding: '6px 12px',
                       background: '#002B4D',
@@ -156,19 +156,19 @@ const TeamWhiteboardsListPage: React.FC = () => {
                   </Link>
                   <button
                     type="button"
-                    onClick={() => handleDelete(wb)}
-                    disabled={deletingId === wb.id}
+                    onClick={() => handleDelete(board)}
+                    disabled={deletingId === board.id}
                     style={{
                       padding: '6px 12px',
                       background: '#fef2f2',
                       color: '#dc2626',
                       border: 'none',
                       borderRadius: '6px',
-                      cursor: deletingId === wb.id ? 'not-allowed' : 'pointer',
+                      cursor: deletingId === board.id ? 'not-allowed' : 'pointer',
                       fontSize: '0.9rem',
                     }}
                   >
-                    {deletingId === wb.id ? 'Deleting…' : 'Delete'}
+                    {deletingId === board.id ? 'Deleting…' : 'Delete'}
                   </button>
                 </div>
               </li>

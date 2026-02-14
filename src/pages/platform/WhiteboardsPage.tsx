@@ -1,15 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Layout from '../../components/Layout';
-import {
-  listWhiteboards,
-  createWhiteboard,
-  deleteWhiteboard,
-  DEFAULT_COMPANY_ID,
-} from '../../services/whiteboardService';
+import { createBoard, listBoardsForUser, listBoardsForTeam, deleteBoard } from '../../services/whiteboards/whiteboardService';
 import { getMemberHubConfig } from '../../services/memberHubService';
-import type { Whiteboard } from '../../types/whiteboard';
+import type { BoardDoc } from '../../services/whiteboards/whiteboardTypes';
+
+const DEFAULT_COMPANY_ID = 'default';
 
 const cardStyle: React.CSSProperties = {
   padding: '30px',
@@ -26,7 +23,10 @@ const cardStyle: React.CSSProperties = {
 const WhiteboardsPage: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [whiteboards, setWhiteboards] = useState<Whiteboard[]>([]);
+  const [searchParams] = useSearchParams();
+  const teamId = searchParams.get('teamId') ?? undefined;
+  const companyId = searchParams.get('companyId') ?? DEFAULT_COMPANY_ID;
+  const [boards, setBoards] = useState<BoardDoc[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -39,8 +39,10 @@ const WhiteboardsPage: React.FC = () => {
     (async () => {
       setLoading(true);
       try {
-        const list = await listWhiteboards(DEFAULT_COMPANY_ID);
-        if (!cancelled) setWhiteboards(list);
+        const list = teamId
+          ? await listBoardsForTeam(teamId, companyId)
+          : await listBoardsForUser(user.uid);
+        if (!cancelled) setBoards(list);
       } catch (e) {
         if (!cancelled) console.error('Failed to list whiteboards', e);
       } finally {
@@ -50,7 +52,7 @@ const WhiteboardsPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [user?.uid]);
+  }, [user?.uid, teamId, companyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -71,8 +73,13 @@ const WhiteboardsPage: React.FC = () => {
     if (!user?.uid) return;
     setCreating(true);
     try {
-      const wb = await createWhiteboard(DEFAULT_COMPANY_ID, user.uid, { title: 'Untitled whiteboard' });
-      navigate(`/platform/whiteboards/${wb.id}`);
+      const { boardId } = await createBoard({
+        ownerId: user.uid,
+        title: 'Untitled whiteboard',
+        ...(teamId ? { teamId, teamCompanyId: companyId } : {}),
+      });
+      const backQuery = teamId ? `?teamId=${teamId}&companyId=${companyId}` : '';
+      navigate(`/platform/whiteboards/${boardId}${backQuery}`);
     } catch (e) {
       console.error('Create whiteboard failed', e);
     } finally {
@@ -80,15 +87,15 @@ const WhiteboardsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (e: React.MouseEvent, wb: Whiteboard) => {
+  const handleDelete = async (e: React.MouseEvent, board: BoardDoc) => {
     e.preventDefault();
     e.stopPropagation();
-    if (wb.ownerId !== user?.uid) return;
-    if (!window.confirm(`Delete "${wb.title}"?`)) return;
-    setDeletingId(wb.id);
+    if (board.ownerId !== user?.uid) return;
+    if (!window.confirm(`Delete "${board.title}"?`)) return;
+    setDeletingId(board.id);
     try {
-      await deleteWhiteboard(DEFAULT_COMPANY_ID, wb.id);
-      setWhiteboards((prev) => prev.filter((w) => w.id !== wb.id));
+      await deleteBoard(board.id);
+      setBoards((prev) => prev.filter((b) => b.id !== board.id));
     } catch (err) {
       console.error('Delete failed', err);
     } finally {
@@ -105,6 +112,11 @@ const WhiteboardsPage: React.FC = () => {
     });
   };
 
+  const backLink = teamId
+    ? `/portal/leadership/teams/${teamId}`
+    : '/platform/whiteboards';
+  const backLabel = teamId ? 'Back to team' : 'Back';
+
   return (
     <Layout>
       <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '40px 20px' }}>
@@ -118,6 +130,9 @@ const WhiteboardsPage: React.FC = () => {
             gap: '16px',
           }}
         >
+          <Link to={backLink} style={{ color: '#002B4D', textDecoration: 'none', fontSize: '0.95rem' }}>
+            {backLabel}
+          </Link>
           <h1 style={{ color: '#002B4D', margin: 0 }}>Whiteboards</h1>
           <button
             type="button"
@@ -154,11 +169,7 @@ const WhiteboardsPage: React.FC = () => {
               href={externalWhiteboardUrl}
               target="_blank"
               rel="noopener noreferrer"
-              style={{
-                color: '#002B4D',
-                fontWeight: 600,
-                textDecoration: 'none',
-              }}
+              style={{ color: '#002B4D', fontWeight: 600, textDecoration: 'none' }}
             >
               Open shared whiteboard →
             </a>
@@ -174,12 +185,7 @@ const WhiteboardsPage: React.FC = () => {
             <iframe
               src={externalWhiteboardEmbedUrl}
               title="Shared whiteboard"
-              style={{
-                width: '100%',
-                height: '500px',
-                border: '1px solid #e5e7eb',
-                borderRadius: '12px',
-              }}
+              style={{ width: '100%', height: '500px', border: '1px solid #e5e7eb', borderRadius: '12px' }}
               sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
             />
           </div>
@@ -189,17 +195,9 @@ const WhiteboardsPage: React.FC = () => {
 
         {loading ? (
           <p style={{ color: '#6b7280' }}>Loading whiteboards…</p>
-        ) : whiteboards.length === 0 ? (
-          <div
-            style={{
-              ...cardStyle,
-              textAlign: 'center',
-              padding: '48px 24px',
-            }}
-          >
-            <p style={{ color: '#6b7280', marginBottom: '16px' }}>
-              No whiteboards yet.
-            </p>
+        ) : boards.length === 0 ? (
+          <div style={{ ...cardStyle, textAlign: 'center', padding: '48px 24px' }}>
+            <p style={{ color: '#6b7280', marginBottom: '16px' }}>No whiteboards yet.</p>
             <button
               type="button"
               onClick={handleCreate}
@@ -217,83 +215,56 @@ const WhiteboardsPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-              gap: '20px',
-            }}
-          >
-            {whiteboards.map((wb) => (
-              <div
-                key={wb.id}
-                style={{
-                  ...cardStyle,
-                  position: 'relative',
-                }}
-              >
-                <Link
-                  to={`/platform/whiteboards/${wb.id}`}
-                  style={{
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    display: 'block',
-                  }}
-                  onMouseEnter={(e) => {
-                    const target = e.currentTarget.closest('div');
-                    if (target) {
-                      target.style.borderColor = '#002B4D';
-                      target.style.transform = 'translateY(-2px)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    const target = e.currentTarget.closest('div');
-                    if (target) {
-                      target.style.borderColor = 'transparent';
-                      target.style.transform = 'translateY(0)';
-                    }
-                  }}
-                >
-                  <h2
-                    style={{
-                      color: '#002B4D',
-                      marginBottom: '8px',
-                      fontSize: '1.1rem',
-                      flex: 1,
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {boards.map((board) => {
+              const href = `/platform/whiteboards/${board.id}${teamId ? `?teamId=${teamId}&companyId=${companyId}` : ''}`;
+              return (
+                <div key={board.id} style={{ ...cardStyle, position: 'relative' }}>
+                  <Link
+                    to={href}
+                    style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}
+                    onMouseEnter={(e) => {
+                      const target = e.currentTarget.closest('div');
+                      if (target) {
+                        target.style.borderColor = '#002B4D';
+                        target.style.transform = 'translateY(-2px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      const target = e.currentTarget.closest('div');
+                      if (target) {
+                        target.style.borderColor = 'transparent';
+                        target.style.transform = 'translateY(0)';
+                      }
                     }}
                   >
-                    {wb.title}
-                  </h2>
-                  <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>
-                    Owner: {wb.ownerId}
-                  </p>
-                  <p style={{ color: '#6b7280', fontSize: '14px', margin: '4px 0 0 0' }}>
-                    Updated {formatDate(wb.updatedAt)}
-                  </p>
-                </Link>
-                {wb.ownerId === user?.uid && (
-                  <button
-                    type="button"
-                    onClick={(e) => handleDelete(e, wb)}
-                    disabled={deletingId === wb.id}
-                    style={{
-                      position: 'absolute',
-                      top: '12px',
-                      right: '12px',
-                      background: 'transparent',
-                      border: 'none',
-                      color: '#6b7280',
-                      cursor: 'pointer',
-                      padding: '4px',
-                      fontSize: '14px',
-                    }}
-                    title="Delete whiteboard"
-                  >
-                    {deletingId === wb.id ? '…' : 'Delete'}
-                  </button>
-                )}
-              </div>
-            ))}
+                    <h2 style={{ color: '#002B4D', marginBottom: '8px', fontSize: '1.1rem' }}>{board.title}</h2>
+                    <p style={{ color: '#6b7280', fontSize: '14px', margin: 0 }}>Updated {formatDate(board.updatedAt)}</p>
+                  </Link>
+                  {board.ownerId === user?.uid && (
+                    <button
+                      type="button"
+                      onClick={(e) => handleDelete(e, board)}
+                      disabled={deletingId === board.id}
+                      style={{
+                        position: 'absolute',
+                        top: '12px',
+                        right: '12px',
+                        background: 'transparent',
+                        border: 'none',
+                        color: '#6b7280',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        fontSize: '14px',
+                      }}
+                      title="Delete whiteboard"
+                    >
+                      {deletingId === board.id ? '…' : 'Delete'}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>

@@ -211,14 +211,7 @@ service cloud.firestore {
     }
     
     // ============================================
-    // WHITEBOARDS (Legacy top-level; kept for reference, new whiteboards use companies/)
-    // ============================================
-    match /whiteboards/{whiteboardId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // ============================================
-    // COMPANY WHITEBOARDS (companies/{companyId}/whiteboards/{boardId})
+    // HELPERS: company (single-tenant) and team membership
     // ============================================
     function canAccessCompany(companyId) {
       return request.auth != null;
@@ -230,6 +223,62 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/teams/$(teamId))
         && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.get('memberIds', []);
     }
+    function canReadTeam(teamId) {
+      return isTeamMember(teamId);
+    }
+
+    // ============================================
+    // WHITEBOARDS (top-level: whiteboards/{boardId}, members, state)
+    // ============================================
+    match /whiteboards/{boardId} {
+      allow read: if request.auth != null
+        && (resource.data.ownerId == request.auth.uid
+            || exists(/databases/$(database)/documents/whiteboards/$(boardId)/members/$(request.auth.uid))
+            || (resource.data.get('teamId', null) != null
+                && resource.data.teamId != ''
+                && canReadTeam(resource.data.teamId)));
+      allow create: if request.auth != null
+        && request.resource.data.ownerId == request.auth.uid
+        && (!('teamId' in request.resource.data)
+            || request.resource.data.teamId == null
+            || request.resource.data.teamId == ''
+            || canReadTeam(request.resource.data.teamId));
+      allow update, delete: if request.auth != null
+        && (resource.data.ownerId == request.auth.uid
+            || exists(/databases/$(database)/documents/whiteboards/$(boardId)/members/$(request.auth.uid))
+            || (resource.data.get('teamId', null) != null
+                && resource.data.teamId != ''
+                && canReadTeam(resource.data.teamId)));
+    }
+    match /whiteboards/{boardId}/members/{userId} {
+      allow read: if request.auth != null
+        && (get(/databases/$(database)/documents/whiteboards/$(boardId)).data.ownerId == request.auth.uid
+            || exists(/databases/$(database)/documents/whiteboards/$(boardId)/members/$(request.auth.uid))
+            || (get(/databases/$(database)/documents/whiteboards/$(boardId)).data.get('teamId', null) != null
+                && canReadTeam(get(/databases/$(database)/documents/whiteboards/$(boardId)).data.teamId)));
+      allow write: if request.auth != null
+        && (get(/databases/$(database)/documents/whiteboards/$(boardId)).data.ownerId == request.auth.uid
+            || (get(/databases/$(database)/documents/whiteboards/$(boardId)).data.get('teamId', null) != null
+                && canReadTeam(get(/databases/$(database)/documents/whiteboards/$(boardId)).data.teamId)));
+    }
+    match /whiteboards/{boardId}/state/{docId} {
+      allow read: if request.auth != null
+        && (get(/databases/$(database)/documents/whiteboards/$(boardId)).data.ownerId == request.auth.uid
+            || exists(/databases/$(database)/documents/whiteboards/$(boardId)/members/$(request.auth.uid))
+            || (get(/databases/$(database)/documents/whiteboards/$(boardId)).data.get('teamId', null) != null
+                && canReadTeam(get(/databases/$(database)/documents/whiteboards/$(boardId)).data.teamId)));
+      allow write: if request.auth != null
+        && (get(/databases/$(database)/documents/whiteboards/$(boardId)).data.ownerId == request.auth.uid
+            || (exists(/databases/$(database)/documents/whiteboards/$(boardId)/members/$(request.auth.uid))
+                && get(/databases/$(database)/documents/whiteboards/$(boardId)/members/$(request.auth.uid)).data.role in ['owner', 'editor']));
+    }
+    match /userWhiteboards/{userId}/boards/{boardId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ============================================
+    // COMPANY WHITEBOARDS (legacy companies/{companyId}/whiteboards – deprecated)
+    // ============================================
     match /companies/{companyId}/whiteboards/{boardId} {
       allow read: if canAccessCompany(companyId)
         && (!resource.exists
