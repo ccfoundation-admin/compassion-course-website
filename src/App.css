@@ -301,12 +301,12 @@ p {
 .nav-logo h2 {
     color: #1e3a8a;
     margin: 0;
-    font-size: 1.8rem;
+    font-size: 16px;
 }
 
 .nav-logo-text {
     color: #1e3a8a;
-    font-size: 1.35rem;
+    font-size: 16px;
     font-weight: 700;
     text-decoration: none;
     white-space: nowrap;
@@ -344,7 +344,7 @@ p {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 18px;
+    font-size: 16px;
 }
 
 .nav-link:hover {
@@ -356,7 +356,7 @@ p {
     background: #1e3a8a;
     color: #ffffff;
     padding: 6px 14px;
-    font-size: 13px;
+    font-size: 16px;
     border: none;
     border-radius: 6px;
     font-weight: 500;
@@ -392,7 +392,7 @@ p {
   justify-content: center;
   background: #1e3a8a;
   color: white;
-  font-size: 1rem;
+  font-size: 16px;
   font-weight: 600;
 }
 
@@ -427,7 +427,7 @@ p {
     color: #1f2937;
     text-decoration: none;
     transition: background 0.3s ease;
-    font-size: 1rem;
+    font-size: 16px;
 }
 
 .dropdown-content a:hover {
@@ -442,7 +442,7 @@ p {
 }
 
 .nav-link-portal {
-    font-size: 1rem;
+    font-size: 16px;
 }
 
 .nav-link-btn {
@@ -485,7 +485,7 @@ p {
     padding: 0.5rem 1rem;
     color: #1f2937;
     text-decoration: none;
-    font-size: 1rem;
+    font-size: 16px;
     font-weight: 500;
     text-align: left;
     background: none;
@@ -520,7 +520,7 @@ p {
     background: #1e3a8a;
     color: #fff;
     padding: 8px 16px;
-    font-size: 1rem;
+    font-size: 16px;
     font-weight: 500;
     border: none;
     border-radius: 6px;
