@@ -294,7 +294,7 @@ p {
     padding: 0 20px;
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     padding-top: 0.5rem;
 }
 
@@ -435,10 +435,108 @@ p {
     color: #3b82f6;
 }
 
-.hamburger {
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.nav-link-portal {
+    font-size: 1rem;
+}
+
+.nav-avatar-wrap {
+    flex-shrink: 0;
+}
+
+.nav-account-wrap {
+    position: relative;
+}
+
+.nav-account-dropdown {
     display: none;
-    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 0.5rem;
+    min-width: 180px;
+    background: white;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-radius: 8px;
+    padding: 0.5rem 0;
+    z-index: 1001;
+}
+
+.nav-account-wrap.nav-account-open .nav-account-dropdown {
+    display: block;
+}
+
+.nav-account-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    color: #1f2937;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: left;
+    background: none;
+    border: none;
     cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.nav-account-dropdown-item:hover {
+    background: #f8f9fa;
+    color: #3b82f6;
+}
+
+.nav-account-dropdown-btn {
+    font-family: inherit;
+}
+
+.nav-account-divider {
+    list-style: none;
+    margin: 1rem 0 0.5rem;
+    padding: 0;
+}
+
+.nav-account-divider-line {
+    display: block;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.nav-account-btn {
+    display: inline-block;
+    background: #1e3a8a;
+    color: #fff;
+    padding: 8px 16px;
+    font-size: 1rem;
+    font-weight: 500;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.nav-account-btn:hover {
+    background: #1e40af;
+}
+
+/* Hide account items in main nav on desktop; they appear in dropdown */
+.nav-menu-account-item {
+    display: none;
+}
+
+.hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    cursor: pointer;
+    padding: 4px;
+    background: none;
+    border: none;
 }
 
 .bar {
@@ -1342,6 +1440,14 @@ section {
 
     .nav-item {
         margin: 1rem 0;
+    }
+
+    .nav-menu-account-item {
+        display: list-item;
+    }
+
+    .nav-account-dropdown {
+        display: none !important;
     }
 
     .hamburger {
