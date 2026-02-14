@@ -39,7 +39,7 @@ const TeamBoardsListPage: React.FC = () => {
     <Layout>
       <div style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 20px' }}>
         <Link
-          to="/portal/leadership/dashboard"
+          to="/portal/leadership"
           style={{ color: '#002B4D', textDecoration: 'none', marginBottom: '20px', display: 'inline-block' }}
         >
           ← Back

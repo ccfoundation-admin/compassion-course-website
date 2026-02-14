@@ -173,7 +173,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
         >
           ← Back to Leadership Portal
         </Link>
-        <h1 style={{ color: '#002B4D', marginBottom: '10px' }}>Main backlog</h1>
+        <h1 style={{ color: '#002B4D', marginBottom: '10px' }}>Backlog</h1>
         <p style={{ color: '#6b7280', fontSize: '1rem', marginBottom: '20px' }}>
           Tasks not yet assigned to a team. Assign to a team (and optionally a member) to move them to that team’s backlog.
         </p>

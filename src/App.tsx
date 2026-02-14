@@ -25,7 +25,6 @@ import BacklogPage from './pages/BacklogPage'
 import CompassionCourseUniversityPage from './pages/CompassionCourseUniversityPage'
 import LibraryPage from './pages/LibraryPage'
 import LeadershipPortalPage from './pages/LeadershipPortalPage'
-import LeadershipDashboardPage from './pages/leadership/LeadershipDashboardPage'
 import TeamBoardsListPage from './pages/leadership/TeamBoardsListPage'
 import CreateTeamPage from './pages/leadership/CreateTeamPage'
 import LeadershipMainBacklogPage from './pages/leadership/LeadershipMainBacklogPage'
@@ -106,11 +105,7 @@ function App() {
                   <LeadershipPortalPage />
                 </LeadershipProtectedRoute>
               } />
-              <Route path="/portal/leadership/dashboard" element={
-                <LeadershipProtectedRoute>
-                  <LeadershipDashboardPage />
-                </LeadershipProtectedRoute>
-              } />
+              <Route path="/portal/leadership/dashboard" element={<Navigate to="/portal/leadership" replace />} />
               <Route path="/portal/leadership/backlog" element={
                 <LeadershipProtectedRoute>
                   <LeadershipMainBacklogPage />
