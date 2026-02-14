@@ -211,14 +211,29 @@ service cloud.firestore {
     }
     
     // ============================================
-    // WHITEBOARDS (site-scoped; authenticated read, admin write)
+    // WHITEBOARDS (authenticated read; admin or team member write for team boards)
     // ============================================
     function isSignedIn() {
       return request.auth != null;
     }
+    function isTeamMember(teamId) {
+      return request.auth != null
+        && teamId != null
+        && teamId != ''
+        && exists(/databases/$(database)/documents/teams/$(teamId))
+        && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.get('memberIds', []);
+    }
     match /whiteboards/{boardId} {
       allow get, list: if isSignedIn();
-      allow create, update, delete: if isAdmin();
+      allow create: if isAdmin()
+        || (isSignedIn()
+            && request.resource.data.get('teamId', null) != null
+            && request.resource.data.teamId != ''
+            && isTeamMember(request.resource.data.teamId));
+      allow update, delete: if isAdmin()
+        || (resource.data.get('teamId', null) != null
+            && resource.data.teamId != ''
+            && isTeamMember(resource.data.teamId));
     }
 
     // ============================================

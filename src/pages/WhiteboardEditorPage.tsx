@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import { getWhiteboard, updateWhiteboard } from '../services/whiteboardService';
+import { getTeam } from '../services/leadershipTeamsService';
 import { ExcalidrawShell } from '../components/whiteboard/ExcalidrawShell';
 import type { ExcalidrawAPI } from '../components/whiteboard/ExcalidrawShell';
 
@@ -19,12 +20,14 @@ function normalizeInitialData(canvasState: { elements?: unknown[]; appState?: Re
 
 const WhiteboardEditorPage: React.FC = () => {
   const { boardId } = useParams<{ boardId: string }>();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin } = useAuth();
   const [board, setBoard] = useState<Awaited<ReturnType<typeof getWhiteboard>>>(null);
+  const [canEdit, setCanEdit] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [linkCopied, setLinkCopied] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const excalidrawApiRef = useRef<ExcalidrawAPI | null>(null);
 
@@ -42,6 +45,16 @@ const WhiteboardEditorPage: React.FC = () => {
         }
         setBoard(doc);
         setTitle(doc.title);
+        if (!doc.teamId) {
+          setCanEdit(isAdmin);
+          return;
+        }
+        getTeam(doc.teamId).then((team) => {
+          if (cancelled) return;
+          setCanEdit(isAdmin || (team != null && user?.uid != null && team.memberIds.includes(user.uid)));
+        }).catch(() => {
+          if (!cancelled) setCanEdit(isAdmin);
+        });
       })
       .catch((e) => {
         if (!cancelled) {
@@ -54,11 +67,11 @@ const WhiteboardEditorPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, [boardId]);
+  }, [boardId, isAdmin, user?.uid]);
 
   const persistState = useCallback(async () => {
     if (!board || !boardId || !excalidrawApiRef.current) return;
-    if (!isAdmin) return;
+    if (!canEdit) return;
     setSaveStatus('saving');
     try {
       const api = excalidrawApiRef.current;
@@ -71,21 +84,30 @@ const WhiteboardEditorPage: React.FC = () => {
     } catch (e) {
       setSaveStatus('error');
     }
-  }, [board, boardId, isAdmin]);
+  }, [board, boardId, canEdit]);
 
   const handleChange = useCallback(() => {
-    if (!isAdmin) return;
+    if (!canEdit) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
       persistState();
     }, 1000);
-  }, [isAdmin, persistState]);
+  }, [canEdit, persistState]);
 
   const handleTitleBlur = useCallback(() => {
-    if (!isAdmin || !boardId || title === (board?.title ?? '')) return;
+    if (!canEdit || !boardId || title === (board?.title ?? '')) return;
     updateWhiteboard(boardId, { title }).catch(() => {});
-  }, [isAdmin, boardId, title, board?.title]);
+  }, [canEdit, boardId, title, board?.title]);
+
+  const handleCopyShareableLink = useCallback(() => {
+    if (!boardId) return;
+    const url = `${window.location.origin}/whiteboards/${boardId}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    });
+  }, [boardId]);
 
   if (!boardId) {
     return (
@@ -128,7 +150,7 @@ const WhiteboardEditorPage: React.FC = () => {
           <Link to="/whiteboards" style={{ color: '#002B4D', textDecoration: 'none', fontWeight: 500 }}>
             ← Back to Whiteboards
           </Link>
-          {isAdmin ? (
+          {canEdit ? (
             <input
               type="text"
               value={title}
@@ -147,7 +169,22 @@ const WhiteboardEditorPage: React.FC = () => {
           ) : (
             <span style={{ fontWeight: 600, color: '#002B4D' }}>{board.title}</span>
           )}
-          {isAdmin && (
+          <button
+            type="button"
+            onClick={handleCopyShareableLink}
+            style={{
+              padding: '6px 12px',
+              background: '#f3f4f6',
+              color: '#374151',
+              border: 'none',
+              borderRadius: '6px',
+              fontSize: '0.875rem',
+              cursor: 'pointer',
+            }}
+          >
+            {linkCopied ? 'Link copied!' : 'Copy shareable link'}
+          </button>
+          {canEdit && (
             <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
               {saveStatus === 'saving' && 'Saving…'}
               {saveStatus === 'saved' && 'Saved'}
@@ -159,7 +196,7 @@ const WhiteboardEditorPage: React.FC = () => {
       <div style={{ height: 'calc(100vh - 120px)', minHeight: '400px' }}>
         <ExcalidrawShell
           initialData={initialData}
-          viewModeEnabled={!isAdmin}
+          viewModeEnabled={!canEdit}
           onReady={(api) => {
             excalidrawApiRef.current = api;
           }}
