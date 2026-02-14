@@ -156,6 +156,11 @@ const LeadershipPortalPage: React.FC = () => {
     return m;
   }, [allTeams]);
 
+  const blockedItems = useMemo(
+    () => workItems.filter((w) => w.blocked === true),
+    [workItems]
+  );
+
   const loadNotifications = () => {
     if (!user?.uid) return;
     setNotificationsLoading(true);
@@ -309,7 +314,37 @@ const LeadershipPortalPage: React.FC = () => {
               {/* Blocked Tasks */}
               <div style={widgetStyle}>
                 <h2 style={cardTitleStyle}>Blocked Tasks</h2>
-                <p style={{ ...secondaryTextStyle, margin: 0 }}>No blocked tasks.</p>
+                {blockedItems.length === 0 ? (
+                  <p style={{ ...secondaryTextStyle, margin: 0 }}>No blocked tasks.</p>
+                ) : (
+                  <>
+                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                      {blockedItems.slice(0, 8).map((w) => {
+                        const teamName = w.teamId ? teamNameById.get(w.teamId) : null;
+                        const subtitle = teamName
+                          ? `Task · ${teamName}`
+                          : `Work item · ${w.status.replace('_', ' ')}`;
+                        const targetUrl = w.teamId
+                          ? `/portal/leadership/teams/${w.teamId}/board`
+                          : '/portal/leadership/teams';
+                        return (
+                          <li key={w.id} style={{ padding: '6px 0', borderBottom: '1px solid #e5e7eb' }}>
+                            <Link to={targetUrl} style={linkStyle}>
+                              {w.title}
+                            </Link>
+                            <span style={{ ...secondaryTextStyle, marginLeft: '6px' }}>({subtitle})</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    <Link
+                      to="/portal/leadership/teams"
+                      style={{ ...linkStyle, display: 'inline-block', marginTop: '12px', fontSize: '0.875rem' }}
+                    >
+                      View on board →
+                    </Link>
+                  </>
+                )}
               </div>
 
               {/* Backlog link card */}
