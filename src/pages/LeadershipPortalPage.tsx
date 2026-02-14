@@ -242,6 +242,9 @@ const LeadershipPortalPage: React.FC = () => {
                 ) : notificationsLoadFailed ? (
                   <>
                     <p style={{ ...secondaryTextStyle, margin: 0 }}>Couldn't load messages.</p>
+                    <p style={{ ...secondaryTextStyle, margin: '8px 0 0', fontSize: '0.8rem' }}>
+                      If you manage this project, deploy Firestore indexes: firebase deploy --only firestore:indexes
+                    </p>
                     <button
                       type="button"
                       onClick={loadNotifications}

@@ -103,19 +103,35 @@ export async function createMentionNotifications(
   );
 }
 
+function isIndexOrQueryError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  const code = (err as { code?: string }).code;
+  const message = String((err as { message?: string }).message ?? '');
+  return code === 'failed-precondition' || /index|indexes/i.test(message);
+}
+
 export async function listNotificationsForUser(
   userId: string,
   limitCount: number = 20
 ): Promise<UserNotification[]> {
   const ref = collection(db, COLLECTION);
-  const q = query(
+  const primaryQuery = query(
     ref,
     where('userId', '==', userId),
     orderBy('createdAt', 'desc'),
     limit(limitCount)
   );
-  const snap = await getDocs(q);
-  return snap.docs.map((d) => fromDoc(d.id, d.data()));
+  try {
+    const snap = await getDocs(primaryQuery);
+    return snap.docs.map((d) => fromDoc(d.id, d.data()));
+  } catch (primaryErr) {
+    if (!isIndexOrQueryError(primaryErr)) throw primaryErr;
+    const fallbackQuery = query(ref, where('userId', '==', userId), limit(limitCount));
+    const fallbackSnap = await getDocs(fallbackQuery);
+    const list = fallbackSnap.docs.map((d) => fromDoc(d.id, d.data()));
+    list.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    return list;
+  }
 }
 
 export async function markNotificationRead(notificationId: string): Promise<void> {
