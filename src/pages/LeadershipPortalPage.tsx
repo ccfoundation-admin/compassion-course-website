@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
@@ -72,12 +72,15 @@ const LeadershipPortalPage: React.FC = () => {
   const [workItems, setWorkItems] = useState<LeadershipWorkItem[]>([]);
   const [allBlockedItems, setAllBlockedItems] = useState<LeadershipWorkItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [notificationsPermissionDenied, setNotificationsPermissionDenied] = useState(false);
+  const dashboardPermissionDeniedRef = useRef(false);
 
   useEffect(() => {
     if (!user?.uid) {
       setNotifications([]);
       setNotificationsLoading(false);
       setNotificationsLoadFailed(false);
+      setNotificationsPermissionDenied(false);
       setTeams([]);
       setAllTeams([]);
       setWorkItems([]);
@@ -102,28 +105,40 @@ const LeadershipPortalPage: React.FC = () => {
         const r2 = results[2];
         const r3 = results[3];
         const r4 = results[4];
+        const isPermissionDenied = (r: PromiseSettledResult<unknown>) =>
+          r?.status === 'rejected' &&
+          ((r as PromiseRejectedResult).reason?.code === 'permission-denied' ||
+            (r as PromiseRejectedResult).reason?.code === 'PERMISSION_DENIED');
+        const anyPermissionDenied =
+          isPermissionDenied(r0) || isPermissionDenied(r1) || isPermissionDenied(r2) || isPermissionDenied(r3) || isPermissionDenied(r4);
+        if (anyPermissionDenied && !dashboardPermissionDeniedRef.current) {
+          dashboardPermissionDeniedRef.current = true;
+          console.error('Dashboard load failed: permission denied (check Firestore rules).');
+        }
         if (r0.status === 'fulfilled') {
           setNotifications(r0.value);
           setNotificationsLoadFailed(false);
+          setNotificationsPermissionDenied(false);
         } else {
-          console.error('Dashboard load item failed:', 0, r0.reason);
+          if (!isPermissionDenied(r0)) console.error('Dashboard load item failed:', 0, r0.reason);
           setNotifications([]);
           setNotificationsLoadFailed(true);
+          if (isPermissionDenied(r0)) setNotificationsPermissionDenied(true);
         }
         if (r1.status === 'fulfilled') {
           setTeams(r1.value);
         } else {
-          console.error('Dashboard load item failed:', 1, r1.reason);
+          if (!isPermissionDenied(r1)) console.error('Dashboard load item failed:', 1, r1.reason);
           setTeams([]);
         }
         if (r2.status === 'fulfilled') {
           setAllTeams(r2.value);
         } else {
-          console.error('Dashboard load item failed:', 2, r2.reason);
+          if (!isPermissionDenied(r2)) console.error('Dashboard load item failed:', 2, r2.reason);
           setAllTeams([]);
         }
         let finalItems: LeadershipWorkItem[] = r3.status === 'fulfilled' ? r3.value : [];
-        if (r3.status === 'rejected') {
+        if (r3.status === 'rejected' && !isPermissionDenied(r3)) {
           console.error('Dashboard load item failed:', 3, r3.reason);
         }
         const teamList = r1.status === 'fulfilled' ? r1.value : [];
@@ -142,7 +157,7 @@ const LeadershipPortalPage: React.FC = () => {
           if (r4.status === 'fulfilled') {
             setAllBlockedItems(r4.value);
           } else {
-            console.error('Dashboard load item failed:', 4, r4?.reason);
+            if (!isPermissionDenied(r4)) console.error('Dashboard load item failed:', 4, r4?.reason);
             setAllBlockedItems([]);
           }
           setWorkItems(finalItems);
@@ -175,9 +190,17 @@ const LeadershipPortalPage: React.FC = () => {
       .then((data) => {
         setNotifications(data);
         setNotificationsLoadFailed(false);
+        setNotificationsPermissionDenied(false);
       })
       .catch((err) => {
-        console.error('Notifications load failed:', err);
+        const permissionDenied =
+          err?.code === 'permission-denied' || err?.code === 'PERMISSION_DENIED';
+        if (permissionDenied) {
+          setNotificationsPermissionDenied(true);
+          console.error('Notifications load failed: permission denied (check Firestore rules for userNotifications).');
+        } else {
+          console.error('Notifications load failed:', err);
+        }
         setNotifications([]);
         setNotificationsLoadFailed(true);
       })
@@ -239,6 +262,10 @@ const LeadershipPortalPage: React.FC = () => {
                 <h2 style={cardTitleStyle}>My Messages</h2>
                 {notificationsLoading ? (
                   <p style={{ ...secondaryTextStyle, margin: 0 }}>Loading…</p>
+                ) : notificationsPermissionDenied ? (
+                  <p style={{ ...secondaryTextStyle, margin: 0 }}>
+                    You don't have permission to load messages. Check Firestore rules for userNotifications.
+                  </p>
                 ) : notificationsLoadFailed ? (
                   <>
                     <p style={{ ...secondaryTextStyle, margin: 0 }}>Couldn't load messages.</p>
