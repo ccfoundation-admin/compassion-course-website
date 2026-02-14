@@ -238,7 +238,6 @@ const WhiteboardEditorPage: React.FC = () => {
             <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
               {saveStatus === 'saving' && 'Saving…'}
               {saveStatus === 'saved' && 'Saved'}
-              {saveStatus === 'failed' && 'Save failed'}
             </span>
           )}
         </div>
