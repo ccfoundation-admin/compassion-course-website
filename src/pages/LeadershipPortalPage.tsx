@@ -265,18 +265,26 @@ const LeadershipPortalPage: React.FC = () => {
                 </p>
               </Link>
 
-              {/* Teams link card */}
-              <Link
-                to="/portal/leadership/teams"
-                style={{ ...linkCardStyle, maxWidth: '320px' }}
-                onMouseEnter={(e) => linkCardHover(e, false)}
-                onMouseLeave={(e) => linkCardHover(e, false)}
-              >
-                <h2 style={{ color: '#002B4D', marginBottom: '6px', fontSize: '1.1rem' }}>Teams</h2>
-                <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: 0 }}>
-                  Team Kanban board and team pages.
-                </p>
-              </Link>
+              {/* My Teams */}
+              <div style={widgetStyle}>
+                <h2 style={cardTitleStyle}>My Teams</h2>
+                {teams.length === 0 ? (
+                  <p style={{ ...secondaryTextStyle, margin: 0 }}>No teams yet.</p>
+                ) : (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                    {teams.map((t) => (
+                      <li key={t.id} style={{ padding: '6px 0' }}>
+                        <Link to={`/portal/leadership/teams/${t.id}`} style={linkStyle}>
+                          {t.name}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <Link to="/portal/leadership/teams" style={{ ...buttonStyle, marginTop: '16px' }}>
+                  View all teams
+                </Link>
+              </div>
 
               {isAdmin && (
                 <Link
@@ -305,27 +313,6 @@ const LeadershipPortalPage: React.FC = () => {
                   </p>
                 </Link>
               )}
-            </div>
-
-            {/* Teams section (list) */}
-            <div style={{ ...widgetStyle, marginBottom: '24px' }}>
-              <h2 style={cardTitleStyle}>Teams</h2>
-              {teams.length === 0 ? (
-                <p style={{ ...secondaryTextStyle, margin: 0 }}>No teams yet.</p>
-              ) : (
-                <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                  {teams.map((t) => (
-                    <li key={t.id} style={{ padding: '6px 0' }}>
-                      <Link to={`/portal/leadership/teams/${t.id}`} style={linkStyle}>
-                        {t.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              <Link to="/portal/leadership/teams" style={{ ...buttonStyle, marginTop: '16px' }}>
-                View all teams
-              </Link>
             </div>
           </>
         )}
