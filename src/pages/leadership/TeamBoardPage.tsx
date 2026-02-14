@@ -16,13 +16,21 @@ import Layout from '../../components/Layout';
 import { listWorkItems, updateWorkItem, createWorkItem } from '../../services/leadershipWorkItemsService';
 import { getTeam } from '../../services/leadershipTeamsService';
 import { getUserProfile } from '../../services/userProfileService';
-import type { LeadershipWorkItem, WorkItemStatus } from '../../types/leadership';
+import TaskForm, { type TaskFormPayload } from '../../components/leadership/TaskForm';
+import type { LeadershipWorkItem, WorkItemStatus, WorkItemLane } from '../../types/leadership';
 
 const COLUMNS: { id: WorkItemStatus; label: string; barColor: string }[] = [
   { id: 'backlog', label: 'Backlog', barColor: '#8b5cf6' },
   { id: 'todo', label: 'Planned work', barColor: '#f59e0b' },
   { id: 'in_progress', label: 'In Progress', barColor: '#22c55e' },
   { id: 'done', label: 'Done', barColor: '#4b5563' },
+];
+
+const LANES: { id: WorkItemLane; label: string }[] = [
+  { id: 'expedited', label: 'Expedited' },
+  { id: 'fixed_date', label: 'Fixed Date' },
+  { id: 'standard', label: 'Standard' },
+  { id: 'intangible', label: 'Intangible' },
 ];
 
 function CardContent({
@@ -102,10 +110,9 @@ const TeamBoardPage: React.FC = () => {
   const [memberIds, setMemberIds] = useState<string[]>([]);
   const [memberLabels, setMemberLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
-  const [showAddItem, setShowAddItem] = useState(false);
-  const [addItemTitle, setAddItemTitle] = useState('');
-  const [addItemAssigneeId, setAddItemAssigneeId] = useState('');
-  const [addingItem, setAddingItem] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [createDefaultLane, setCreateDefaultLane] = useState<WorkItemLane>('standard');
+  const [editingItem, setEditingItem] = useState<LeadershipWorkItem | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -143,57 +150,81 @@ const TeamBoardPage: React.FC = () => {
     loadBoard();
   }, [teamId]);
 
-  const moveItem = async (itemId: string, newStatus: WorkItemStatus) => {
-    try {
-      await updateWorkItem(itemId, { status: newStatus });
-      setWorkItems((prev) =>
-        prev.map((w) => (w.id === itemId ? { ...w, status: newStatus } : w))
-      );
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const handleDragStart = (e: DragStartEvent) => {
     setActiveId(e.active.id as string);
   };
 
-  const handleDragEnd = (e: DragEndEvent) => {
+  const handleDragEnd = async (e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
     if (!over || typeof active.id !== 'string') return;
-    const status = COLUMNS.find((c) => c.id === over.id)?.id;
-    if (status && active.id.startsWith('item-')) {
-      const itemId = active.id.replace(/^item-/, '');
-      moveItem(itemId, status);
+    const overStr = String(over.id);
+    if (!active.id.startsWith('item-')) return;
+    const itemId = (active.id as string).replace(/^item-/, '');
+    const match = overStr.match(/^(.+)-(backlog|todo|in_progress|done)$/);
+    if (match) {
+      const [, laneId, statusId] = match;
+      const status = statusId as WorkItemStatus;
+      const lane = LANES.some((l) => l.id === laneId) ? (laneId as WorkItemLane) : undefined;
+      try {
+        await updateWorkItem(itemId, { status, ...(lane ? { lane } : {}) });
+        setWorkItems((prev) =>
+          prev.map((w) =>
+            w.id === itemId ? { ...w, status, ...(lane ? { lane } : {}) } : w
+          )
+        );
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
-  const handleAddItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const title = addItemTitle.trim();
-    if (!title || !teamId) return;
-    setAddingItem(true);
+  const handleCreateSave = async (data: TaskFormPayload) => {
+    if (!teamId) return;
     try {
       await createWorkItem({
-        title,
+        title: data.title,
+        description: data.description,
         teamId,
-        status: 'backlog',
-        assigneeId: addItemAssigneeId || undefined,
+        status: data.status,
+        lane: data.lane,
+        estimate: data.estimate,
+        blocked: data.blocked,
+        assigneeId: data.assigneeId,
+        comments: data.comments,
       });
-      setAddItemTitle('');
-      setAddItemAssigneeId('');
-      setShowAddItem(false);
+      setShowCreateForm(false);
+      setCreateDefaultLane('standard');
       await loadBoard();
     } catch (err) {
       console.error(err);
-    } finally {
-      setAddingItem(false);
     }
   };
 
-  const byStatus = (status: WorkItemStatus) =>
-    workItems.filter((w) => w.status === status);
+  const handleEditSave = async (data: TaskFormPayload) => {
+    if (!editingItem) return;
+    try {
+      await updateWorkItem(editingItem.id, {
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        lane: data.lane,
+        estimate: data.estimate,
+        blocked: data.blocked,
+        assigneeId: data.assigneeId,
+        comments: data.comments,
+      });
+      setEditingItem(null);
+      await loadBoard();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const itemsForCell = (laneId: WorkItemLane, status: WorkItemStatus) =>
+    workItems.filter(
+      (w) => (w.lane ?? 'standard') === laneId && w.status === status
+    );
 
   const getAssigneeName = (assigneeId: string | undefined) =>
     assigneeId ? memberLabels[assigneeId] ?? assigneeId : null;
@@ -268,41 +299,63 @@ const TeamBoardPage: React.FC = () => {
           <p style={{ color: '#6b7280' }}>Loading…</p>
         ) : (
           <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
-              <div
-                style={{
-                  width: '100px',
-                  flexShrink: 0,
-                  paddingTop: '48px',
-                  fontSize: '0.85rem',
-                  fontWeight: 600,
-                  color: '#374151',
-                }}
-              >
-                STANDARD
-              </div>
-              <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '16px', flex: 1, minWidth: 0 }}>
-                {COLUMNS.map((col) => (
-                  <Column
-                    key={col.id}
-                    column={col}
-                    items={byStatus(col.id)}
-                    memberLabels={memberLabels}
-                    teamId={teamId}
-                    isBacklog={col.id === 'backlog'}
-                    showAddItem={showAddItem}
-                    setShowAddItem={setShowAddItem}
-                    addItemTitle={addItemTitle}
-                    setAddItemTitle={setAddItemTitle}
-                    addItemAssigneeId={addItemAssigneeId}
-                    setAddItemAssigneeId={setAddItemAssigneeId}
-                    memberIds={memberIds}
-                    addingItem={addingItem}
-                    onAddItem={handleAddItem}
-                  />
-                ))}
-              </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {LANES.map((lane) => (
+                <div key={lane.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+                  <div
+                    style={{
+                      width: '100px',
+                      flexShrink: 0,
+                      paddingTop: '48px',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      color: '#374151',
+                    }}
+                  >
+                    {lane.label}
+                  </div>
+                  <div style={{ display: 'flex', gap: '16px', overflowX: 'auto', paddingBottom: '16px', flex: 1, minWidth: 0 }}>
+                    {COLUMNS.map((col) => (
+                      <BoardCell
+                        key={`${lane.id}-${col.id}`}
+                        laneId={lane.id}
+                        column={col}
+                        items={itemsForCell(lane.id, col.id)}
+                        memberLabels={memberLabels}
+                        teamId={teamId}
+                        memberIds={memberIds}
+                        onAddItem={() => { setCreateDefaultLane(lane.id); setShowCreateForm(true); }}
+                        onEditItem={setEditingItem}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
+
+            {showCreateForm && (
+              <TaskForm
+                mode="create"
+                defaultLane={createDefaultLane}
+                teamId={teamId}
+                teamMemberIds={memberIds}
+                memberLabels={memberLabels}
+                initialItem={undefined}
+                onSave={handleCreateSave}
+                onCancel={() => { setShowCreateForm(false); setCreateDefaultLane('standard'); }}
+              />
+            )}
+            {editingItem && (
+              <TaskForm
+                mode="edit"
+                initialItem={editingItem}
+                teamId={teamId}
+                teamMemberIds={memberIds}
+                memberLabels={memberLabels}
+                onSave={handleEditSave}
+                onCancel={() => setEditingItem(null)}
+              />
+            )}
 
             <DragOverlay>
               {activeItem ? (
@@ -331,53 +384,53 @@ const TeamBoardPage: React.FC = () => {
 function DraggableCard({
   item,
   assigneeName,
+  onEdit,
 }: {
   item: LeadershipWorkItem;
   assigneeName: string | null;
+  onEdit: (item: LeadershipWorkItem) => void;
 }) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
     id: `item-${item.id}`,
     data: { item },
   });
   return (
-    <div ref={setNodeRef} {...listeners} {...attributes}>
+    <div
+      ref={setNodeRef}
+      {...listeners}
+      {...attributes}
+      onClick={(e) => { e.stopPropagation(); onEdit(item); }}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => e.key === 'Enter' && onEdit(item)}
+    >
       <WorkItemCard item={item} assigneeName={assigneeName} isDragging={isDragging} />
     </div>
   );
 }
 
-function Column({
+function BoardCell({
+  laneId,
   column,
   items,
   memberLabels,
   teamId,
-  isBacklog,
-  showAddItem,
-  setShowAddItem,
-  addItemTitle,
-  setAddItemTitle,
-  addItemAssigneeId,
-  setAddItemAssigneeId,
   memberIds,
-  addingItem,
   onAddItem,
+  onEditItem,
 }: {
+  laneId: WorkItemLane;
   column: (typeof COLUMNS)[0];
   items: LeadershipWorkItem[];
   memberLabels: Record<string, string>;
   teamId: string;
-  isBacklog: boolean;
-  showAddItem: boolean;
-  setShowAddItem: (v: boolean) => void;
-  addItemTitle: string;
-  setAddItemTitle: (v: string) => void;
-  addItemAssigneeId: string;
-  setAddItemAssigneeId: (v: string) => void;
   memberIds: string[];
-  addingItem: boolean;
-  onAddItem: (e: React.FormEvent) => void;
+  onAddItem: () => void;
+  onEditItem: (item: LeadershipWorkItem) => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+  const droppableId = `${laneId}-${column.id}`;
+  const { setNodeRef, isOver } = useDroppable({ id: droppableId });
+  const isBacklog = column.id === 'backlog';
 
   return (
     <div
@@ -396,62 +449,30 @@ function Column({
         {column.label}
       </h3>
       {isBacklog && (
-        <>
-          {showAddItem ? (
-            <form onSubmit={onAddItem} style={{ marginBottom: '12px' }}>
-              <input
-                type="text"
-                value={addItemTitle}
-                onChange={(e) => setAddItemTitle(e.target.value)}
-                placeholder="Title"
-                autoFocus
-                style={{ width: '100%', padding: '8px 10px', marginBottom: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px' }}
-              />
-              <select
-                value={addItemAssigneeId}
-                onChange={(e) => setAddItemAssigneeId(e.target.value)}
-                style={{ width: '100%', padding: '8px 10px', marginBottom: '8px', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '14px' }}
-              >
-                <option value="">No assignee</option>
-                {memberIds.map((id) => (
-                  <option key={id} value={id}>{memberLabels[id] || id}</option>
-                ))}
-              </select>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button type="submit" className="btn btn-primary" disabled={addingItem} style={{ padding: '6px 12px', fontSize: '0.85rem' }}>
-                  {addingItem ? 'Adding…' : 'Add'}
-                </button>
-                <button type="button" className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => { setShowAddItem(false); setAddItemTitle(''); setAddItemAssigneeId(''); }}>
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowAddItem(true)}
-              style={{
-                width: '100%',
-                padding: '16px',
-                marginBottom: '12px',
-                border: '2px dashed #d1d5db',
-                borderRadius: '8px',
-                background: '#fff',
-                color: '#6b7280',
-                fontSize: '0.9rem',
-                cursor: 'pointer',
-              }}
-            >
-              Add Item
-            </button>
-          )}
-        </>
+        <button
+          type="button"
+          onClick={onAddItem}
+          style={{
+            width: '100%',
+            padding: '16px',
+            marginBottom: '12px',
+            border: '2px dashed #d1d5db',
+            borderRadius: '8px',
+            background: '#fff',
+            color: '#6b7280',
+            fontSize: '0.9rem',
+            cursor: 'pointer',
+          }}
+        >
+          Add Item
+        </button>
       )}
       {items.map((item) => (
         <DraggableCard
           key={item.id}
           item={item}
           assigneeName={memberLabels[item.assigneeId!] ?? item.assigneeId ?? null}
+          onEdit={onEditItem}
         />
       ))}
     </div>

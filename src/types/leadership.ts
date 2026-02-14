@@ -19,6 +19,18 @@ export interface LeadershipTeam {
 
 export type WorkItemStatus = 'backlog' | 'todo' | 'in_progress' | 'done';
 
+export type WorkItemType = 'task';
+
+export type WorkItemLane = 'expedited' | 'fixed_date' | 'standard' | 'intangible';
+
+export interface WorkItemComment {
+  id: string;
+  userId: string;
+  userName?: string;
+  text: string;
+  createdAt: Date;
+}
+
 export interface LeadershipWorkItem {
   id: string;
   title: string;
@@ -28,6 +40,10 @@ export interface LeadershipWorkItem {
   status: WorkItemStatus;
   dueDate?: Date;
   blocked?: boolean;
+  type?: WorkItemType;
+  lane?: WorkItemLane;
+  estimate?: number;
+  comments?: WorkItemComment[];
   createdAt: Date;
   updatedAt: Date;
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import TaskForm, { type TaskFormPayload } from '../../components/leadership/TaskForm';
 import { getTeam } from '../../services/leadershipTeamsService';
 import {
   getWorkingAgreementsByTeam,
@@ -32,8 +33,8 @@ const LeadershipTeamPage: React.FC = () => {
   const [memberLabels, setMemberLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [savingAgreements, setSavingAgreements] = useState(false);
-  const [newBacklogTitle, setNewBacklogTitle] = useState('');
-  const [showAddBacklog, setShowAddBacklog] = useState(false);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingBacklogItem, setEditingBacklogItem] = useState<LeadershipWorkItem | null>(null);
 
   useEffect(() => {
     if (!teamId) return;
@@ -125,18 +126,41 @@ const LeadershipTeamPage: React.FC = () => {
     }
   };
 
-  const handleAddToBacklog = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const title = newBacklogTitle.trim();
-    if (!title || !teamId) return;
+  const handleCreateBacklogSave = async (data: TaskFormPayload) => {
+    if (!teamId) return;
     try {
       await createWorkItem({
-        title,
+        title: data.title,
+        description: data.description,
         teamId,
-        status: 'backlog',
+        status: data.status,
+        lane: data.lane,
+        estimate: data.estimate,
+        blocked: data.blocked,
+        assigneeId: data.assigneeId,
+        comments: data.comments,
       });
-      setNewBacklogTitle('');
-      setShowAddBacklog(false);
+      setShowCreateForm(false);
+      loadBacklog();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEditBacklogSave = async (data: TaskFormPayload) => {
+    if (!editingBacklogItem) return;
+    try {
+      await updateWorkItem(editingBacklogItem.id, {
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        lane: data.lane,
+        estimate: data.estimate,
+        blocked: data.blocked,
+        assigneeId: data.assigneeId,
+        comments: data.comments,
+      });
+      setEditingBacklogItem(null);
       loadBacklog();
     } catch (err) {
       console.error(err);
@@ -270,43 +294,42 @@ const LeadershipTeamPage: React.FC = () => {
               <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '12px' }}>
                 Items not yet on the board. Move to board to add to To Do.
               </p>
-              {!showAddBacklog ? (
-                <button
-                  type="button"
-                  onClick={() => setShowAddBacklog(true)}
-                  style={{
-                    padding: '8px 16px',
-                    background: '#e5e7eb',
-                    color: '#374151',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    marginBottom: '12px',
-                  }}
-                >
-                  Add to backlog
-                </button>
-              ) : (
-                <form onSubmit={handleAddToBacklog} style={{ marginBottom: '12px', display: 'flex', gap: '8px' }}>
-                  <input
-                    type="text"
-                    value={newBacklogTitle}
-                    onChange={(e) => setNewBacklogTitle(e.target.value)}
-                    placeholder="Task title"
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '8px',
-                    }}
-                  />
-                  <button type="submit" style={{ padding: '8px 16px', background: '#002B4D', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer' }}>
-                    Add
-                  </button>
-                  <button type="button" onClick={() => { setShowAddBacklog(false); setNewBacklogTitle(''); }} style={{ padding: '8px 16px', background: '#fff', border: '1px solid #d1d5db', borderRadius: '8px', cursor: 'pointer' }}>
-                    Cancel
-                  </button>
-                </form>
+              <button
+                type="button"
+                onClick={() => setShowCreateForm(true)}
+                style={{
+                  padding: '8px 16px',
+                  background: '#e5e7eb',
+                  color: '#374151',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  marginBottom: '12px',
+                }}
+              >
+                Add to backlog
+              </button>
+              {showCreateForm && teamId && (
+                <TaskForm
+                  mode="create"
+                  defaultLane="standard"
+                  teamId={teamId}
+                  teamMemberIds={team?.memberIds ?? []}
+                  memberLabels={memberLabels}
+                  onSave={handleCreateBacklogSave}
+                  onCancel={() => setShowCreateForm(false)}
+                />
+              )}
+              {editingBacklogItem && (
+                <TaskForm
+                  mode="edit"
+                  initialItem={editingBacklogItem}
+                  teamId={teamId}
+                  teamMemberIds={team?.memberIds ?? []}
+                  memberLabels={memberLabels}
+                  onSave={handleEditBacklogSave}
+                  onCancel={() => setEditingBacklogItem(null)}
+                />
               )}
               {backlogItems.length === 0 ? (
                 <p style={{ color: '#6b7280', margin: 0 }}>No items in team backlog.</p>
@@ -316,6 +339,13 @@ const LeadershipTeamPage: React.FC = () => {
                     <li key={item.id} style={{ marginBottom: '12px' }}>
                       <span style={{ fontWeight: 500 }}>{item.title}</span>
                       <div style={{ display: 'flex', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          onClick={() => setEditingBacklogItem(item)}
+                          style={{ padding: '4px 10px', fontSize: '0.8rem', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                        >
+                          Edit
+                        </button>
                         <button
                           type="button"
                           onClick={() => handleMoveToBoard(item.id)}

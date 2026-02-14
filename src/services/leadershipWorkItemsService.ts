@@ -12,14 +12,36 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
-import type { LeadershipWorkItem, WorkItemStatus } from '../types/leadership';
+import type { LeadershipWorkItem, WorkItemStatus, WorkItemLane, WorkItemComment } from '../types/leadership';
 
 const COLLECTION = 'leadershipWorkItems';
+
+const VALID_LANES: WorkItemLane[] = ['expedited', 'fixed_date', 'standard', 'intangible'];
+
+function parseComment(c: unknown): WorkItemComment | null {
+  if (!c || typeof c !== 'object') return null;
+  const o = c as Record<string, unknown>;
+  const id = o.id as string;
+  const userId = o.userId as string;
+  const text = o.text as string;
+  if (!id || !userId || !text) return null;
+  const createdAt = (o.createdAt as { toDate?: () => Date })?.toDate?.() ?? new Date();
+  return {
+    id,
+    userId,
+    userName: o.userName as string | undefined,
+    text,
+    createdAt,
+  };
+}
 
 function toWorkItem(docSnap: { id: string; data: () => Record<string, unknown> }): LeadershipWorkItem {
   const d = docSnap.data() ?? {};
   const status = (d.status as WorkItemStatus) ?? 'backlog';
   const validStatus: WorkItemStatus[] = ['backlog', 'todo', 'in_progress', 'done'];
+  const lane = d.lane as WorkItemLane | undefined;
+  const commentsRaw = Array.isArray(d.comments) ? d.comments : [];
+  const comments: WorkItemComment[] = commentsRaw.map(parseComment).filter((c): c is WorkItemComment => c != null);
   return {
     id: docSnap.id,
     title: (d.title as string) ?? '',
@@ -29,6 +51,10 @@ function toWorkItem(docSnap: { id: string; data: () => Record<string, unknown> }
     status: validStatus.includes(status) ? status : 'backlog',
     dueDate: (d.dueDate as { toDate: () => Date })?.toDate?.() ?? undefined,
     blocked: d.blocked === true,
+    type: d.type === 'task' ? 'task' : undefined,
+    lane: lane && VALID_LANES.includes(lane) ? lane : undefined,
+    estimate: typeof d.estimate === 'number' && [0.5, 1, 1.5, 2].includes(d.estimate) ? d.estimate : undefined,
+    comments: comments.length > 0 ? comments : undefined,
     createdAt: (d.createdAt as { toDate: () => Date })?.toDate?.() ?? new Date(),
     updatedAt: (d.updatedAt as { toDate: () => Date })?.toDate?.() ?? new Date(),
   };
@@ -80,8 +106,16 @@ export async function createWorkItem(data: {
   status?: WorkItemStatus;
   dueDate?: Date;
   blocked?: boolean;
+  type?: 'task';
+  lane?: WorkItemLane;
+  estimate?: number;
+  comments?: WorkItemComment[];
 }): Promise<LeadershipWorkItem> {
   const ref = collection(db, COLLECTION);
+  const commentsForFirestore = data.comments?.map((c) => ({
+    ...c,
+    createdAt: c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt),
+  }));
   const docRef = await addDoc(ref, {
     title: data.title,
     description: data.description ?? null,
@@ -90,6 +124,10 @@ export async function createWorkItem(data: {
     status: data.status ?? 'backlog',
     dueDate: data.dueDate ?? null,
     blocked: data.blocked === true,
+    type: data.type ?? 'task',
+    lane: data.lane && VALID_LANES.includes(data.lane) ? data.lane : 'standard',
+    estimate: data.estimate ?? null,
+    comments: commentsForFirestore ?? null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -99,7 +137,7 @@ export async function createWorkItem(data: {
 
 export async function updateWorkItem(
   id: string,
-  updates: Partial<Pick<LeadershipWorkItem, 'title' | 'description' | 'assigneeId' | 'teamId' | 'status' | 'dueDate' | 'blocked'>>
+  updates: Partial<Pick<LeadershipWorkItem, 'title' | 'description' | 'assigneeId' | 'teamId' | 'status' | 'dueDate' | 'blocked' | 'type' | 'lane' | 'estimate' | 'comments'>>
 ): Promise<void> {
   const ref = doc(db, COLLECTION, id);
   const data: Record<string, unknown> = { updatedAt: serverTimestamp() };
@@ -110,6 +148,15 @@ export async function updateWorkItem(
   if (updates.status !== undefined) data.status = updates.status;
   if (updates.dueDate !== undefined) data.dueDate = updates.dueDate;
   if (updates.blocked !== undefined) data.blocked = updates.blocked;
+  if (updates.type !== undefined) data.type = updates.type;
+  if (updates.lane !== undefined) data.lane = VALID_LANES.includes(updates.lane) ? updates.lane : 'standard';
+  if (updates.estimate !== undefined) data.estimate = updates.estimate;
+  if (updates.comments !== undefined) {
+    data.comments = updates.comments.map((c) => ({
+      ...c,
+      createdAt: c.createdAt instanceof Date ? c.createdAt : new Date(c.createdAt),
+    }));
+  }
   await updateDoc(ref, data);
 }
 

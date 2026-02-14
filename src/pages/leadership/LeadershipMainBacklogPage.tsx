@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
+import TaskForm, { type TaskFormPayload } from '../../components/leadership/TaskForm';
 import {
   listMainBacklog,
   createWorkItem,
@@ -25,9 +26,8 @@ const LeadershipMainBacklogPage: React.FC = () => {
   const [items, setItems] = useState<LeadershipWorkItem[]>([]);
   const [teams, setTeams] = useState<LeadershipTeam[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAdd, setShowAdd] = useState(false);
-  const [newTitle, setNewTitle] = useState('');
-  const [newDescription, setNewDescription] = useState('');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<LeadershipWorkItem | null>(null);
   const [assigningId, setAssigningId] = useState<string | null>(null);
   const [assignTeamId, setAssignTeamId] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
@@ -77,19 +77,37 @@ const LeadershipMainBacklogPage: React.FC = () => {
     }).catch(() => setTeamMembers([]));
   }, [assignTeamId]);
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const title = newTitle.trim();
-    if (!title) return;
+  const handleCreateSave = async (data: TaskFormPayload) => {
     try {
       await createWorkItem({
-        title,
-        description: newDescription.trim() || undefined,
-        status: 'backlog',
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        lane: data.lane,
+        estimate: data.estimate,
+        blocked: data.blocked,
+        comments: data.comments,
       });
-      setNewTitle('');
-      setNewDescription('');
-      setShowAdd(false);
+      setShowCreateForm(false);
+      load();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleEditSave = async (data: TaskFormPayload) => {
+    if (!editingItem) return;
+    try {
+      await updateWorkItem(editingItem.id, {
+        title: data.title,
+        description: data.description,
+        status: data.status,
+        lane: data.lane,
+        estimate: data.estimate,
+        blocked: data.blocked,
+        comments: data.comments,
+      });
+      setEditingItem(null);
       load();
     } catch (err) {
       console.error(err);
@@ -127,95 +145,37 @@ const LeadershipMainBacklogPage: React.FC = () => {
           Tasks not yet assigned to a team. Assign to a team (and optionally a member) to move them to that team’s backlog.
         </p>
 
-        {!showAdd ? (
-          <button
-            type="button"
-            onClick={() => setShowAdd(true)}
-            style={{
-              padding: '10px 20px',
-              background: '#002B4D',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              marginBottom: '20px',
-            }}
-          >
-            Add task
-          </button>
-        ) : (
-          <form
-            onSubmit={handleCreate}
-            style={{
-              background: '#f9fafb',
-              padding: '16px',
-              borderRadius: '8px',
-              marginBottom: '20px',
-            }}
-          >
-            <div style={{ marginBottom: '12px' }}>
-              <input
-                type="text"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="Task title"
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                }}
-              />
-            </div>
-            <div style={{ marginBottom: '12px' }}>
-              <textarea
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-                placeholder="Description (optional)"
-                rows={2}
-                style={{
-                  width: '100%',
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  resize: 'vertical',
-                }}
-              />
-            </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button
-                type="submit"
-                style={{
-                  padding: '8px 16px',
-                  background: '#002B4D',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Add to backlog
-              </button>
-              <button
-                type="button"
-                onClick={() => { setShowAdd(false); setNewTitle(''); setNewDescription(''); }}
-                style={{
-                  padding: '8px 16px',
-                  background: '#fff',
-                  color: '#374151',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
+        <button
+          type="button"
+          onClick={() => setShowCreateForm(true)}
+          style={{
+            padding: '10px 20px',
+            background: '#002B4D',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            marginBottom: '20px',
+          }}
+        >
+          Add task
+        </button>
+
+        {showCreateForm && (
+          <TaskForm
+            mode="create"
+            onSave={handleCreateSave}
+            onCancel={() => setShowCreateForm(false)}
+          />
+        )}
+        {editingItem && (
+          <TaskForm
+            mode="edit"
+            initialItem={editingItem}
+            onSave={handleEditSave}
+            onCancel={() => setEditingItem(null)}
+          />
         )}
 
         {loading ? (
@@ -232,6 +192,22 @@ const LeadershipMainBacklogPage: React.FC = () => {
                     {item.description}
                   </div>
                 )}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
+                  <button
+                    type="button"
+                    onClick={() => setEditingItem(item)}
+                    style={{
+                      padding: '4px 10px',
+                      fontSize: '0.8rem',
+                      background: '#e5e7eb',
+                      border: 'none',
+                      borderRadius: '6px',
+                      cursor: 'pointer',
+                      color: '#374151',
+                    }}
+                  >
+                    Edit
+                  </button>
                 {assigningId === item.id ? (
                   <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
                     <select
@@ -293,7 +269,6 @@ const LeadershipMainBacklogPage: React.FC = () => {
                     type="button"
                     onClick={() => setAssigningId(item.id)}
                     style={{
-                      marginTop: '8px',
                       padding: '4px 10px',
                       fontSize: '0.8rem',
                       background: '#e5e7eb',
@@ -306,6 +281,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
                     Assign to team…
                   </button>
                 )}
+                </div>
               </div>
             ))}
           </div>
