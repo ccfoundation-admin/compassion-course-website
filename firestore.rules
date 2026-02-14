@@ -222,36 +222,33 @@ service cloud.firestore {
     }
 
     // ============================================
-    // LEADERSHIP PORTAL (Dashboard, Teams, Work items)
+    // LEADERSHIP PORTAL (Dashboard, Teams, Work items) — admin only
     // ============================================
-    // Access controlled by app (LeadershipProtectedRoute); any authenticated user may read/write.
+    // Dashboard data (teams, workItems, boards, etc.) readable/writable only by admins (admins/{uid} exists).
     match /leadershipMessages/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if isAdmin();
     }
     match /teams/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if isAdmin();
     }
     match /workItems/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if isAdmin();
     }
     match /boards/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if isAdmin();
     }
     match /teamBoardSettings/{id} {
-      allow read, write: if isSignedIn();
+      allow read, write: if isAdmin();
     }
-    // Working agreements: doc id = teamId; allow if user is in team or admin
     match /leadershipWorkingAgreements/{teamId} {
-      allow read, write: if isSignedIn() && (
-        request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.memberIds
-        || isAdmin()
-      );
+      allow read, write: if isAdmin();
     }
-    // User notifications (e.g. @-mentions in work item comments)
-    match /userNotifications/{id} {
-      allow get, list: if isSignedIn() && resource.data.userId == request.auth.uid;
-      allow create: if isSignedIn();
-      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    // User notifications: signed-in users read/update only their own (userId field)
+    match /userNotifications/{notifId} {
+      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow delete: if false;
     }
   }
 }
