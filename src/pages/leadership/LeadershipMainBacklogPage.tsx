@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import Layout from '../../components/Layout';
 import TaskForm, { type TaskFormPayload, type TaskFormSaveContext } from '../../components/leadership/TaskForm';
 import {
-  listMainBacklog,
+  listAllBacklogStatusItems,
   createWorkItem,
   updateWorkItem,
 } from '../../services/leadershipWorkItemsService';
@@ -38,7 +38,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
     setLoading(true);
     try {
       const [backlog, teamList] = await Promise.all([
-        listMainBacklog(),
+        listAllBacklogStatusItems(),
         listTeams(),
       ]);
       setItems(backlog);
@@ -175,7 +175,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
         </Link>
         <h1 style={{ color: '#002B4D', marginBottom: '10px' }}>Backlog</h1>
         <p style={{ color: '#6b7280', fontSize: '1rem', marginBottom: '20px' }}>
-          Tasks not yet assigned to a team. Assign to a team (and optionally a member) to move them to that team’s backlog.
+          All tasks in Backlog state, from any team or unassigned.
         </p>
 
         <button
@@ -214,109 +214,118 @@ const LeadershipMainBacklogPage: React.FC = () => {
         {loading ? (
           <p style={{ color: '#6b7280' }}>Loading…</p>
         ) : items.length === 0 ? (
-          <p style={{ color: '#6b7280' }}>No items in main backlog.</p>
+          <p style={{ color: '#6b7280' }}>No tasks in Backlog state.</p>
         ) : (
           <div>
-            {items.map((item) => (
-              <div key={item.id} style={cardStyle}>
-                <div style={{ fontWeight: 500, marginBottom: '4px' }}>{item.title}</div>
-                {item.description && (
-                  <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px' }}>
-                    {item.description}
-                  </div>
-                )}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
-                  <button
-                    type="button"
-                    onClick={() => setEditingItem(item)}
-                    style={{
-                      padding: '4px 10px',
-                      fontSize: '0.8rem',
-                      background: '#e5e7eb',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      color: '#374151',
-                    }}
-                  >
-                    Edit
-                  </button>
-                {assigningId === item.id ? (
-                  <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
-                    <select
-                      value={assignTeamId}
-                      onChange={(e) => setAssignTeamId(e.target.value)}
-                      style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: '6px' }}
-                    >
-                      <option value="">Select team</option>
-                      {teams.map((t) => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
-                      ))}
-                    </select>
-                    {teamMembers.length > 0 && (
-                      <select
-                        value={assigneeId}
-                        onChange={(e) => setAssigneeId(e.target.value)}
-                        style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: '6px' }}
-                      >
-                        <option value="">No assignee</option>
-                        {teamMembers.map((m) => (
-                          <option key={m.id} value={m.id}>{m.label}</option>
-                        ))}
-                      </select>
-                    )}
+            {items.map((item) => {
+              const team = item.teamId ? teams.find((t) => t.id === item.teamId) : null;
+              const hasTeam = Boolean(item.teamId && item.teamId !== '');
+              return (
+                <div key={item.id} style={cardStyle}>
+                  <div style={{ fontWeight: 500, marginBottom: '4px' }}>{item.title}</div>
+                  {item.description && (
+                    <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px' }}>
+                      {item.description}
+                    </div>
+                  )}
+                  {hasTeam && team && (
+                    <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '8px' }}>
+                      Team: <Link to={`/portal/leadership/teams/${item.teamId}/board`} style={{ color: '#002B4D', fontWeight: 500, textDecoration: 'underline' }}>{team.name}</Link>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '8px' }}>
                     <button
                       type="button"
-                      onClick={() => handleAssignToTeam(item.id)}
-                      disabled={!assignTeamId}
+                      onClick={() => setEditingItem(item)}
                       style={{
-                        padding: '6px 12px',
-                        background: assignTeamId ? '#002B4D' : '#9ca3af',
-                        color: '#fff',
+                        padding: '4px 10px',
+                        fontSize: '0.8rem',
+                        background: '#e5e7eb',
                         border: 'none',
                         borderRadius: '6px',
-                        cursor: assignTeamId ? 'pointer' : 'not-allowed',
-                        fontSize: '0.85rem',
-                      }}
-                    >
-                      Assign
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setAssigningId(null); setAssignTeamId(''); setAssigneeId(''); }}
-                      style={{
-                        padding: '6px 12px',
-                        background: '#fff',
-                        color: '#374151',
-                        border: '1px solid #d1d5db',
-                        borderRadius: '6px',
                         cursor: 'pointer',
-                        fontSize: '0.85rem',
+                        color: '#374151',
                       }}
                     >
-                      Cancel
+                      Edit
                     </button>
+                    {!hasTeam && (assigningId === item.id ? (
+                      <div style={{ marginTop: '8px', display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+                        <select
+                          value={assignTeamId}
+                          onChange={(e) => setAssignTeamId(e.target.value)}
+                          style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                        >
+                          <option value="">Select team</option>
+                          {teams.map((t) => (
+                            <option key={t.id} value={t.id}>{t.name}</option>
+                          ))}
+                        </select>
+                        {teamMembers.length > 0 && (
+                          <select
+                            value={assigneeId}
+                            onChange={(e) => setAssigneeId(e.target.value)}
+                            style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: '6px' }}
+                          >
+                            <option value="">No assignee</option>
+                            {teamMembers.map((m) => (
+                              <option key={m.id} value={m.id}>{m.label}</option>
+                            ))}
+                          </select>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleAssignToTeam(item.id)}
+                          disabled={!assignTeamId}
+                          style={{
+                            padding: '6px 12px',
+                            background: assignTeamId ? '#002B4D' : '#9ca3af',
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: '6px',
+                            cursor: assignTeamId ? 'pointer' : 'not-allowed',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          Assign
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setAssigningId(null); setAssignTeamId(''); setAssigneeId(''); }}
+                          style={{
+                            padding: '6px 12px',
+                            background: '#fff',
+                            color: '#374151',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            fontSize: '0.85rem',
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setAssigningId(item.id)}
+                        style={{
+                          padding: '4px 10px',
+                          fontSize: '0.8rem',
+                          background: '#e5e7eb',
+                          border: 'none',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          color: '#374151',
+                        }}
+                      >
+                        Assign to team…
+                      </button>
+                    ))}
                   </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setAssigningId(item.id)}
-                    style={{
-                      padding: '4px 10px',
-                      fontSize: '0.8rem',
-                      background: '#e5e7eb',
-                      border: 'none',
-                      borderRadius: '6px',
-                      cursor: 'pointer',
-                      color: '#374151',
-                    }}
-                  >
-                    Assign to team…
-                  </button>
-                )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
