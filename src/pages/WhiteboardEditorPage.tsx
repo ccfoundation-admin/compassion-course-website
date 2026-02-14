@@ -185,6 +185,24 @@ const WhiteboardEditorPage: React.FC = () => {
             {linkCopied ? 'Link copied!' : 'Copy shareable link'}
           </button>
           {canEdit && (
+            <button
+              type="button"
+              onClick={() => persistState()}
+              disabled={saveStatus === 'saving'}
+              style={{
+                padding: '6px 12px',
+                background: '#002B4D',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '6px',
+                fontSize: '0.875rem',
+                cursor: saveStatus === 'saving' ? 'not-allowed' : 'pointer',
+              }}
+            >
+              Save
+            </button>
+          )}
+          {canEdit && (
             <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
               {saveStatus === 'saving' && 'Saving…'}
               {saveStatus === 'saved' && 'Saved'}
