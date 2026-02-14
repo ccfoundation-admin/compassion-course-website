@@ -21,16 +21,29 @@ const TeamWhiteboardsListPage: React.FC = () => {
 
   useEffect(() => {
     if (!teamId) return;
-    Promise.all([getTeam(teamId), listWhiteboardsForTeam(teamId)])
-      .then(([t, list]) => {
-        setTeam(t ?? null);
-        setTeamName(t?.name ?? '');
-        setBoards(list);
-      })
-      .catch(() => {
-        setTeam(null);
-        setTeamName('');
-        setBoards([]);
+    setError(null);
+    Promise.allSettled([getTeam(teamId), listWhiteboardsForTeam(teamId)])
+      .then(([teamResult, listResult]) => {
+        if (teamResult.status === 'fulfilled') {
+          const t = teamResult.value;
+          setTeam(t ?? null);
+          setTeamName(t?.name ?? '');
+        } else {
+          setTeam(null);
+          setTeamName('');
+          setError((prev) => prev || 'Failed to load team.');
+          console.error('Team whiteboards: getTeam failed', teamResult.reason);
+        }
+        if (listResult.status === 'fulfilled') {
+          setBoards(listResult.value);
+        } else {
+          setBoards([]);
+          setError((prev) => prev || 'Failed to load whiteboards. Check the console for details.');
+          console.error('Team whiteboards: listWhiteboardsForTeam failed', listResult.reason);
+        }
+        if (teamResult.status === 'fulfilled' && listResult.status === 'fulfilled') {
+          setError(null);
+        }
       })
       .finally(() => setLoading(false));
   }, [teamId]);

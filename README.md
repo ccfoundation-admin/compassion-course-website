@@ -223,6 +223,9 @@ JWT_SECRET=super-secure-production-secret
 PORT=3000
 ```
 
+### Firebase (Firestore)
+When using Firestore, deploy rules and indexes so features like team whiteboards work: `firebase deploy --only firestore:indexes` (and `firestore:rules` as needed). The team whiteboard list query requires the composite index defined in `firestore.indexes.json`.
+
 ## 🐛 Troubleshooting
 
 ### Common Issues
