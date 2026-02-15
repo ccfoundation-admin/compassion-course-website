@@ -91,12 +91,19 @@ const LeadershipPortalPage: React.FC = () => {
     setLoading(true);
     setNotificationsLoading(true);
     let cancelled = false;
+    const wrap = <T,>(label: string, p: Promise<T>) =>
+      p.catch((err: unknown) => {
+        const code = err && typeof err === 'object' && 'code' in err ? (err as { code?: string }).code : undefined;
+        const msg = err && typeof err === 'object' && 'message' in err ? (err as { message?: string }).message : undefined;
+        console.error(`[LeadershipPortalPage] ${label} FAILED: code=${code} message=${msg}`, err);
+        throw err;
+      });
     Promise.allSettled([
-      listNotificationsForUser(user.uid, 20),
-      listTeamsForUser(user.uid),
-      listTeams(),
-      listWorkItemsForUser(user.uid),
-      listAllBlockedItems(),
+      wrap('notifications', listNotificationsForUser(user.uid, 20)),
+      wrap('teamsForUser', listTeamsForUser(user.uid)),
+      wrap('teams', listTeams()),
+      wrap('workItems', listWorkItemsForUser(user.uid)),
+      wrap('blockedItems', listAllBlockedItems()),
     ])
       .then(async (results) => {
         if (cancelled) return;

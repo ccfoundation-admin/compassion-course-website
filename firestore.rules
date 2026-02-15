@@ -4,10 +4,11 @@ service cloud.firestore {
     function isSignedIn() {
       return request.auth != null;
     }
-    // Single authoritative admin signal: admins/{uid} document exists
+    // Admin: compassioncf.com email or admins/{uid} document exists
     function isAdmin() {
-      return request.auth != null &&
-             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return request.auth != null
+        && (exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+            || (request.auth.token.email != null && request.auth.token.email.matches('.*@compassioncf\\.com$')));
     }
     
     // Helper function to check if user owns a resource
@@ -224,15 +225,19 @@ service cloud.firestore {
     // ============================================
     // LEADERSHIP PORTAL (Dashboard, Teams, Work items) — admin only
     // ============================================
-    // Dashboard data (teams, workItems, boards, etc.) readable/writable only by admins (admins/{uid} exists).
+    // Dashboard data: admins full access; leaders read teams they belong to and related work items
     match /leadershipMessages/{id} {
       allow read, write: if isAdmin();
     }
     match /teams/{id} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid in resource.data.get('memberIds', []));
+      allow write: if isAdmin();
     }
     match /workItems/{id} {
-      allow read, write: if isAdmin();
+      allow read: if isAdmin()
+        || (request.auth != null && request.auth.uid == resource.data.get('assigneeId', ''))
+        || (request.auth != null && resource.data.get('teamId', '') != '' && request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.get('memberIds', []));
+      allow write: if isAdmin();
     }
     match /boards/{id} {
       allow read, write: if isAdmin();
@@ -243,11 +248,11 @@ service cloud.firestore {
     match /leadershipWorkingAgreements/{teamId} {
       allow read, write: if isAdmin();
     }
-    // User notifications: signed-in users read/update only their own (userId field)
+    // User notifications: user reads own; admins can read all
     match /userNotifications/{notifId} {
-      allow read: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow read: if request.auth != null && (isAdmin() || resource.data.userId == request.auth.uid);
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
-      allow update: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow update: if request.auth != null && (resource.data.userId == request.auth.uid || isAdmin());
       allow delete: if false;
     }
   }
