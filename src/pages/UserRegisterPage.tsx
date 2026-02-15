@@ -75,19 +75,30 @@ const UserRegisterPage: React.FC = () => {
     return null; // useEffect will handle navigation
   }
 
+  const trimmedPassword = password.trim();
+  const trimmedConfirm = confirmPassword.trim();
+  const passwordsMatch = trimmedPassword === trimmedConfirm;
+  const passwordLongEnough = trimmedPassword.length >= 8;
+  const confirmLongEnough = trimmedConfirm.length >= 8;
+  const canSubmit = passwordLongEnough && confirmLongEnough && passwordsMatch;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validate passwords match
-    if (password !== confirmPassword) {
+    const pwd = password.trim();
+    const conf = confirmPassword.trim();
+
+    if (!pwd || !conf) {
+      setError('Please enter and confirm your password.');
+      return;
+    }
+    if (pwd !== conf) {
       setError('Passwords do not match.');
       return;
     }
-
-    // Validate password length
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (pwd.length < 8) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
 
@@ -100,7 +111,7 @@ const UserRegisterPage: React.FC = () => {
     setLoading(true);
 
     try {
-      await register(email, password, recaptchaVerifierRef.current);
+      await register(email, pwd, recaptchaVerifierRef.current);
       // Navigation will be handled by useEffect
     } catch (error: any) {
       console.error('Registration error:', error);
@@ -189,11 +200,17 @@ const UserRegisterPage: React.FC = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
               className="form-input"
-              minLength={6}
+              minLength={8}
+              placeholder="At least 8 characters"
             />
+            {password.length > 0 && !passwordLongEnough && (
+              <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#dc2626' }}>
+                Password must be at least 8 characters.
+              </p>
+            )}
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">Confirm password</label>
             <input
               type="password"
               id="confirmPassword"
@@ -201,13 +218,22 @@ const UserRegisterPage: React.FC = () => {
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               className="form-input"
-              minLength={6}
+              minLength={8}
             />
+            {confirmPassword.length > 0 && !passwordsMatch && (
+              <p style={{ margin: '4px 0 0', fontSize: '0.8rem', color: '#dc2626' }}>
+                Passwords do not match.
+              </p>
+            )}
           </div>
           <div className="form-group">
             <div id="recaptcha-container"></div>
           </div>
-          <button type="submit" disabled={loading} className="btn btn-primary">
+          <button
+            type="submit"
+            disabled={loading || !canSubmit}
+            className="btn btn-primary"
+          >
             {loading ? 'Creating account...' : 'Register'}
           </button>
         </form>
