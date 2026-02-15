@@ -574,7 +574,7 @@ const UserManagement: React.FC = () => {
         <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', maxWidth: '560px' }}>
           <h2 style={{ color: '#002B4D', marginBottom: '16px' }}>Create User</h2>
           <p style={{ marginBottom: '20px', color: '#6b7280', fontSize: '0.9rem' }}>
-            Add a new user by email. They will receive a temporary password and must change it on first login.
+            Add a new user by email. Their first-time password will be <strong>12341234</strong>; they will be prompted to change it on first login.
           </p>
           <form onSubmit={createUserByAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
