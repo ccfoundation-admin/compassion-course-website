@@ -13,7 +13,7 @@ import {
   RecaptchaVerifier,
   sendPasswordResetEmail
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/firebaseConfig';
 import { createUserProfile, getUserProfile } from '../services/userProfileService';
 import { getUserDoc, ensureUserDoc, type UserDoc, type UserStatus, type UserRole } from '../services/usersService';
@@ -63,63 +63,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [userDoc, setUserDoc] = useState<UserDoc | null>(null);
 
-  // Bootstrap: ensure admins/{uid} exists for allowed emails (client-only convenience; authority is the doc)
-  const createAdminDocument = async (user: User) => {
-    if (!user.email || !ADMIN_EMAILS.includes(user.email)) {
-      return false;
-    }
-    try {
-      console.log('🔧 Auto-creating admin document for:', user.uid);
-      await setDoc(
-        doc(db, 'admins', user.uid),
-        { uid: user.uid, email: user.email, status: 'active', role: 'admin', createdAt: serverTimestamp() },
-        { merge: true }
-      );
-      console.log('✅ Admin document created successfully!');
-      return true;
-    } catch (error: any) {
-      console.error('❌ Error creating admin document:', error);
-      return false;
-    }
-  };
-
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       
       if (user) {
-        // Fast path for known admin emails - set admin immediately and set loading to false
-        if (user.email && ADMIN_EMAILS.includes(user.email)) {
-          // Bootstrap: ensure admins/{uid} exists BEFORE any profile list/read so rules allow access
-          const ensureAdminThenContinue = async () => {
-            await getIdTokenResult(user, true);
-            await createAdminDocument(user);
-            setIsAdmin(true);
-            setLoading(false);
-            // Profile ensure after admin doc exists (non-blocking)
-            getUserProfile(user.uid)
-              .then(existingProfile => {
-                if (!existingProfile) {
-                  return createUserProfile(
-                    user.uid,
-                    user.email || '',
-                    user.displayName || user.email?.split('@')[0] || 'User',
-                    user.photoURL || undefined
-                  ).then(() => console.log('User profile created on login'));
-                }
-              })
-              .catch(err => {
-                const isOfflineError = err?.code === 'unavailable' || err?.message?.includes('offline');
-                if (!isOfflineError) console.error('Error ensuring user profile exists:', err);
-              });
-          };
-          ensureAdminThenContinue().catch(err => {
-            console.error('Bootstrap admin ensure failed:', err);
-            setLoading(false);
-          });
-          return;
-        }
-
+        // Read-only admin check: getDoc(admins/{uid}) only; never write. Admin docs are created in Console or via Cloud Function.
         // For non-admin users, check admin status first (with timeout)
         const checkAdmin = async () => {
           try {
@@ -270,13 +219,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('Login successful:', userCredential.user.email);
-      
-      // Auto-create admin document if email is in admin list
-      if (ADMIN_EMAILS.includes(email)) {
-        console.log('🔄 Admin email detected, ensuring admin document exists...');
-        await createAdminDocument(userCredential.user);
-      }
-      
       return userCredential;
     } catch (error: any) {
       console.error('Firebase login error:', error);
@@ -342,13 +284,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('🔵 Attempting signInWithPopup...');
       const userCredential = await signInWithPopup(auth, provider);
       console.log('✅ Google sign-in successful:', userCredential.user.email);
-      
-      // Auto-create admin document if email is in admin list
-      if (userCredential.user.email && ADMIN_EMAILS.includes(userCredential.user.email)) {
-        console.log('🔄 Admin email detected via Google sign-in, ensuring admin document exists...');
-        await createAdminDocument(userCredential.user);
-      }
-      
       // Auto-create user profile
       try {
         const existingProfile = await getUserProfile(userCredential.user.uid);
