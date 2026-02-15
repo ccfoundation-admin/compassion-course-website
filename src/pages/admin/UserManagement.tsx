@@ -397,15 +397,16 @@ const UserManagement: React.FC = () => {
     setAddingUser(true);
     try {
       console.log('[CreateUser] calling callable');
-      const createUserByAdminCallable = httpsCallable<
+      const fn = httpsCallable<
         { email: string; displayName?: string; role?: string },
         { ok: boolean; uid: string; email: string; temporaryPassword: string }
       >(functions, 'createUserByAdmin');
-      const result = await createUserByAdminCallable({
+      const result = await fn({
         email,
         displayName: addUserName.trim() || undefined,
         role: 'viewer',
       });
+      console.log('[CreateUser] callable result', result.data);
       const data = result.data;
       setAddUserResult({ email: data.email, temporaryPassword: data.temporaryPassword });
       setSuccess('User added. They must change their password on first login.');
