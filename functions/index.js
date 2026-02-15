@@ -1,10 +1,11 @@
 const functions = require("firebase-functions");
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
-const { initializeApp } = require("firebase-admin/app");
-const { getAuth } = require("firebase-admin/auth");
-const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const admin = require("firebase-admin");
 
-initializeApp();
+if (!admin.apps.length) admin.initializeApp();
+
+const db = admin.firestore();
+const FieldValue = admin.firestore.FieldValue;
 
 const TEMP_PASSWORD = "12341234";
 const USERS_COLLECTION = "users";
@@ -17,7 +18,6 @@ const STATUS_ACTIVE = "active";
  * with status=active, role=viewer for immediate read-only portal access.
  */
 exports.onAuthUserCreated = functions.auth.user().onCreate(async (user) => {
-  const db = getFirestore();
   const now = FieldValue.serverTimestamp();
   const email = (user.email && String(user.email).trim()) || "";
   const displayName = (user.displayName && String(user.displayName).trim()) || email.split("@")[0] || "";
@@ -43,6 +43,7 @@ exports.onAuthUserCreated = functions.auth.user().onCreate(async (user) => {
  * @returns {{ ok: boolean, uid: string, email: string, temporaryPassword: string }}
  */
 async function createUserByAdminLogic(caller, data) {
+  let step = "start";
   try {
     console.log("[createUserByAdmin] start", {
       callerUid: caller?.uid,
@@ -51,6 +52,7 @@ async function createUserByAdminLogic(caller, data) {
     });
 
     // Input validation
+    step = "validate";
     if (!data?.email) {
       throw new HttpsError("invalid-argument", "email is required");
     }
@@ -66,8 +68,8 @@ async function createUserByAdminLogic(caller, data) {
       throw new HttpsError("unauthenticated", "sign in required");
     }
 
-    // Admin check: admins/{caller.uid}
-    const db = getFirestore();
+    // Admin check: admins/{caller.uid} (Admin SDK only)
+    step = "adminCheck.readAdminDoc";
     const adminSnap = await db.collection("admins").doc(caller.uid).get();
     if (!adminSnap.exists) {
       throw new HttpsError("permission-denied", "admin doc missing");
@@ -84,8 +86,9 @@ async function createUserByAdminLogic(caller, data) {
       throw new HttpsError("permission-denied", "admin not active or approved");
     }
 
-    // Auth: check if user already exists
-    const auth = getAuth();
+    // Auth: check if user already exists (Admin SDK only)
+    step = "auth.getUserByEmail";
+    const auth = admin.auth();
     try {
       await auth.getUserByEmail(email);
       throw new HttpsError("already-exists", "user already exists");
@@ -93,11 +96,13 @@ async function createUserByAdminLogic(caller, data) {
       if (e instanceof HttpsError) throw e;
       const code = e.code || (e.errorInfo && e.errorInfo.code);
       if (code !== "auth/user-not-found") {
+        console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
         throw new HttpsError("internal", "getUserByEmail failed: " + (e.message || "unknown"));
       }
     }
 
     // Create Auth user
+    step = "auth.createUser";
     let userRecord;
     try {
       userRecord = await auth.createUser({
@@ -107,39 +112,50 @@ async function createUserByAdminLogic(caller, data) {
         emailVerified: false,
       });
     } catch (e) {
+      console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
       throw new HttpsError("internal", "createUser failed: " + (e.message || "unknown"));
     }
 
     const now = FieldValue.serverTimestamp();
     const newUid = userRecord.uid;
 
-    // Firestore: users/{newUid}
+    // Firestore: users/{newUid} (Admin SDK only)
+    step = "firestore.write.users";
     try {
-      await db.collection(USERS_COLLECTION).doc(newUid).set({
-        uid: newUid,
-        email,
-        displayName: displayName || "",
-        role,
-        status: STATUS_PENDING,
-        createdAt: now,
-        createdBy: caller.uid,
-      });
+      await db.collection(USERS_COLLECTION).doc(newUid).set(
+        {
+          uid: newUid,
+          email,
+          displayName: displayName || "",
+          role,
+          status: STATUS_PENDING,
+          createdAt: now,
+          createdBy: caller.uid,
+        },
+        { merge: true }
+      );
     } catch (e) {
+      console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
       throw new HttpsError("internal", "firestore write failed: " + (e.message || "unknown"));
     }
 
-    // Firestore: userProfiles/{newUid} (mirror existing schema)
+    // Firestore: userProfiles/{newUid} (Admin SDK only; mirror existing schema)
+    step = "firestore.write.userProfiles";
     try {
-      await db.collection("userProfiles").doc(newUid).set({
-        email,
-        name: displayName || "",
-        organizations: [],
-        role,
-        mustChangePassword: true,
-        createdAt: now,
-        updatedAt: now,
-      });
+      await db.collection("userProfiles").doc(newUid).set(
+        {
+          email,
+          name: displayName || "",
+          organizations: [],
+          role,
+          mustChangePassword: true,
+          createdAt: now,
+          updatedAt: now,
+        },
+        { merge: true }
+      );
     } catch (e) {
+      console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
       throw new HttpsError("internal", "firestore write failed: " + (e.message || "unknown"));
     }
 
@@ -151,7 +167,8 @@ async function createUserByAdminLogic(caller, data) {
     };
   } catch (e) {
     if (e instanceof HttpsError) throw e;
-    throw new HttpsError("internal", e?.message || "unknown error");
+    console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
+    throw new HttpsError("internal", `createUserByAdmin failed at ${step}: ${e?.message || "unknown"}`);
   }
 }
 
@@ -196,7 +213,6 @@ exports.approveUser = onCall(
       throw new HttpsError("invalid-argument", "uid is required.");
     }
     const role = typeof data.role === "string" && ROLES_ALLOWLIST.includes(data.role) ? data.role : "viewer";
-    const db = getFirestore();
     const callerEmail = request.auth.token?.email ? String(request.auth.token.email).toLowerCase().trim() : "";
     const adminByUid = db.collection("admins").doc(callerUid);
     const adminByEmail = db.collection("admins").doc(callerEmail);
@@ -239,7 +255,6 @@ exports.grantAdmin = onCall(
     if (!targetUid || !email) {
       throw new HttpsError("invalid-argument", "targetUid and email are required.");
     }
-    const db = getFirestore();
     const callerAdminSnap = await db.collection("admins").doc(callerUid).get();
     if (!callerAdminSnap.exists) {
       throw new HttpsError("permission-denied", "Admin only.");
@@ -285,7 +300,6 @@ exports.revokeAdmin = onCall(
     if (!targetUid) {
       throw new HttpsError("invalid-argument", "targetUid is required.");
     }
-    const db = getFirestore();
     const callerAdminSnap = await db.collection("admins").doc(callerUid).get();
     if (!callerAdminSnap.exists) {
       throw new HttpsError("permission-denied", "Admin only.");
