@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { collection, getDocs, doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
-import { auth, db, functions } from '../../firebase/firebaseConfig';
-import { httpsCallable } from 'firebase/functions';
+import { auth, db } from '../../firebase/firebaseConfig';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../context/AuthContext';
 import { listUserProfiles, updateUserProfile, deleteUserProfile } from '../../services/userProfileService';
 import { listTeams, getTeam, createTeamWithBoard, updateTeam, deleteTeam } from '../../services/leadershipTeamsService';
@@ -347,11 +347,16 @@ const UserManagement: React.FC = () => {
     }
     setAddingUser(true);
     try {
-      const createUserFn = httpsCallable<
-        { email: string; name?: string },
+      const functions = getFunctions(undefined, 'us-central1');
+      const createUserByAdminCallable = httpsCallable<
+        { email: string; displayName?: string; role?: string },
         { ok: boolean; uid: string; email: string; temporaryPassword: string }
       >(functions, 'createUserByAdmin');
-      const result = await createUserFn({ email, name: addUserName.trim() || undefined });
+      const result = await createUserByAdminCallable({
+        email,
+        displayName: addUserName.trim() || undefined,
+        role: 'viewer',
+      });
       const data = result.data;
       setAddUserResult({ email: data.email, temporaryPassword: data.temporaryPassword });
       setSuccess('User added. They must change their password on first login.');

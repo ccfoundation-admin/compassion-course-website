@@ -24,7 +24,10 @@ exports.createUserByAdmin = onCall(
       throw new HttpsError("invalid-argument", "Missing data.");
     }
     const newEmail = typeof data.email === "string" ? data.email.trim() : "";
-    const name = typeof data.name === "string" ? data.name.trim() : "";
+    const name = (typeof data.displayName === "string" ? data.displayName.trim() : null)
+      || (typeof data.name === "string" ? data.name.trim() : "") || "";
+    const allowedRoles = ["viewer", "contributor", "manager", "admin"];
+    const role = typeof data.role === "string" && allowedRoles.includes(data.role) ? data.role : "viewer";
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!newEmail || !emailRegex.test(newEmail)) {
       throw new HttpsError("invalid-argument", "A valid email is required.");
@@ -68,7 +71,7 @@ exports.createUserByAdmin = onCall(
       email: normalizedNewEmail,
       name: name || "",
       organizations: [],
-      role: "viewer",
+      role,
       mustChangePassword: true,
       createdAt: now,
       updatedAt: now,
