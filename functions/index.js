@@ -118,9 +118,17 @@ async function createUserByAdminLogic(caller, data) {
 
 /**
  * Callable: createUserByAdmin — admin creates new user via Auth + userProfiles + users.
+ * cors allows the Hosting origins so the web app can invoke without CORS errors.
  */
 exports.createUserByAdmin = onCall(
-  { region: "us-central1", invoker: "public" },
+  {
+    region: "us-central1",
+    cors: [
+      "https://compassion-course-websit-937d6.firebaseapp.com",
+      "https://compassion-course-websit-937d6.web.app",
+    ],
+    invoker: "public",
+  },
   async (request) => {
     console.log("[createUserByAdmin] invoked", request.auth?.uid);
     if (!request.auth?.uid) {
