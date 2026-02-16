@@ -7,17 +7,44 @@ if (!admin.apps.length) admin.initializeApp();
 const db = admin.firestore();
 const FieldValue = admin.firestore.FieldValue;
 
+/** @param {unknown} err - @returns {{ message: string, code?: string, stack?: string }} */
+function normalizeError(err) {
+  const e = err && typeof err === "object" ? err : {};
+  return {
+    message: (e.message != null ? String(e.message) : "") || "unknown",
+    code: e.code != null ? String(e.code) : (e.errorInfo && e.errorInfo?.code != null ? String(e.errorInfo.code) : undefined),
+    stack: e.stack != null ? String(e.stack) : undefined,
+  };
+}
+
+/**
+ * @param {string} fnName
+ * @param {string} step
+ * @param {object} [meta]
+ */
+function logStep(fnName, step, meta = {}) {
+  console.log(JSON.stringify({ fn: fnName, step, level: "info", ...meta }));
+}
+
+/**
+ * @param {string} fnName
+ * @param {string} step
+ * @param {unknown} err
+ * @param {object} [meta]
+ */
+function logError(fnName, step, err, meta = {}) {
+  console.error(JSON.stringify({ fn: fnName, step, level: "error", err: normalizeError(err), ...meta }));
+}
+
 /**
  * UID-only admin gate: read admins/{callerUid}, require role in [admin, superAdmin] and status in [active, approved].
  * @param {string|null|undefined} callerUid
- * @param {string} stepLabel - for logging (e.g. "createUserByAdmin.adminCheck")
- * @returns {Promise<{ uid: string, role: string, status: string }>}
+ * @returns {Promise<{ uid: string, role: string, status: string, email?: string }>}
  */
-async function assertActiveAdmin(callerUid, stepLabel) {
+async function assertActiveAdmin(callerUid) {
   if (!callerUid) {
     throw new HttpsError("unauthenticated", "sign in required");
   }
-  console.log("[assertActiveAdmin]", stepLabel, callerUid);
   const snap = await db.collection("admins").doc(callerUid).get();
   if (!snap.exists) {
     throw new HttpsError("permission-denied", "admin doc missing");
@@ -31,7 +58,8 @@ async function assertActiveAdmin(callerUid, stepLabel) {
   if (status !== "active" && status !== "approved") {
     throw new HttpsError("permission-denied", "admin not active or approved");
   }
-  return { uid: callerUid, role, status };
+  const email = data?.email != null ? String(data.email) : undefined;
+  return { uid: callerUid, role, status, email };
 }
 
 const TEMP_PASSWORD = "12341234";
@@ -69,16 +97,13 @@ exports.onAuthUserCreated = functions.auth.user().onCreate(async (user) => {
  * @param {object} data - { email, displayName?, name?, role? }
  * @returns {{ ok: boolean, uid: string, email: string, temporaryPassword: string }}
  */
+const FN_CREATE_USER = "createUserByAdmin";
+
 async function createUserByAdminLogic(caller, data) {
   let step = "start";
   try {
-    console.log("[createUserByAdmin] start", {
-      callerUid: caller?.uid,
-      callerEmail: caller?.email,
-      targetEmail: data?.email,
-    });
+    logStep(FN_CREATE_USER, step, { callerUid: caller?.uid, targetEmail: data?.email });
 
-    // Input validation
     step = "validate";
     if (!data?.email) {
       throw new HttpsError("invalid-argument", "email is required");
@@ -90,10 +115,9 @@ async function createUserByAdminLogic(caller, data) {
     const displayName = data.displayName != null ? String(data.displayName).trim() : "";
     const role = typeof data.role === "string" && ROLES_ALLOWLIST.includes(data.role) ? data.role : "viewer";
 
-    step = "adminCheck.readAdminDoc";
-    await assertActiveAdmin(caller?.uid ?? null, "createUserByAdmin.adminCheck");
+    step = "adminCheck";
+    await assertActiveAdmin(caller?.uid ?? null);
 
-    // Auth: check if user already exists (Admin SDK only)
     step = "auth.getUserByEmail";
     const auth = admin.auth();
     try {
@@ -101,14 +125,13 @@ async function createUserByAdminLogic(caller, data) {
       throw new HttpsError("already-exists", "user already exists");
     } catch (e) {
       if (e instanceof HttpsError) throw e;
-      const code = e.code || (e.errorInfo && e.errorInfo.code);
+      const code = e?.code || (e?.errorInfo && e?.errorInfo?.code);
       if (code !== "auth/user-not-found") {
-        console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
-        throw new HttpsError("internal", "getUserByEmail failed: " + (e.message || "unknown"));
+        logError(FN_CREATE_USER, step, e);
+        throw new HttpsError("internal", "getUserByEmail failed: " + (e?.message || "unknown"));
       }
     }
 
-    // Create Auth user
     step = "auth.createUser";
     let userRecord;
     try {
@@ -119,14 +142,13 @@ async function createUserByAdminLogic(caller, data) {
         emailVerified: false,
       });
     } catch (e) {
-      console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
-      throw new HttpsError("internal", "createUser failed: " + (e.message || "unknown"));
+      logError(FN_CREATE_USER, step, e);
+      throw new HttpsError("internal", "createUser failed: " + (e?.message || "unknown"));
     }
 
     const now = FieldValue.serverTimestamp();
     const newUid = userRecord.uid;
 
-    // Firestore: users/{newUid} (Admin SDK only)
     step = "firestore.write.users";
     try {
       await db.collection(USERS_COLLECTION).doc(newUid).set(
@@ -142,11 +164,10 @@ async function createUserByAdminLogic(caller, data) {
         { merge: true }
       );
     } catch (e) {
-      console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
-      throw new HttpsError("internal", "firestore write failed: " + (e.message || "unknown"));
+      logError(FN_CREATE_USER, step, e);
+      throw new HttpsError("internal", "firestore write failed: " + (e?.message || "unknown"));
     }
 
-    // Firestore: userProfiles/{newUid} (Admin SDK only; mirror existing schema)
     step = "firestore.write.userProfiles";
     try {
       await db.collection("userProfiles").doc(newUid).set(
@@ -162,8 +183,8 @@ async function createUserByAdminLogic(caller, data) {
         { merge: true }
       );
     } catch (e) {
-      console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
-      throw new HttpsError("internal", "firestore write failed: " + (e.message || "unknown"));
+      logError(FN_CREATE_USER, step, e);
+      throw new HttpsError("internal", "firestore write failed: " + (e?.message || "unknown"));
     }
 
     return {
@@ -174,7 +195,7 @@ async function createUserByAdminLogic(caller, data) {
     };
   } catch (e) {
     if (e instanceof HttpsError) throw e;
-    console.error("[createUserByAdmin]", { step, err: e, message: e?.message, code: e?.code, stack: e?.stack });
+    logError(FN_CREATE_USER, step, e);
     throw new HttpsError("internal", `createUserByAdmin failed at ${step}: ${e?.message || "unknown"}`);
   }
 }
@@ -194,12 +215,14 @@ exports.createUserByAdmin = onCall(
       const result = await createUserByAdminLogic(caller, request.data || {});
       return result;
     } catch (err) {
-      console.error("[createUserByAdmin] error", err);
+      logError(FN_CREATE_USER, "handler", err);
       if (err instanceof HttpsError) throw err;
       throw new HttpsError("internal", err?.message || "unknown error");
     }
   }
 );
+
+const FN_APPROVE_USER = "approveUser";
 
 /**
  * Callable: approveUser — admin-only. Sets users/{uid}.status=active and role.
@@ -207,33 +230,48 @@ exports.createUserByAdmin = onCall(
 exports.approveUser = onCall(
   { region: "us-central1", invoker: "public" },
   async (request) => {
-    if (!request.auth?.uid) {
-      throw new HttpsError("unauthenticated", "Sign-in required.");
+    let step = "start";
+    try {
+      logStep(FN_APPROVE_USER, step);
+      if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Sign-in required.");
+      }
+      step = "adminCheck";
+      await assertActiveAdmin(request.auth.uid);
+      step = "validate";
+      const data = request.data;
+      if (!data || typeof data !== "object") {
+        throw new HttpsError("invalid-argument", "Missing data.");
+      }
+      const targetUid = typeof data.uid === "string" ? data.uid.trim() : "";
+      if (!targetUid) {
+        throw new HttpsError("invalid-argument", "uid is required.");
+      }
+      const role = typeof data.role === "string" && ROLES_ALLOWLIST.includes(data.role) ? data.role : "viewer";
+      step = "firestore.read.user";
+      const userRef = db.collection(USERS_COLLECTION).doc(targetUid);
+      const snap = await userRef.get();
+      if (!snap.exists) {
+        throw new HttpsError("not-found", "User not found.");
+      }
+      step = "firestore.update.user";
+      const now = FieldValue.serverTimestamp();
+      await userRef.update({
+        status: STATUS_ACTIVE,
+        role,
+        updatedAt: now,
+      });
+      logStep(FN_APPROVE_USER, "done", { uid: targetUid });
+      return { ok: true, uid: targetUid, status: STATUS_ACTIVE, role };
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      logError(FN_APPROVE_USER, step, e);
+      throw new HttpsError("internal", e?.message || "unknown error");
     }
-    const data = request.data;
-    if (!data || typeof data !== "object") {
-      throw new HttpsError("invalid-argument", "Missing data.");
-    }
-    const targetUid = typeof data.uid === "string" ? data.uid.trim() : "";
-    if (!targetUid) {
-      throw new HttpsError("invalid-argument", "uid is required.");
-    }
-    const role = typeof data.role === "string" && ROLES_ALLOWLIST.includes(data.role) ? data.role : "viewer";
-    await assertActiveAdmin(request.auth.uid, "approveUser.adminCheck");
-    const userRef = db.collection(USERS_COLLECTION).doc(targetUid);
-    const snap = await userRef.get();
-    if (!snap.exists) {
-      throw new HttpsError("not-found", "User not found.");
-    }
-    const now = FieldValue.serverTimestamp();
-    await userRef.update({
-      status: STATUS_ACTIVE,
-      role,
-      updatedAt: now,
-    });
-    return { ok: true, uid: targetUid, status: STATUS_ACTIVE, role };
   }
 );
+
+const FN_GRANT_ADMIN = "grantAdmin";
 
 /**
  * Callable: grantAdmin — active admin grants admin to another user. Writes /admins/{targetUid}.
@@ -241,34 +279,48 @@ exports.approveUser = onCall(
 exports.grantAdmin = onCall(
   { region: "us-central1", invoker: "public" },
   async (request) => {
-    if (!request.auth?.uid) {
-      throw new HttpsError("unauthenticated", "Sign-in required.");
+    let step = "start";
+    try {
+      logStep(FN_GRANT_ADMIN, step);
+      if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Sign-in required.");
+      }
+      step = "adminCheck";
+      await assertActiveAdmin(request.auth.uid);
+      step = "validate";
+      const callerEmail = request.auth.token?.email ? String(request.auth.token.email).toLowerCase().trim() : "";
+      const data = request.data;
+      if (!data || typeof data !== "object") {
+        throw new HttpsError("invalid-argument", "Missing data.");
+      }
+      const targetUid = typeof data.targetUid === "string" ? data.targetUid.trim() : "";
+      const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
+      if (!targetUid || !email) {
+        throw new HttpsError("invalid-argument", "targetUid and email are required.");
+      }
+      step = "firestore.write.admin";
+      const now = FieldValue.serverTimestamp();
+      const grantedAt = new Date().toISOString();
+      await db.collection("admins").doc(targetUid).set({
+        uid: targetUid,
+        email,
+        role: "admin",
+        status: "active",
+        grantedBy: callerEmail || "unknown",
+        grantedAt,
+        updatedAt: now,
+      });
+      logStep(FN_GRANT_ADMIN, "done", { targetUid });
+      return { ok: true };
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      logError(FN_GRANT_ADMIN, step, e);
+      throw new HttpsError("internal", e?.message || "unknown error");
     }
-    const callerEmail = request.auth.token?.email ? String(request.auth.token.email).toLowerCase().trim() : "";
-    const data = request.data;
-    if (!data || typeof data !== "object") {
-      throw new HttpsError("invalid-argument", "Missing data.");
-    }
-    const targetUid = typeof data.targetUid === "string" ? data.targetUid.trim() : "";
-    const email = typeof data.email === "string" ? data.email.trim().toLowerCase() : "";
-    if (!targetUid || !email) {
-      throw new HttpsError("invalid-argument", "targetUid and email are required.");
-    }
-    await assertActiveAdmin(request.auth.uid, "grantAdmin.adminCheck");
-    const now = FieldValue.serverTimestamp();
-    const grantedAt = new Date().toISOString();
-    await db.collection("admins").doc(targetUid).set({
-      uid: targetUid,
-      email,
-      role: "admin",
-      status: "active",
-      grantedBy: callerEmail || "unknown",
-      grantedAt,
-      updatedAt: now,
-    });
-    return { ok: true };
   }
 );
+
+const FN_REVOKE_ADMIN = "revokeAdmin";
 
 /**
  * Callable: revokeAdmin — active admin revokes admin from a user. Deletes /admins/{targetUid}.
@@ -276,23 +328,35 @@ exports.grantAdmin = onCall(
 exports.revokeAdmin = onCall(
   { region: "us-central1", invoker: "public" },
   async (request) => {
-    if (!request.auth?.uid) {
-      throw new HttpsError("unauthenticated", "Sign-in required.");
+    let step = "start";
+    try {
+      logStep(FN_REVOKE_ADMIN, step);
+      if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Sign-in required.");
+      }
+      step = "adminCheck";
+      await assertActiveAdmin(request.auth.uid);
+      step = "validate";
+      const data = request.data;
+      if (!data || typeof data !== "object") {
+        throw new HttpsError("invalid-argument", "Missing data.");
+      }
+      const targetUid = typeof data.targetUid === "string" ? data.targetUid.trim() : "";
+      if (!targetUid) {
+        throw new HttpsError("invalid-argument", "targetUid is required.");
+      }
+      step = "firestore.delete.admin";
+      const targetRef = db.collection("admins").doc(targetUid);
+      const targetSnap = await targetRef.get();
+      if (targetSnap.exists) {
+        await targetRef.delete();
+      }
+      logStep(FN_REVOKE_ADMIN, "done", { targetUid });
+      return { ok: true };
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      logError(FN_REVOKE_ADMIN, step, e);
+      throw new HttpsError("internal", e?.message || "unknown error");
     }
-    const data = request.data;
-    if (!data || typeof data !== "object") {
-      throw new HttpsError("invalid-argument", "Missing data.");
-    }
-    const targetUid = typeof data.targetUid === "string" ? data.targetUid.trim() : "";
-    if (!targetUid) {
-      throw new HttpsError("invalid-argument", "targetUid is required.");
-    }
-    await assertActiveAdmin(request.auth.uid, "revokeAdmin.adminCheck");
-    const targetRef = db.collection("admins").doc(targetUid);
-    const targetSnap = await targetRef.get();
-    if (targetSnap.exists) {
-      await targetRef.delete();
-    }
-    return { ok: true };
   }
 );
