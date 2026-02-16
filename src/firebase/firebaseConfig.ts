@@ -5,29 +5,38 @@ import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 import { getFunctions } from "firebase/functions";
 
-// Firebase config - env vars with fallbacks for compassion-course-websit-937d6
-// apiKey must match Firebase Console → Project settings → General → Your apps (Web) → SDK setup (case-sensitive)
+// Firebase config - ONLY from Vite env vars (single source of truth)
+// apiKey must match Firebase Console → Project settings → Your apps (Web) - case-sensitive
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? "AIzaSyAAMFrWpsv1BIAkPIjNjGnV61IkZ8EIeRY",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? "compassion-course-websit-937d6.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "compassion-course-websit-937d6",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? "compassion-course-websit-937d6.firebasestorage.app",
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID ?? "1:1087479449158:web:882a39db02a25172322c47",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
+// Runtime sanity check (temporary - for verification)
+console.log("Firebase apiKey in use:", firebaseConfig.apiKey ? `${firebaseConfig.apiKey.slice(0, 12)}...` : "(undefined)");
+
 if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("YOUR_")) {
-  throw new Error("Firebase apiKey missing/invalid in firebaseConfig. Set VITE_FIREBASE_API_KEY from Firebase Console → Project settings → Your apps (Web).");
+  const msg = "Firebase apiKey missing/invalid. Set VITE_FIREBASE_API_KEY in .env from Firebase Console → Project settings → Your apps (Web).";
+  console.error(msg);
+  throw new Error(msg);
 }
 if (!firebaseConfig.projectId) {
-  throw new Error("Firebase projectId missing. Set VITE_FIREBASE_PROJECT_ID.");
+  throw new Error("Firebase projectId missing. Set VITE_FIREBASE_PROJECT_ID in .env.");
 }
 
-console.log("Firebase init:", { projectId: firebaseConfig.projectId, authDomain: firebaseConfig.authDomain });
+// Initialize Firebase ONCE (guard against double init)
+export const app = getApps().length > 0
+  ? getApps()[0] as ReturnType<typeof initializeApp>
+  : initializeApp(firebaseConfig);
 
-export const app = initializeApp(firebaseConfig);
-console.log("[firebase] apps:", getApps().map((a) => a.name), "project:", app.options.projectId);
+if (getApps().length === 1) {
+  console.log("Firebase init:", { projectId: firebaseConfig.projectId, authDomain: firebaseConfig.authDomain });
+}
 
 export const auth = getAuth(app);
 export const db = getFirestore(app);
