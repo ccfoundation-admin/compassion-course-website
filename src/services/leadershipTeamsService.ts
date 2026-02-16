@@ -10,8 +10,7 @@ import {
   where,
   serverTimestamp,
 } from 'firebase/firestore';
-import { httpsCallableFromURL } from 'firebase/functions';
-import { auth, db, functions } from '../firebase/firebaseConfig';
+import { auth, db } from '../firebase/firebaseConfig';
 import type { LeadershipTeam } from '../types/leadership';
 
 const COLLECTION = 'teams';
@@ -58,40 +57,45 @@ export async function createTeam(name: string, memberIds: string[] = []): Promis
   return toTeam({ id: snap.id, data: () => snap.data() ?? {} });
 }
 
-/** Creates a team and its board (1:1) via callable (same-origin URL to avoid Cloud Run CORS). */
+/** Creates a team and its board (1:1) via same-origin /api endpoint (HTTP function + ID token). */
 export async function createTeamWithBoard(
   name: string,
   memberIds: string[] = []
 ): Promise<LeadershipTeam> {
-  const base = typeof window !== 'undefined' ? window.location.origin : '';
-  const url = `${base}/api/createTeamWithBoard`;
-  console.log('[createTeamWithBoard] httpsCallableFromURL', { url, authUid: auth.currentUser?.uid });
-  const fn = httpsCallableFromURL<
-    { name: string; memberIds: string[] },
-    { ok: boolean; teamId: string; boardId: string }
-  >(functions, url);
-
-  try {
-    const res = await fn({ name, memberIds });
-    const data = res.data;
-
-    if (!data?.ok || !data?.teamId) {
-      throw new Error('createTeamWithBoard failed');
-    }
-
-    const now = new Date();
-    return {
-      id: data.teamId,
-      name,
-      memberIds,
-      createdAt: now,
-      updatedAt: now,
-    };
-  } catch (err: unknown) {
-    const e = err as { code?: string; message?: string };
-    console.log('[createTeamWithBoard]', e?.code, e?.message);
-    throw err;
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) {
+    throw Object.assign(new Error('Sign in required'), { code: 'functions/unauthenticated', message: 'Sign in required' });
   }
+
+  const res = await fetch('/api/createTeamWithBoard', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ name, memberIds }),
+  });
+
+  if (res.status === 401) {
+    throw Object.assign(new Error('Sign in required'), { code: 'functions/unauthenticated', message: 'Sign in required' });
+  }
+  if (res.status === 403) {
+    throw Object.assign(new Error('Only admins can create teams'), { code: 'functions/permission-denied', message: 'Only admins can create teams' });
+  }
+
+  const data = await res.json();
+  if (!data?.ok || !data?.teamId) {
+    throw new Error(data?.error || 'createTeamWithBoard failed');
+  }
+
+  const now = new Date();
+  return {
+    id: data.teamId,
+    name,
+    memberIds,
+    createdAt: now,
+    updatedAt: now,
+  };
 }
 
 export async function updateTeam(

@@ -1,0 +1,243 @@
+[2026-02-14T09:31:38.841Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2026-02-14T09:31:38.842Z] > authorizing via signed-in user (info@compassioncf.com)
+[2026-02-14T09:31:38.842Z] [iam] checking project compassion-course-websit-937d6 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[2026-02-14T09:31:38.842Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:38.842Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:38.843Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions [none]
+[2026-02-14T09:31:38.843Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:38.843Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[2026-02-14T09:31:39.622Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions 200
+[2026-02-14T09:31:39.622Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[2026-02-14T09:31:39.622Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:39.622Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:39.623Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/compassion-course-websit-937d6/serviceAccounts/compassion-course-websit-937d6@appspot.gserviceaccount.com:testIamPermissions [none]
+[2026-02-14T09:31:39.623Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/compassion-course-websit-937d6/serviceAccounts/compassion-course-websit-937d6@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[2026-02-14T09:31:39.847Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/compassion-course-websit-937d6/serviceAccounts/compassion-course-websit-937d6@appspot.gserviceaccount.com:testIamPermissions 200
+[2026-02-14T09:31:39.847Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/compassion-course-websit-937d6/serviceAccounts/compassion-course-websit-937d6@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+
+=== Deploying to 'compassion-course-websit-937d6'...
+
+i  deploying functions 
+Running command: npm --prefix "$RESOURCE_DIR" run build
+
+> build
+> echo 'No build step'
+
+No build step
+✔  functions: Finished running predeploy script. 
+[2026-02-14T09:31:40.033Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.033Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.033Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudresourcemanager.googleapis.com [none]
+[2026-02-14T09:31:40.033Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudresourcemanager.googleapis.com x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:40.378Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudresourcemanager.googleapis.com 200
+[2026-02-14T09:31:40.379Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudresourcemanager.googleapis.com [omitted]
+[2026-02-14T09:31:40.379Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.379Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.379Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6 [none]
+[2026-02-14T09:31:40.584Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6 200
+[2026-02-14T09:31:40.584Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6 {"projectNumber":"1087479449158","projectId":"compassion-course-websit-937d6","lifecycleState":"ACTIVE","name":"Compassion Course Website","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-01-10T14:35:58.651247Z","parent":{"type":"organization","id":"813805947008"}}
+i  functions: preparing codebase default for deployment 
+i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[2026-02-14T09:31:40.586Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.587Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.587Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.587Z] Checked if tokens are valid: true, expires at: 1771063592185
+i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[2026-02-14T09:31:40.587Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.588Z] Checked if tokens are valid: true, expires at: 1771063592185
+i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[2026-02-14T09:31:40.588Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.588Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:40.588Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudfunctions.googleapis.com [none]
+[2026-02-14T09:31:40.588Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudfunctions.googleapis.com x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:40.589Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/runtimeconfig.googleapis.com [none]
+[2026-02-14T09:31:40.590Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/runtimeconfig.googleapis.com x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:40.592Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudbuild.googleapis.com [none]
+[2026-02-14T09:31:40.592Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudbuild.googleapis.com x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:40.595Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/artifactregistry.googleapis.com [none]
+[2026-02-14T09:31:40.595Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/artifactregistry.googleapis.com x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:40.931Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudfunctions.googleapis.com 200
+[2026-02-14T09:31:40.931Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudfunctions.googleapis.com [omitted]
+✔  functions: required API cloudfunctions.googleapis.com is enabled 
+[2026-02-14T09:31:41.034Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudbuild.googleapis.com 200
+[2026-02-14T09:31:41.034Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudbuild.googleapis.com [omitted]
+✔  functions: required API cloudbuild.googleapis.com is enabled 
+[2026-02-14T09:31:41.463Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/runtimeconfig.googleapis.com 200
+[2026-02-14T09:31:41.463Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/runtimeconfig.googleapis.com [omitted]
+[2026-02-14T09:31:41.468Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/artifactregistry.googleapis.com 200
+[2026-02-14T09:31:41.469Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/artifactregistry.googleapis.com [omitted]
+✔  artifactregistry: required API artifactregistry.googleapis.com is enabled 
+[2026-02-14T09:31:41.469Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:41.469Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:41.469Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/compassion-course-websit-937d6/adminSdkConfig [none]
+[2026-02-14T09:31:42.051Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/compassion-course-websit-937d6/adminSdkConfig 200
+[2026-02-14T09:31:42.052Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/compassion-course-websit-937d6/adminSdkConfig {"projectId":"compassion-course-websit-937d6","storageBucket":"compassion-course-websit-937d6.firebasestorage.app"}
+[2026-02-14T09:31:42.053Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:42.053Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:42.053Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/compassion-course-websit-937d6/configs [none]
+[2026-02-14T09:31:42.881Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/compassion-course-websit-937d6/configs 200
+[2026-02-14T09:31:42.882Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/compassion-course-websit-937d6/configs {}
+[2026-02-14T09:31:42.884Z] Validating nodejs source
+⚠  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+⚠  functions: Please note that there will be breaking changes when you upgrade. 
+[2026-02-14T09:31:43.438Z] > [functions] package.json contents: {
+  "name": "compassion-course-functions",
+  "description": "Cloud Functions for Compassion Course",
+  "main": "index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0"
+  },
+  "private": true,
+  "scripts": {
+    "build": "echo 'No build step'"
+  }
+}
+[2026-02-14T09:31:43.438Z] Building nodejs source
+i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[2026-02-14T09:31:43.439Z] Could not find functions.yaml. Must use http discovery
+[2026-02-14T09:31:43.447Z] Found firebase-functions binary at '/Users/jaybond/Projects/Compassion Course/functions/node_modules/.bin/firebase-functions'
+Serving at port 8364
+
+[2026-02-14T09:31:43.658Z] Got response from /__/functions.yaml {"endpoints":{"createUserByAdmin":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["us-central1"],"labels":{},"callableTrigger":{},"entryPoint":"createUserByAdmin"}},"specVersion":"v1alpha1","requiredAPIs":[],"extensions":{}}
+i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[2026-02-14T09:31:47.676Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:47.676Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:47.676Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/firebaseextensions.googleapis.com [none]
+[2026-02-14T09:31:47.676Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/firebaseextensions.googleapis.com x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:48.528Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/firebaseextensions.googleapis.com 200
+[2026-02-14T09:31:48.529Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/firebaseextensions.googleapis.com [omitted]
+✔  extensions: required API firebaseextensions.googleapis.com is enabled 
+[2026-02-14T09:31:48.529Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[2026-02-14T09:31:48.529Z] > authorizing via signed-in user (info@compassioncf.com)
+[2026-02-14T09:31:48.529Z] [iam] checking project compassion-course-websit-937d6 for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[2026-02-14T09:31:48.529Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:48.529Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:48.530Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions [none]
+[2026-02-14T09:31:48.530Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:48.530Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[2026-02-14T09:31:48.727Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions 200
+[2026-02-14T09:31:48.727Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[2026-02-14T09:31:48.728Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:48.728Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:48.728Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/compassion-course-websit-937d6/instances pageSize=100&pageToken=
+[2026-02-14T09:31:49.551Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/compassion-course-websit-937d6/instances 200
+[2026-02-14T09:31:49.551Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/compassion-course-websit-937d6/instances {}
+i  functions: preparing functions directory for uploading... 
+i  functions: packaged /Users/jaybond/Projects/Compassion Course/functions (30.11 KB) for uploading 
+[2026-02-14T09:31:49.589Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:49.589Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:49.589Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/compassion-course-websit-937d6/locations/-/functions [none]
+[2026-02-14T09:31:50.163Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/compassion-course-websit-937d6/locations/-/functions 200
+[2026-02-14T09:31:50.163Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/compassion-course-websit-937d6/locations/-/functions {}
+[2026-02-14T09:31:50.164Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:50.164Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:50.164Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/compassion-course-websit-937d6/locations/-/functions filter=environment%3D%22GEN_2%22
+[2026-02-14T09:31:50.755Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/compassion-course-websit-937d6/locations/-/functions 200
+[2026-02-14T09:31:50.755Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/compassion-course-websit-937d6/locations/-/functions {"functions":[{"name":"projects/compassion-course-websit-937d6/locations/us-central1/functions/createUserByAdmin","buildConfig":{"build":"projects/1087479449158/locations/us-central1/builds/9b8c700c-1448-4a7a-b36f-cb80099c849a","runtime":"nodejs22","entryPoint":"createUserByAdmin","source":{"storageSource":{"bucket":"gcf-v2-sources-1087479449158-us-central1","object":"createUserByAdmin/function-source.zip","generation":"1771061105871976"}},"environmentVariables":{"GOOGLE_NODE_RUN_SCRIPTS":""},"dockerRepository":"projects/compassion-course-websit-937d6/locations/us-central1/repositories/gcf-artifacts","sourceProvenance":{"resolvedStorageSource":{"bucket":"gcf-v2-sources-1087479449158-us-central1","object":"createUserByAdmin/function-source.zip","generation":"1771061105871976"}},"dockerRegistry":"ARTIFACT_REGISTRY","serviceAccount":"projects/compassion-course-websit-937d6/serviceAccounts/1087479449158-compute@developer.gserviceaccount.com","automaticUpdatePolicy":{}},"state":"FAILED","updateTime":"2026-02-14T09:25:58.264217615Z","labels":{"deployment-tool":"cli-firebase","deployment-callable":"true","firebase-functions-hash":"2463e9ae7cdec3e19a08d3fc348c52f003a71268"},"stateMessages":[{"severity":"ERROR","type":"CloudRunServiceNotFound","message":"Cloud Run service projects/compassion-course-websit-937d6/locations/us-central1/services/createuserbyadmin for the function was not found. The function will not work correctly. Please redeploy."}],"environment":"GEN_2","url":"https://us-central1-compassion-course-websit-937d6.cloudfunctions.net/createUserByAdmin","createTime":"2026-02-14T09:25:06.772981937Z","satisfiesPzi":true}]}
+i  functions: ensuring required API run.googleapis.com is enabled... 
+[2026-02-14T09:31:50.759Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:50.759Z] Checked if tokens are valid: true, expires at: 1771063592185
+i  functions: ensuring required API eventarc.googleapis.com is enabled... 
+[2026-02-14T09:31:50.760Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:50.760Z] Checked if tokens are valid: true, expires at: 1771063592185
+i  functions: ensuring required API pubsub.googleapis.com is enabled... 
+[2026-02-14T09:31:50.760Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:50.760Z] Checked if tokens are valid: true, expires at: 1771063592185
+i  functions: ensuring required API storage.googleapis.com is enabled... 
+[2026-02-14T09:31:50.760Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:50.760Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:50.760Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/run.googleapis.com [none]
+[2026-02-14T09:31:50.760Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/run.googleapis.com x-goog-quota-user=projects/1087479449158
+[2026-02-14T09:31:50.761Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/eventarc.googleapis.com [none]
+[2026-02-14T09:31:50.761Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/eventarc.googleapis.com x-goog-quota-user=projects/1087479449158
+[2026-02-14T09:31:50.763Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/pubsub.googleapis.com [none]
+[2026-02-14T09:31:50.763Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/pubsub.googleapis.com x-goog-quota-user=projects/1087479449158
+[2026-02-14T09:31:50.765Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/storage.googleapis.com [none]
+[2026-02-14T09:31:50.765Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/storage.googleapis.com x-goog-quota-user=projects/1087479449158
+[2026-02-14T09:31:51.580Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/run.googleapis.com 200
+[2026-02-14T09:31:51.580Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/run.googleapis.com [omitted]
+✔  functions: required API run.googleapis.com is enabled 
+[2026-02-14T09:31:51.581Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/eventarc.googleapis.com 200
+[2026-02-14T09:31:51.581Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/eventarc.googleapis.com [omitted]
+✔  functions: required API eventarc.googleapis.com is enabled 
+[2026-02-14T09:31:51.641Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/storage.googleapis.com 200
+[2026-02-14T09:31:51.642Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/storage.googleapis.com [omitted]
+✔  functions: required API storage.googleapis.com is enabled 
+[2026-02-14T09:31:51.672Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/pubsub.googleapis.com 200
+[2026-02-14T09:31:51.672Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/1087479449158/services/pubsub.googleapis.com [omitted]
+✔  functions: required API pubsub.googleapis.com is enabled 
+i  functions: generating the service identity for pubsub.googleapis.com... 
+[2026-02-14T09:31:51.673Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:51.673Z] Checked if tokens are valid: true, expires at: 1771063592185
+i  functions: generating the service identity for eventarc.googleapis.com... 
+[2026-02-14T09:31:51.674Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:51.674Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:51.674Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/1087479449158/services/pubsub.googleapis.com:generateServiceIdentity [none]
+[2026-02-14T09:31:51.675Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1beta1/projects/1087479449158/services/eventarc.googleapis.com:generateServiceIdentity [none]
+[2026-02-14T09:31:52.502Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/1087479449158/services/eventarc.googleapis.com:generateServiceIdentity 200
+[2026-02-14T09:31:52.502Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/1087479449158/services/eventarc.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-1087479449158@gcp-sa-eventarc.iam.gserviceaccount.com","uniqueId":"105570895704980374117"}}
+[2026-02-14T09:31:52.551Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1beta1/projects/1087479449158/services/pubsub.googleapis.com:generateServiceIdentity 200
+[2026-02-14T09:31:52.551Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1beta1/projects/1087479449158/services/pubsub.googleapis.com:generateServiceIdentity {"name":"operations/finished.DONE_OPERATION","done":true,"response":{"@type":"type.googleapis.com/google.api.serviceusage.v1beta1.ServiceIdentity","email":"service-1087479449158@gcp-sa-pubsub.iam.gserviceaccount.com","uniqueId":"106898419798651914942"}}
+[2026-02-14T09:31:52.555Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:52.556Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:52.556Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudresourcemanager.googleapis.com [none]
+[2026-02-14T09:31:52.556Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudresourcemanager.googleapis.com x-goog-quota-user=projects/compassion-course-websit-937d6
+[2026-02-14T09:31:52.875Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudresourcemanager.googleapis.com 200
+[2026-02-14T09:31:52.875Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/compassion-course-websit-937d6/services/cloudresourcemanager.googleapis.com [omitted]
+[2026-02-14T09:31:52.876Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:52.876Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:52.876Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6 [none]
+[2026-02-14T09:31:53.086Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6 200
+[2026-02-14T09:31:53.087Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/compassion-course-websit-937d6 {"projectNumber":"1087479449158","projectId":"compassion-course-websit-937d6","lifecycleState":"ACTIVE","name":"Compassion Course Website","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-01-10T14:35:58.651247Z","parent":{"type":"organization","id":"813805947008"}}
+[2026-02-14T09:31:53.087Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:53.088Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:53.088Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/1087479449158 [none]
+[2026-02-14T09:31:53.303Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/1087479449158 403
+[2026-02-14T09:31:53.303Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/1087479449158 {"error":{"code":403,"message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158","serviceTitle":"Compute Engine API","containerInfo":"1087479449158","service":"compute.googleapis.com","consumer":"projects/1087479449158"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158"}]}]}}
+[2026-02-14T09:31:53.304Z] unable to look up default compute service account. Falling back to 1087479449158-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158","serviceTitle":"Compute Engine API","containerInfo":"1087479449158","service":"compute.googleapis.com","consumer":"projects/1087479449158"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/1087479449158 had HTTP Error: 403, Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[2026-02-14T09:31:53.304Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:53.304Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:53.304Z] >>> [apiv2][query] GET https://compute.googleapis.com/compute/v1/projects/1087479449158 [none]
+[2026-02-14T09:31:53.470Z] <<< [apiv2][status] GET https://compute.googleapis.com/compute/v1/projects/1087479449158 403
+[2026-02-14T09:31:53.471Z] <<< [apiv2][body] GET https://compute.googleapis.com/compute/v1/projects/1087479449158 {"error":{"code":403,"message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158","service":"compute.googleapis.com","consumer":"projects/1087479449158","serviceTitle":"Compute Engine API","containerInfo":"1087479449158"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158"}]}]}}
+[2026-02-14T09:31:53.471Z] unable to look up default compute service account. Falling back to 1087479449158-compute@developer.gserviceaccount.com. Error: {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":403,"message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","errors":[{"message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","domain":"usageLimits","reason":"accessNotConfigured","extendedHelp":"https://console.developers.google.com"}],"status":"PERMISSION_DENIED","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"SERVICE_DISABLED","domain":"googleapis.com","metadata":{"activationUrl":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158","service":"compute.googleapis.com","consumer":"projects/1087479449158","serviceTitle":"Compute Engine API","containerInfo":"1087479449158"}},{"@type":"type.googleapis.com/google.rpc.LocalizedMessage","locale":"en-US","message":"Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry."},{"@type":"type.googleapis.com/google.rpc.Help","links":[{"description":"Google developers console API activation","url":"https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158"}]}]}},"response":{"statusCode":403}},"exit":1,"message":"Request to https://compute.googleapis.com/compute/v1/projects/1087479449158 had HTTP Error: 403, Compute Engine API has not been used in project 1087479449158 before or it is disabled. Enable it by visiting https://console.developers.google.com/apis/api/compute.googleapis.com/overview?project=1087479449158 then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.","status":403}
+[2026-02-14T09:31:53.473Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:53.473Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:53.473Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/compassion-course-websit-937d6/billingInfo [none]
+[2026-02-14T09:31:54.209Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/compassion-course-websit-937d6/billingInfo 200
+[2026-02-14T09:31:54.210Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/compassion-course-websit-937d6/billingInfo {"name":"projects/compassion-course-websit-937d6/billingInfo","projectId":"compassion-course-websit-937d6","billingAccountName":"billingAccounts/0123EC-4204D0-350C9C","billingEnabled":true}
+i  functions: updating Node.js 22 (2nd Gen) function createUserByAdmin(us-central1)... 
+[2026-02-14T09:31:54.214Z] Precondition failed. Cannot update a GCFv2 function without storage
+[2026-02-14T09:31:54.218Z] Total Function Deployment time: 1
+[2026-02-14T09:31:54.218Z] 1 Functions Deployed
+[2026-02-14T09:31:54.218Z] 1 Functions Errored
+[2026-02-14T09:31:54.218Z] 0 Function Deployments Aborted
+[2026-02-14T09:31:54.218Z] Average Function Deployment time: 0
+
+Functions deploy had errors with the following functions:
+	createUserByAdmin(us-central1)
+[2026-02-14T09:31:54.232Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:54.232Z] Checked if tokens are valid: true, expires at: 1771063592185
+[2026-02-14T09:31:54.232Z] >>> [apiv2][query] GET https://artifactregistry.googleapis.com/v1/projects/compassion-course-websit-937d6/locations/us-central1/repositories/gcf-artifacts [none]
+[2026-02-14T09:31:55.014Z] <<< [apiv2][status] GET https://artifactregistry.googleapis.com/v1/projects/compassion-course-websit-937d6/locations/us-central1/repositories/gcf-artifacts 200
+[2026-02-14T09:31:55.015Z] <<< [apiv2][body] GET https://artifactregistry.googleapis.com/v1/projects/compassion-course-websit-937d6/locations/us-central1/repositories/gcf-artifacts {"name":"projects/compassion-course-websit-937d6/locations/us-central1/repositories/gcf-artifacts","format":"DOCKER","description":"This repository is created and used by Cloud Functions for storing function docker images.","labels":{"goog-managed-by":"cloudfunctions"},"createTime":"2026-02-14T09:25:21.278167Z","updateTime":"2026-02-14T09:26:56.232642Z","mode":"STANDARD_REPOSITORY","cleanupPolicies":{"firebase-functions-cleanup":{"id":"firebase-functions-cleanup","action":"DELETE","condition":{"tagState":"ANY","olderThan":"2592000s"}}},"vulnerabilityScanningConfig":{"lastEnableTime":"2026-02-14T09:25:06.962169624Z","enablementState":"SCANNING_DISABLED","enablementStateReason":"API containerscanning.googleapis.com is not enabled."},"satisfiesPzi":true,"registryUri":"us-central1-docker.pkg.dev/compassion-course-websit-937d6/gcf-artifacts"}
+[2026-02-14T09:31:55.016Z] Functions deploy failed.
+[2026-02-14T09:31:55.016Z] {}
+[2026-02-14T09:31:55.022Z] Error: Precondition failed
+    at Fabricator.updateV2Function (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:382:19)
+    at Fabricator.updateEndpoint (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:155:24)
+    at /usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:110:71
+    at handle (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:89:23)
+    at Fabricator.applyChangeset (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:110:26)
+    at /usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:69:40
+    at Array.map (<anonymous>)
+    at Fabricator.applyPlan (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/fabricator.js:68:54)
+    at release (/usr/local/lib/node_modules/firebase-tools/lib/deploy/functions/release/index.js:76:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+
+Error: There was an error deploying functions
