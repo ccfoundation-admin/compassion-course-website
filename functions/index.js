@@ -383,7 +383,14 @@ exports.revokeAdmin = onCall(
  * Callable: createTeamWithBoard — active admin creates team + board via Admin SDK (client cannot write teams/boards).
  */
 exports.createTeamWithBoard = onCall(
-  { region: "us-central1", invoker: "public", cors: true },
+  {
+    region: "us-central1",
+    invoker: "public",
+    cors: [
+      "https://compassion-course-websit-937d6.web.app",
+      "https://compassion-course-websit-937d6.firebaseapp.com",
+    ],
+  },
   async (request) => {
     const caller = await requireActiveAdmin(request);
 
