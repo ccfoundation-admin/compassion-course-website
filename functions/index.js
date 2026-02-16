@@ -406,125 +406,67 @@ exports.revokeAdmin = onCall(
   }
 );
 
-/**
- * Callable (Gen 1): createTeamWithBoard — active admin creates team + board via Admin SDK.
- * Gen 1 avoids Cloud Run allUsers/run.invoker; auth + admin checks inside handler.
- */
-exports.createTeamWithBoard = functions
-  .region("us-central1")
-  .https.onCall(async (data, context) => {
-    const caller = await requireActiveAdminV1(context);
-
-    const name = typeof data?.name === "string" ? data.name.trim() : "";
-    const memberIds = Array.isArray(data?.memberIds) ? data.memberIds : [];
-    if (!name) {
-      throw new functions.https.HttpsError("invalid-argument", "name is required");
-    }
-    if (!memberIds.every((x) => typeof x === "string")) {
-      throw new functions.https.HttpsError("invalid-argument", "memberIds must be string[]");
-    }
-
-    const now = FieldValue.serverTimestamp();
-    const teamRef = db.collection("teams").doc();
-    const boardRef = db.collection("boards").doc();
-
-    await teamRef.set({
-      name,
-      memberIds,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: caller.uid,
-    });
-
-    await boardRef.set({
-      teamId: teamRef.id,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: caller.uid,
-    });
-
-    return { ok: true, teamId: teamRef.id, boardId: boardRef.id };
-  });
+const FN_CREATE_TEAM = "createTeamWithBoard";
 
 /**
- * HTTP function (v2, unused): same-origin /api path. Kept as _v2 to avoid duplicate name; use Gen1 createTeamWithBoard.
+ * Callable (v2): createTeamWithBoard — admin-only. Creates team + board in Firestore.
+ * Use httpsCallable(functions, "createTeamWithBoard") from the client; no direct fetch to avoid CORS.
  */
-exports.createTeamWithBoard_v2 = onRequest(
-  { region: "us-central1" },
-  async (req, res) => {
-    console.log("[createTeamWithBoard_v2] auth header present", { hasAuthHeader: !!req.headers.authorization });
-
-    if (req.method !== "POST") {
-      res.status(405).json({ error: "Method Not Allowed" });
-      return;
-    }
-
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      res.status(401).json({ error: "Sign in required" });
-      return;
-    }
-    const idToken = authHeader.slice(7);
-
-    let uid;
+exports.createTeamWithBoard = onCall(
+  { region: "us-central1", invoker: "public" },
+  async (request) => {
+    let step = "start";
     try {
-      const decoded = await admin.auth().verifyIdToken(idToken);
-      uid = decoded.uid;
-    } catch {
-      res.status(401).json({ error: "Sign in required" });
-      return;
-    }
+      logStep(FN_CREATE_TEAM, step);
+      if (!request.auth?.uid) {
+        throw new HttpsError("unauthenticated", "Sign-in required.");
+      }
+      step = "adminCheck";
+      const caller = await requireActiveAdmin(request);
+      const data = request.data;
+      const name = typeof data?.name === "string" ? data.name.trim() : "";
+      const memberIds = Array.isArray(data?.memberIds) ? data.memberIds : [];
+      if (!name) {
+        throw new HttpsError("invalid-argument", "name is required");
+      }
+      if (!memberIds.every((x) => typeof x === "string")) {
+        throw new HttpsError("invalid-argument", "memberIds must be string[]");
+      }
 
-    const adminSnap = await db.collection("admins").doc(uid).get();
-    if (!adminSnap.exists) {
-      res.status(403).json({ error: "Only admins can create teams" });
-      return;
-    }
-    const adminData = adminSnap.data() || {};
-    const okRole = adminData.role === "admin" || adminData.role === "superAdmin";
-    const okStatus = adminData.status === "active" || adminData.status === "approved";
-    if (!okRole || !okStatus) {
-      res.status(403).json({ error: "Only admins can create teams" });
-      return;
-    }
+      step = "firestore.write";
+      const now = FieldValue.serverTimestamp();
+      const teamRef = db.collection("teams").doc();
+      const boardRef = db.collection("boards").doc();
 
-    let body;
-    try {
-      body = typeof req.body === "object" && req.body !== null ? req.body : JSON.parse(req.body || "{}");
-    } catch {
-      res.status(400).json({ error: "Invalid JSON body" });
-      return;
+      await teamRef.set({
+        name,
+        memberIds,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: caller.uid,
+      });
+
+      await boardRef.set({
+        teamId: teamRef.id,
+        createdAt: now,
+        updatedAt: now,
+        createdBy: caller.uid,
+      });
+
+      logStep(FN_CREATE_TEAM, "done", { teamId: teamRef.id });
+      return { ok: true, teamId: teamRef.id, boardId: boardRef.id };
+    } catch (e) {
+      if (e instanceof HttpsError) throw e;
+      logError(FN_CREATE_TEAM, step, e);
+      throw new HttpsError("internal", e?.message || "unknown error");
     }
-
-    const name = typeof body.name === "string" ? body.name.trim() : "";
-    const memberIds = Array.isArray(body.memberIds) ? body.memberIds : [];
-    if (!name) {
-      res.status(400).json({ error: "name is required" });
-      return;
-    }
-    if (!memberIds.every((x) => typeof x === "string")) {
-      res.status(400).json({ error: "memberIds must be string[]" });
-      return;
-    }
-
-    const now = FieldValue.serverTimestamp();
-    const teamRef = db.collection("teams").doc();
-    const boardRef = db.collection("boards").doc();
-
-    await teamRef.set({
-      name,
-      memberIds,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: uid,
-    });
-    await boardRef.set({
-      teamId: teamRef.id,
-      createdAt: now,
-      updatedAt: now,
-      createdBy: uid,
-    });
-
-    res.status(200).json({ ok: true, teamId: teamRef.id, boardId: boardRef.id });
   }
 );
+
+/**
+ * DEPRECATED: HTTP onRequest version — do not use from browser (CORS). Use createTeamWithBoard callable instead.
+ */
+// exports.createTeamWithBoard_v2 = onRequest(
+//   { region: "us-central1" },
+//   async (req, res) => { ... }
+// );
