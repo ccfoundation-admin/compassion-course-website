@@ -5,43 +5,26 @@ import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 import { getFunctions } from "firebase/functions";
 
-// Firebase config - env vars with fallbacks for Compassion Course Website (compassion-course-websit-937d6)
+// Firebase config - env vars with fallbacks for compassion-course-websit-937d6
+// apiKey must match Firebase Console → Project settings → General → Your apps (Web) → SDK setup (case-sensitive)
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY ?? "AIzaSyAAMFrWpsv1BIAKPIjNjGnV61IkZ8EIeRY",
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN ?? "compassion-course-websit-937d6.firebaseapp.com",
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID ?? "compassion-course-websit-937d6",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET ?? "compassion-course-websit-937d6.firebasestorage.app",
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID ?? "1:1087479449158:web:882a39db02a25172322c47",
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-console.log('🏛️ Initializing Firebase for Compassion Course');
-console.log('🔧 Firebase config:', {
-  projectId: firebaseConfig.projectId,
-  authDomain: firebaseConfig.authDomain,
-  apiKey: firebaseConfig.apiKey ? `${firebaseConfig.apiKey.substring(0, 10)}...` : 'MISSING',
-  storageBucket: firebaseConfig.storageBucket
-});
-// Use this projectId when deploying: firebase use <projectId> && firebase deploy --only firestore
-if (firebaseConfig.projectId) {
-  console.log('📌 Firestore projectId:', firebaseConfig.projectId, '(must match firebase deploy target)');
+if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes("YOUR_")) {
+  throw new Error("Firebase apiKey missing/invalid in firebaseConfig. Set VITE_FIREBASE_API_KEY from Firebase Console → Project settings → Your apps (Web).");
+}
+if (!firebaseConfig.projectId) {
+  throw new Error("Firebase projectId missing. Set VITE_FIREBASE_PROJECT_ID.");
 }
 
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-  console.error('❌ Missing Firebase env vars. Ensure VITE_FIREBASE_* are set at build time.');
-  console.error('Required variables:', {
-    VITE_FIREBASE_API_KEY: !!firebaseConfig.apiKey,
-    VITE_FIREBASE_PROJECT_ID: !!firebaseConfig.projectId,
-    VITE_FIREBASE_AUTH_DOMAIN: !!firebaseConfig.authDomain
-  });
-  throw new Error('Firebase configuration is incomplete. Check environment variables.');
-}
-
-// Validate API key format (Firebase API keys typically start with 'AIza')
-if (firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('AIza')) {
-  console.warn('⚠️ API key format looks unusual. Firebase API keys typically start with "AIza"');
-}
+console.log("Firebase init:", { projectId: firebaseConfig.projectId, authDomain: firebaseConfig.authDomain });
 
 const app = initializeApp(firebaseConfig);
 
@@ -55,7 +38,5 @@ export const functions = getFunctions(app, 'us-central1');
 export const analytics = (typeof window !== 'undefined' && firebaseConfig.measurementId)
   ? getAnalytics(app)
   : undefined as unknown as ReturnType<typeof getAnalytics>;
-
-console.log('✅ Firebase services initialized for Compassion Course');
 
 export default app;
