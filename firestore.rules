@@ -284,12 +284,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     match /boards/{id} {
-      allow read: if isAdmin() || isActiveUser();
-      allow write: if canWrite();
+      allow read: if isActiveAdmin();
+      allow create, update, delete: if isActiveAdmin();
     }
     match /teams/{id} {
-      allow read: if isAdmin() || (isActiveUser() && request.auth.uid in resource.data.get('memberIds', []));
-      allow create, update, delete: if canWrite() || isActiveAdmin();
+      allow read: if isActiveAdmin();
+      allow create, update, delete: if isActiveAdmin();
     }
     match /workItems/{id} {
       allow read: if isAdmin()
