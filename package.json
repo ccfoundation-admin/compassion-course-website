@@ -4,6 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/generate-firebase-config.js",
+    "prebuild": "node scripts/generate-firebase-config.js",
     "dev": "vite --host",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
