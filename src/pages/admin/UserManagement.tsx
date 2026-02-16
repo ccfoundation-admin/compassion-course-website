@@ -1,7 +1,8 @@
+// Deprecated: user provisioning is self-signup only. Create User tab removed.
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
-import { auth, db, functions } from '../../firebase/firebaseConfig';
+import { db, functions } from '../../firebase/firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../context/AuthContext';
 import { listUserProfiles, getUserProfile, createUserProfile, updateUserProfile, deleteUserProfile } from '../../services/userProfileService';
@@ -15,7 +16,7 @@ const GOOGLE_ADMIN_CONSOLE_URL = 'https://admin.google.com';
 
 const APPROVE_ROLES: PortalRole[] = ['viewer', 'contributor', 'manager', 'admin'];
 
-export type AdminUserTab = 'directory' | 'teams' | 'create' | 'pending';
+export type AdminUserTab = 'directory' | 'teams' | 'pending';
 
 const UserManagement: React.FC = () => {
   const { user } = useAuth();
@@ -23,7 +24,7 @@ const UserManagement: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const activeTab: AdminUserTab =
-    tabParam === 'teams' || tabParam === 'create' || tabParam === 'pending' ? tabParam : 'directory';
+    tabParam === 'teams' || tabParam === 'pending' ? tabParam : 'directory';
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [adminIds, setAdminIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
@@ -38,11 +39,14 @@ const UserManagement: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState<'all' | PortalRole>('all');
   const [removingId, setRemovingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [addUserEmail, setAddUserEmail] = useState('');
-  const [addUserName, setAddUserName] = useState('');
-  const [addingUser, setAddingUser] = useState(false);
-  const [addUserResult, setAddUserResult] = useState<{ email: string; temporaryPassword: string } | null>(null);
   const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
+
+  // Redirect legacy ?tab=create to directory
+  useEffect(() => {
+    if (searchParams.get('tab') === 'create') {
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   // Team Management tab state
   const [teams, setTeams] = useState<LeadershipTeam[]>([]);
@@ -403,71 +407,12 @@ const UserManagement: React.FC = () => {
     }
   };
 
-  const createUserByAdmin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setAddUserResult(null);
-    const email = addUserEmail.trim();
-    if (!email) {
-      setError('Please enter an email address.');
-      return;
-    }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address.');
-      return;
-    }
-    if (!auth.currentUser) {
-      setError('You must be logged in to add users. Sign in again and try again.');
-      return;
-    }
-    setAddingUser(true);
-    try {
-      console.log('[CreateUser] calling callable');
-      const fn = httpsCallable<
-        { email: string; displayName?: string; role?: string },
-        { ok: boolean; uid: string; email: string; temporaryPassword: string }
-      >(functions, 'createUserByAdmin');
-      const result = await fn({
-        email,
-        displayName: addUserName.trim() || undefined,
-        role: 'viewer',
-      });
-      console.log('[CreateUser] callable result', result.data);
-      const data = result.data;
-      setAddUserResult({ email: data.email, temporaryPassword: data.temporaryPassword });
-      setSuccess('User added. They must change their password on first login.');
-      setAddUserEmail('');
-      setAddUserName('');
-      await loadData();
-    } catch (err: unknown) {
-      const code = (err as { code?: string })?.code ?? '';
-      const message = (err as { message?: string })?.message ?? 'Failed to add user.';
-      if (code === 'functions/unauthenticated') {
-        setError('You must be logged in to add users. Sign in again and try again.');
-      } else if (code === 'functions/permission-denied') {
-        setError('Only admins can add users. Your account may not have admin access.');
-      } else if (code === 'functions/already-exists') {
-        setError('A user with this email already exists.');
-      } else if (code === 'functions/invalid-argument') {
-        setError(message || 'Invalid input.');
-      } else if (code === 'functions/not-found') {
-        setError('Add user is not available: callable "createUserByAdmin" is not deployed.');
-      } else {
-        setError(message || 'Server error.');
-      }
-    } finally {
-      setAddingUser(false);
-    }
-  };
-
   return (
     <>
     <AdminLayout title="User Management">
       <div style={{ marginBottom: '24px', borderBottom: '1px solid #e5e7eb' }}>
         <nav style={{ display: 'flex', gap: '0' }}>
-          {(['directory', 'teams', 'create', 'pending'] as const).map((t) => (
+          {(['directory', 'teams', 'pending'] as const).map((t) => (
             <button
               key={t}
               type="button"
@@ -483,7 +428,7 @@ const UserManagement: React.FC = () => {
                 fontSize: '1rem',
               }}
             >
-              {t === 'directory' ? 'User Directory' : t === 'teams' ? 'Team Management' : t === 'create' ? 'Create User' : 'Pending approvals'}
+              {t === 'directory' ? 'User Directory' : t === 'teams' ? 'Team Management' : 'Pending approvals'}
             </button>
           ))}
         </nav>
@@ -733,51 +678,6 @@ const UserManagement: React.FC = () => {
               </table>
             </div>
           )}
-        </div>
-        )}
-
-        {activeTab === 'create' && (
-        <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', maxWidth: '560px' }}>
-          <h2 style={{ color: '#002B4D', marginBottom: '16px' }}>Create User</h2>
-          <p style={{ marginBottom: '20px', color: '#6b7280', fontSize: '0.9rem' }}>
-            Add a new user by email. Their first-time password will be <strong>12341234</strong>; they will be prompted to change it on first login.
-          </p>
-          <form onSubmit={createUserByAdmin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <label htmlFor="add-user-email" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Email</label>
-              <input
-                id="add-user-email"
-                type="email"
-                value={addUserEmail}
-                onChange={(e) => { setAddUserEmail(e.target.value); setAddUserResult(null); }}
-                placeholder="user@example.com"
-                required
-                style={{ width: '100%', maxWidth: '400px', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
-              />
-            </div>
-            <div>
-              <label htmlFor="add-user-name" style={{ display: 'block', marginBottom: '4px', fontSize: '0.875rem', fontWeight: 500, color: '#374151' }}>Name (optional)</label>
-              <input
-                id="add-user-name"
-                type="text"
-                value={addUserName}
-                onChange={(e) => setAddUserName(e.target.value)}
-                placeholder="Display name"
-                style={{ width: '100%', maxWidth: '400px', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: '8px', fontSize: '14px' }}
-              />
-            </div>
-            <button type="submit" className="btn btn-primary" disabled={addingUser} style={{ padding: '10px 20px', fontSize: '14px', alignSelf: 'flex-start' }}>
-              {addingUser ? 'Adding...' : 'Add user'}
-            </button>
-          </form>
-          {addUserResult && (
-            <p style={{ marginTop: '16px', marginBottom: 0, fontSize: '0.875rem', color: '#166534', fontWeight: 500 }}>
-              Temporary password (show to user once): <strong>{addUserResult.temporaryPassword}</strong>. They must change it on first login.
-            </p>
-          )}
-          <p style={{ marginTop: '16px', marginBottom: 0, fontSize: '0.75rem', color: '#6b7280' }}>
-            Uses callable function createUserByAdmin via httpsCallable (no CORS).
-          </p>
         </div>
         )}
 

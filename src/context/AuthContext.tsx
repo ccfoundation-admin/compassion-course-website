@@ -34,6 +34,8 @@ interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
   loading: boolean;
+  /** True until admin check completes for the current user (only relevant when user is set). */
+  adminLoading: boolean;
   /** Canonical user doc (users/{uid}); null while loading or if not yet created. */
   userDoc: UserDoc | null;
   userRole: UserRole | null;
@@ -61,13 +63,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [adminLoading, setAdminLoading] = useState(false);
   const [userDoc, setUserDoc] = useState<UserDoc | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       
-      if (user) {
+      if (user?.uid) {
+        setAdminLoading(true);
         // Read-only admin check: getDoc(admins/{uid}) only; never write. Admin docs are created in Console or via Cloud Function.
         // For non-admin users, check admin status first (with timeout)
         const checkAdmin = async () => {
@@ -94,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Check Firestore document (UID-only; rules allow read of own doc via isSelf)
           const docPath = `admins/${user.uid}`;
-          console.log('[admin check] auth.currentUser?.uid', auth.currentUser?.uid, 'auth.currentUser?.email', auth.currentUser?.email);
+          console.log('[admin check] start uid=', user.uid);
           console.log('[admin check] doc path', docPath);
           try {
             const timeoutPromise = new Promise<never>((_, reject) => 
@@ -114,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const okStatus = status === 'active' || status === 'approved';
             const okRole = role === 'admin' || role === 'superAdmin';
             const isAdminUser = adminDoc.exists() && okRole && okStatus;
-            console.log('[admin check] okStatus', okStatus, 'okRole', okRole, 'status', status, 'role', role, 'isAdminUser', isAdminUser);
+            console.log('[admin check] end isAdmin=', !!isAdminUser);
             setIsAdmin(!!isAdminUser);
           } catch (error: any) {
             console.log('[admin check] catch e.code', error?.code, 'e.message', error?.message);
@@ -134,6 +138,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } catch (adminError) {
           console.error('Error in checkAdmin:', adminError);
           setIsAdmin(false);
+        } finally {
+          setAdminLoading(false);
         }
         
         // Token already refreshed in checkAdmin(); ensure user profile exists in background (non-blocking)
@@ -145,17 +151,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               user.displayName || user.email?.split('@')[0] || 'User',
               user.photoURL || undefined
             ).then(() => {
-              console.log('User profile created on login');
+              console.log('[profile] created on login');
             });
           }
         }).catch(err => {
           const isOfflineError = err?.code === 'unavailable' || 
                                 err?.message?.includes('offline');
           if (!isOfflineError) {
-            console.error('Error ensuring user profile exists:', err);
+            console.error('[profile] failed on login', err);
           }
         });
       } else {
+        setAdminLoading(false);
         setIsAdmin(false);
         setUserDoc(null);
       }
@@ -243,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // but Firebase will use it automatically if initialized. For explicit v2 usage,
       // we ensure the verifier is set up before calling createUserWithEmailAndPassword.
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('Registration successful:', userCredential.user.email);
+      console.log('[signup] success', userCredential.user.email);
       
       // Auto-create user profile
       try {
@@ -255,16 +262,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userCredential.user.displayName || email.split('@')[0],
             userCredential.user.photoURL || undefined  // Convert null to undefined
           );
-          console.log('User profile created successfully');
+          console.log('[profile] created on signup');
         }
       } catch (profileError) {
-        console.error('Error creating user profile:', profileError);
+        console.error('[profile] failed on signup', profileError);
         // Don't fail registration if profile creation fails
       }
       
       return userCredential;
     } catch (error: any) {
-      console.error('Firebase registration error:', error);
+      console.error('[signup] failure', error?.code, error?.message);
       // Re-throw the error so the RegisterPage can handle it
       throw error;
     }
@@ -294,15 +301,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userCredential.user.displayName || userCredential.user.email?.split('@')[0] || 'User',
             userCredential.user.photoURL || undefined  // Convert null to undefined
           );
-          console.log('User profile created from Google sign-in');
+          console.log('[profile] created from Google sign-in');
         }
       } catch (profileError) {
-        console.error('Error creating user profile:', profileError);
+        console.error('[profile] failed on Google sign-in', profileError);
       }
       
       return userCredential;
     } catch (error: any) {
-      console.error('❌ Google sign-in error:', error);
+      console.error('[signup] failure Google', error?.code, error?.message);
       console.error('❌ Error code:', error.code);
       console.error('❌ Error message:', error.message);
       console.error('❌ Full error:', JSON.stringify(error, null, 2));
@@ -369,6 +376,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     isAdmin,
     loading,
+    adminLoading,
     userDoc,
     userRole: userDoc?.role ?? null,
     userStatus: userDoc?.status ?? null,

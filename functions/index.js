@@ -243,26 +243,29 @@ async function createUserByAdminLogic(caller, data) {
 }
 
 /**
+ * DEPRECATED: User provisioning is self-signup only. Create User UI removed; callable no longer exposed.
+ * Uncomment to re-enable admin-created users (not recommended).
+ *
  * Callable (onCall): createUserByAdmin — region us-central1, invoker public for browser OPTIONS.
  * All validation and admin check inside createUserByAdminLogic; handler wraps errors for explicit HttpsError.
  */
-exports.createUserByAdmin = onCall(
-  { region: "us-central1", invoker: "public" },
-  async (request) => {
-    try {
-      const caller = {
-        uid: request.auth?.uid || null,
-        email: request.auth?.token?.email ? String(request.auth.token.email) : "",
-      };
-      const result = await createUserByAdminLogic(caller, request.data || {});
-      return result;
-    } catch (err) {
-      logError(FN_CREATE_USER, "handler", err);
-      if (err instanceof HttpsError) throw err;
-      throw new HttpsError("internal", err?.message || "unknown error");
-    }
-  }
-);
+// exports.createUserByAdmin = onCall(
+//   { region: "us-central1", invoker: "public" },
+//   async (request) => {
+//     try {
+//       const caller = {
+//         uid: request.auth?.uid || null,
+//         email: request.auth?.token?.email ? String(request.auth.token.email) : "",
+//       };
+//       const result = await createUserByAdminLogic(caller, request.data || {});
+//       return result;
+//     } catch (err) {
+//       logError(FN_CREATE_USER, "handler", err);
+//       if (err instanceof HttpsError) throw err;
+//       throw new HttpsError("internal", err?.message || "unknown error");
+//     }
+//   }
+// );
 
 const FN_APPROVE_USER = "approveUser";
 
