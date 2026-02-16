@@ -247,8 +247,8 @@ const UserProfilePage: React.FC = () => {
                   onSubmit={async (e) => {
                     e.preventDefault();
                     setSetPasswordError('');
-                    if (setPasswordValue.length < 6) {
-                      setSetPasswordError('Password must be at least 6 characters.');
+                    if (setPasswordValue.length < 8) {
+                      setSetPasswordError('Password must be at least 8 characters.');
                       return;
                     }
                     if (setPasswordValue !== setPasswordConfirm) {

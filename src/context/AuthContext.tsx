@@ -177,27 +177,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const displayName = user.displayName ?? user.email?.split('@')[0] ?? 'User';
     let cancelled = false;
     const load = async () => {
-      let doc = await getUserDoc(uid);
+      let userDocResult = await getUserDoc(uid);
       if (cancelled) return;
-      if (!doc) {
+      if (!userDocResult) {
         await new Promise((r) => setTimeout(r, 1000));
         if (cancelled) return;
-        doc = await getUserDoc(uid);
+        userDocResult = await getUserDoc(uid);
       }
       if (cancelled) return;
-      if (!doc) {
+      if (!userDocResult) {
         await new Promise((r) => setTimeout(r, 2000));
         if (cancelled) return;
-        doc = await getUserDoc(uid);
+        userDocResult = await getUserDoc(uid);
       }
       if (cancelled) return;
-      if (!doc) {
+      if (!userDocResult) {
         try {
           const adminSnap = await getDoc(doc(db, 'admins', uid));
           if (adminSnap.exists() || (user.email && ADMIN_EMAILS.includes(user.email))) {
-            doc = await ensureUserDoc(uid, email, displayName, { status: 'active', role: 'admin' });
+            userDocResult = await ensureUserDoc(uid, email, displayName, { status: 'active', role: 'admin' });
           } else {
-            doc = await ensureUserDoc(uid, email, displayName);
+            userDocResult = await ensureUserDoc(uid, email, displayName);
           }
         } catch (e) {
           if (!cancelled) setUserDoc(null);
@@ -205,8 +205,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
       if (!cancelled) {
-        setUserDoc(doc);
-        if (doc.status === 'active' && doc.role === 'admin') setIsAdmin(true);
+        setUserDoc(userDocResult);
+        if (userDocResult.status === 'active' && userDocResult.role === 'admin') setIsAdmin(true);
       }
     };
     load();
@@ -215,11 +215,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [user?.uid, user?.email, user?.displayName]);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string, password: string): Promise<void> => {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       console.log('Login successful:', userCredential.user.email);
-      return userCredential;
     } catch (error: any) {
       console.error('Firebase login error:', error);
       
@@ -237,15 +236,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, recaptchaVerifier?: RecaptchaVerifier) => {
+  const register = async (email: string, password: string, recaptchaVerifier?: RecaptchaVerifier): Promise<void> => {
     try {
       // Note: createUserWithEmailAndPassword doesn't directly accept recaptchaVerifier,
       // but Firebase will use it automatically if initialized. For explicit v2 usage,
       // we ensure the verifier is set up before calling createUserWithEmailAndPassword.
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('Registration successful:', userCredential.user.email);
-      
-      // Auto-create user profile
+
+      // Auto-create user profile and users/{uid} doc immediately so the user is
+      // "active" as soon as the auth state observer fires, avoiding the race
+      // condition where the second useEffect retries 3 times then crashes.
       try {
         const existingProfile = await getUserProfile(userCredential.user.uid);
         if (!existingProfile) {
@@ -253,7 +254,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userCredential.user.uid,
             email,
             userCredential.user.displayName || email.split('@')[0],
-            userCredential.user.photoURL || undefined  // Convert null to undefined
+            userCredential.user.photoURL || undefined
           );
           console.log('User profile created successfully');
         }
@@ -261,8 +262,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Error creating user profile:', profileError);
         // Don't fail registration if profile creation fails
       }
-      
-      return userCredential;
+
+      // Eagerly create the users/{uid} doc so the second useEffect doesn't have to
+      // retry and fall through to the (previously broken) fallback path.
+      try {
+        await ensureUserDoc(
+          userCredential.user.uid,
+          email,
+          userCredential.user.displayName || email.split('@')[0]
+        );
+        console.log('User doc ensured on registration');
+      } catch (userDocError) {
+        console.error('Error ensuring user doc on registration:', userDocError);
+      }
     } catch (error: any) {
       console.error('Firebase registration error:', error);
       // Re-throw the error so the RegisterPage can handle it
@@ -292,15 +304,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userCredential.user.uid,
             userCredential.user.email || '',
             userCredential.user.displayName || userCredential.user.email?.split('@')[0] || 'User',
-            userCredential.user.photoURL || undefined  // Convert null to undefined
+            userCredential.user.photoURL || undefined
           );
           console.log('User profile created from Google sign-in');
         }
       } catch (profileError) {
         console.error('Error creating user profile:', profileError);
       }
-      
-      return userCredential;
+
+      // Eagerly create the users/{uid} doc for new Google sign-in users
+      try {
+        await ensureUserDoc(
+          userCredential.user.uid,
+          userCredential.user.email || '',
+          userCredential.user.displayName || userCredential.user.email?.split('@')[0] || 'User'
+        );
+      } catch (userDocError) {
+        console.error('Error ensuring user doc on Google sign-in:', userDocError);
+      }
     } catch (error: any) {
       console.error('❌ Google sign-in error:', error);
       console.error('❌ Error code:', error.code);

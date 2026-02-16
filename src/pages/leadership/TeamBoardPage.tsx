@@ -123,12 +123,14 @@ const TeamBoardPage: React.FC = () => {
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
   );
 
-  const loadBoard = () => {
+  const loadBoard = (cancelled?: () => boolean) => {
     if (!teamId) return;
     setLoading(true);
     Promise.all([listWorkItems(teamId), getTeam(teamId), getTeamBoardSettings(teamId)])
       .then(async ([items, team, settings]) => {
+        if (cancelled && cancelled()) return;
         const board = await getBoardByTeamId(teamId);
+        if (cancelled && cancelled()) return;
         if (!board) {
           try {
             await createBoardForTeam(teamId);
@@ -136,6 +138,7 @@ const TeamBoardPage: React.FC = () => {
             console.warn('Lazy create board failed:', err);
           }
         }
+        if (cancelled && cancelled()) return;
         setWorkItems(items);
         setTeamName(team?.name ?? '');
         setMemberIds(team?.memberIds ?? []);
@@ -148,24 +151,30 @@ const TeamBoardPage: React.FC = () => {
             team.memberIds.map((uid) =>
               getUserProfile(uid).then((p) => [uid, p?.name || p?.email || uid] as const)
             )
-          ).then((pairs) => setMemberLabels(Object.fromEntries(pairs)));
+          ).then((pairs) => { if (!cancelled || !cancelled()) setMemberLabels(Object.fromEntries(pairs)); });
         } else {
           setMemberLabels({});
         }
       })
       .catch(() => {
+        if (cancelled && cancelled()) return;
         setWorkItems([]);
         setTeamName('');
         setMemberIds([]);
         setMemberLabels({});
         setBoardSettings(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled || !cancelled()) setLoading(false); });
   };
 
+  const loadBoardRef = React.useRef<() => void>();
+
   useEffect(() => {
+    let cancelled = false;
     window.scrollTo(0, 0);
-    loadBoard();
+    loadBoard(() => cancelled);
+    loadBoardRef.current = () => loadBoard();
+    return () => { cancelled = true; };
   }, [teamId]);
 
   const handleDragStart = (e: DragStartEvent) => {
@@ -229,7 +238,7 @@ const TeamBoardPage: React.FC = () => {
       }
       setShowCreateForm(false);
       setCreateDefaultLane('standard');
-      await loadBoard();
+      loadBoardRef.current?.();
     } catch (err) {
       console.error(err);
     }
@@ -265,7 +274,7 @@ const TeamBoardPage: React.FC = () => {
         }
       }
       setEditingItem(null);
-      await loadBoard();
+      loadBoardRef.current?.();
     } catch (err) {
       console.error(err);
     }

@@ -83,7 +83,8 @@ const UserManagement: React.FC = () => {
       setTeams(list);
       const profiles = await listUserProfiles();
       setTeamProfiles(profiles);
-    } catch {
+    } catch (err) {
+      console.error('Error loading teams:', err);
       setTeams([]);
       setTeamProfiles([]);
     } finally {
@@ -169,7 +170,8 @@ const UserManagement: React.FC = () => {
           if (email) ids.add(email.toLowerCase());
         });
         setAdminIds(ids);
-      } catch {
+      } catch (err) {
+        console.error('Error loading admin IDs:', err);
         setAdminIds(new Set());
       }
     } catch (err: unknown) {

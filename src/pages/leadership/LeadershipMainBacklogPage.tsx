@@ -34,25 +34,33 @@ const LeadershipMainBacklogPage: React.FC = () => {
   const [assigneeId, setAssigneeId] = useState('');
   const [teamMembers, setTeamMembers] = useState<{ id: string; label: string }[]>([]);
 
-  const load = async () => {
+  const loadRef = React.useRef<() => void>();
+
+  const load = async (cancelled?: () => boolean) => {
     setLoading(true);
     try {
       const [backlog, teamList] = await Promise.all([
         listAllBacklogStatusItems(),
         listTeams(),
       ]);
+      if (cancelled && cancelled()) return;
       setItems(backlog);
       setTeams(teamList);
-    } catch {
+    } catch (err) {
+      console.error('Error loading backlog:', err);
+      if (cancelled && cancelled()) return;
       setItems([]);
       setTeams([]);
     } finally {
-      setLoading(false);
+      if (!cancelled || !cancelled()) setLoading(false);
     }
   };
 
   useEffect(() => {
-    load();
+    let cancelled = false;
+    load(() => cancelled);
+    loadRef.current = () => load();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -61,7 +69,9 @@ const LeadershipMainBacklogPage: React.FC = () => {
       setAssigneeId('');
       return;
     }
+    let cancelled = false;
     getTeam(assignTeamId).then((team) => {
+      if (cancelled) return;
       if (!team) {
         setTeamMembers([]);
         return;
@@ -73,9 +83,10 @@ const LeadershipMainBacklogPage: React.FC = () => {
             label: p?.name || p?.email || uid,
           }))
         )
-      ).then(setTeamMembers);
+      ).then((members) => { if (!cancelled) setTeamMembers(members); });
       setAssigneeId('');
-    }).catch(() => setTeamMembers([]));
+    }).catch(() => { if (!cancelled) setTeamMembers([]); });
+    return () => { cancelled = true; };
   }, [assignTeamId]);
 
   const handleCreateSave = async (data: TaskFormPayload, context?: TaskFormSaveContext) => {
@@ -106,7 +117,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
         }
       }
       setShowCreateForm(false);
-      load();
+      loadRef.current?.();
     } catch (err) {
       console.error(err);
     }
@@ -141,7 +152,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
         }
       }
       setEditingItem(null);
-      load();
+      loadRef.current?.();
     } catch (err) {
       console.error(err);
     }
@@ -158,7 +169,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
       setAssigningId(null);
       setAssignTeamId('');
       setAssigneeId('');
-      load();
+      loadRef.current?.();
     } catch (err) {
       console.error(err);
     }

@@ -10,6 +10,7 @@ const AboutPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const loadData = async () => {
       try {
         setLoading(true);
@@ -17,17 +18,20 @@ const AboutPage: React.FC = () => {
           getTeamMembers(),
           getLanguageSections()
         ]);
-        setTeamMembers(members);
-        setLanguageSections(sections);
+        if (!cancelled) {
+          setTeamMembers(members);
+          setLanguageSections(sections);
+        }
       } catch (err: any) {
         console.error('Error loading team data:', err);
-        setError('Failed to load team information');
+        if (!cancelled) setError('Failed to load team information');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     loadData();
+    return () => { cancelled = true; };
   }, []);
 
   // Group team members by team section

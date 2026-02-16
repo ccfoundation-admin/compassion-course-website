@@ -33,11 +33,13 @@ const Navigation: React.FC = () => {
       setProfileLoading(false);
       return;
     }
+    let cancelled = false;
     setProfileLoading(true);
     getUserProfile(user.uid)
-      .then(setProfile)
-      .catch(() => setProfile(null))
-      .finally(() => setProfileLoading(false));
+      .then((p) => { if (!cancelled) setProfile(p); })
+      .catch(() => { if (!cancelled) setProfile(null); })
+      .finally(() => { if (!cancelled) setProfileLoading(false); });
+    return () => { cancelled = true; };
   }, [user?.uid, authLoading]);
 
   useEffect(() => {
@@ -77,8 +79,8 @@ const Navigation: React.FC = () => {
     <nav className="navbar">
       <div className="nav-container">
         <div className="nav-logo">
-          <Link to="/" className="nav-logo-text">
-            The Compassion Course
+          <Link to="/" className="nav-logo-link">
+            <img src="/Logo-with-HSW-transparent.png" alt="The Compassion Course" className="nav-logo-img" />
           </Link>
         </div>
 
@@ -86,22 +88,11 @@ const Navigation: React.FC = () => {
           <li className="nav-item">
             <Link to="/" className={`nav-link ${isActive('/') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Home</Link>
           </li>
-          <li className="nav-item dropdown">
-            <Link to="/programs" className={`nav-link ${isActive('/programs') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
-              Programs <i className="fas fa-chevron-down"></i>
-            </Link>
-            <div className="dropdown-content">
-              <Link to="/programs#foundation">Compassion Course</Link>
-              <Link to="/programs#advanced">Advanced Programs</Link>
-              <Link to="/programs#workshops">Evening Workshops</Link>
-              <Link to="/programs#coaching">Personal Coaching</Link>
-            </div>
+          <li className="nav-item">
+            <Link to="/programs" className={`nav-link ${isActive('/programs') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Programs</Link>
           </li>
           <li className="nav-item">
             <Link to="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>About Us</Link>
-          </li>
-          <li className="nav-item">
-            <a href="/#testimonials" className="nav-link" onClick={() => setIsMenuOpen(false)}>What People Say</a>
           </li>
           <li className="nav-item">
             <Link to="/compass-companion" className={`nav-link ${isActive('/compass-companion') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
