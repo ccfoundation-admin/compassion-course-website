@@ -10,7 +10,7 @@ import {
   where,
   serverTimestamp,
 } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
+import { httpsCallableFromURL } from 'firebase/functions';
 import { db, functions } from '../firebase/firebaseConfig';
 import type { LeadershipTeam } from '../types/leadership';
 
@@ -58,15 +58,16 @@ export async function createTeam(name: string, memberIds: string[] = []): Promis
   return toTeam({ id: snap.id, data: () => snap.data() ?? {} });
 }
 
-/** Creates a team and its board (1:1) via callable; client cannot write to teams/boards directly. */
+/** Creates a team and its board (1:1) via callable (same-origin URL to avoid CORS). */
 export async function createTeamWithBoard(
   name: string,
   memberIds: string[] = []
 ): Promise<LeadershipTeam> {
-  const fn = httpsCallable<{ name: string; memberIds: string[] }, { ok: boolean; teamId: string; boardId: string }>(
-    functions,
-    'createTeamWithBoard'
-  );
+  const url = `${typeof window !== 'undefined' ? window.location.origin : ''}/api/createTeamWithBoard`;
+  const fn = httpsCallableFromURL<
+    { name: string; memberIds: string[] },
+    { ok: boolean; teamId: string; boardId: string }
+  >(functions, url);
   const res = await fn({ name, memberIds });
   const data = res.data as { ok?: boolean; teamId?: string; boardId?: string };
   if (!data?.ok || !data?.teamId) throw new Error('createTeamWithBoard failed');

@@ -319,9 +319,18 @@ const UserManagement: React.FC = () => {
       await createTeamWithBoard(name, []);
       setCreateTeamName('');
       await loadTeams();
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to create team. In Firestore, check the teams collection exists and rules allow write for authenticated users.';
-      setCreateTeamError(message);
+    } catch (err: unknown) {
+      const code = (err as { code?: string })?.code ?? '';
+      const message = (err as { message?: string })?.message ?? 'Failed to create team.';
+      if (code === 'functions/unauthenticated') {
+        setCreateTeamError('Sign in required to create teams.');
+      } else if (code === 'functions/permission-denied') {
+        setCreateTeamError('Only admins can create teams.');
+      } else if (code === 'functions/invalid-argument') {
+        setCreateTeamError(message || 'Invalid input.');
+      } else {
+        setCreateTeamError(message);
+      }
       console.error('Create team failed:', err);
     } finally {
       setTeamSaving(false);
