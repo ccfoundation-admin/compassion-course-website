@@ -246,9 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const register = async (email: string, password: string, recaptchaVerifier?: RecaptchaVerifier) => {
     try {
-      // Note: createUserWithEmailAndPassword doesn't directly accept recaptchaVerifier,
-      // but Firebase will use it automatically if initialized. For explicit v2 usage,
-      // we ensure the verifier is set up before calling createUserWithEmailAndPassword.
+      // Self-signup: no email verification sent or required; user gets access immediately.
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       console.log('[signup] success', userCredential.user.email);
       

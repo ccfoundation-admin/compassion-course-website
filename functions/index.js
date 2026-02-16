@@ -112,7 +112,7 @@ const STATUS_ACTIVE = "active";
 
 /**
  * Auth trigger (1st gen): when a new Auth user is created (self-signup), create users/{uid}
- * with status=active, role=viewer for immediate read-only portal access.
+ * with status=active, role=viewer for immediate access. No email verification required.
  */
 exports.onAuthUserCreated = functions.auth.user().onCreate(async (user) => {
   const now = FieldValue.serverTimestamp();
@@ -181,7 +181,6 @@ async function createUserByAdminLogic(caller, data) {
         email,
         password: TEMP_PASSWORD,
         displayName: displayName || undefined,
-        emailVerified: false,
       });
     } catch (e) {
       logError(FN_CREATE_USER, step, e);
