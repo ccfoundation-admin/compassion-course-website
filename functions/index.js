@@ -444,13 +444,12 @@ exports.createTeamWithBoard = functions
   });
 
 /**
- * HTTP function: same-origin /api/createTeamWithBoard (Hosting rewrite).
- * Verifies Firebase ID token and enforces active admin; creates team + board via Admin SDK.
+ * HTTP function (v2, unused): same-origin /api path. Kept as _v2 to avoid duplicate name; use Gen1 createTeamWithBoard.
  */
-exports.createTeamWithBoardHttp = onRequest(
+exports.createTeamWithBoard_v2 = onRequest(
   { region: "us-central1" },
   async (req, res) => {
-    console.log("[createTeamWithBoardHttp] auth header present", { hasAuthHeader: !!req.headers.authorization });
+    console.log("[createTeamWithBoard_v2] auth header present", { hasAuthHeader: !!req.headers.authorization });
 
     if (req.method !== "POST") {
       res.status(405).json({ error: "Method Not Allowed" });
