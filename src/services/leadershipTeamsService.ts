@@ -63,15 +63,18 @@ export async function createTeamWithBoard(
   name: string,
   memberIds: string[] = []
 ): Promise<LeadershipTeam> {
-  console.log('[createTeamWithBoard] calling httpsCallable', { region: 'us-central1', authUid: auth.currentUser?.uid });
-  console.log('[createTeamWithBoard] functions host', (functions as any)?._url?.() ?? (functions as any)?.customDomain ?? 'unknown');
   const fn = httpsCallable<
     { name: string; memberIds: string[] },
     { ok: boolean; teamId: string; boardId: string }
   >(functions, 'createTeamWithBoard');
+
   const res = await fn({ name, memberIds });
-  const data = res.data as { ok?: boolean; teamId?: string; boardId?: string };
-  if (!data?.ok || !data?.teamId) throw new Error('createTeamWithBoard failed');
+  const data = res.data;
+
+  if (!data?.ok || !data?.teamId) {
+    throw new Error('createTeamWithBoard failed');
+  }
+
   const now = new Date();
   return {
     id: data.teamId,
