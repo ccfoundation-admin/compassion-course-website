@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useAuthModal } from '../context/AuthModalContext';
+import { usePermissions } from '../context/PermissionsContext';
 import { getUserProfile } from '../services/userProfileService';
 import type { UserProfile } from '../types/platform';
 
@@ -18,6 +19,8 @@ const Navigation: React.FC = () => {
   const navigate = useNavigate();
   const { user, logout, loading: authLoading } = useAuth();
   const { openAuthModal } = useAuthModal();
+  const { role, isAdmin } = usePermissions();
+  const showLeadership = role === 'manager' || role === 'admin' || isAdmin;
 
   useEffect(() => {
     const mq = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT + 1}px)`);
@@ -54,7 +57,7 @@ const Navigation: React.FC = () => {
   }, [accountOpen]);
 
   const isActive = (path: string) => location.pathname === path;
-  const isInPortal = location.pathname === '/portal' || location.pathname.startsWith('/portal/');
+  const isActivePrefix = (prefix: string) => location.pathname === prefix || location.pathname.startsWith(prefix + '/');
 
   const handlePortalLogout = async () => {
     setAccountOpen(false);
@@ -66,6 +69,26 @@ const Navigation: React.FC = () => {
     setAccountOpen(false);
     openAuthModal();
   };
+
+  // Derive display name and initials
+  const displayName = (() => {
+    const n = (profile?.name || '').trim();
+    if (n) return n.split(/\s+/)[0]; // First name only
+    if (user?.displayName) return user.displayName.split(/\s+/)[0];
+    if (user?.email) return user.email.split('@')[0];
+    return '';
+  })();
+
+  const initials = (() => {
+    const n = (profile?.name || '').trim();
+    if (n) {
+      const parts = n.split(/\s+/);
+      return parts.length >= 2
+        ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+        : parts[0][0].toUpperCase();
+    }
+    return (user?.email || '?').charAt(0).toUpperCase();
+  })();
 
   return (
     <nav className="navbar">
@@ -89,9 +112,20 @@ const Navigation: React.FC = () => {
             </Link>
           </li>
           {user && (
-            <li className="nav-item">
-              <Link to="/portal" className={`nav-link ${isActive('/portal') || isInPortal ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Portal</Link>
-            </li>
+            <>
+              <li className="nav-item">
+                <Link to="/portal/circle" className={`nav-link ${isActive('/portal/circle') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+                  Community
+                </Link>
+              </li>
+              {showLeadership && (
+                <li className="nav-item">
+                  <Link to="/portal/leadership" className={`nav-link ${isActivePrefix('/portal/leadership') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+                    Dashboard
+                  </Link>
+                </li>
+              )}
+            </>
           )}
           {/* Mobile-only account items */}
           {!isDesktop && (
@@ -102,7 +136,7 @@ const Navigation: React.FC = () => {
               {user ? (
                 <>
                   <li className="nav-item nav-menu-account-item">
-                    <Link to="/portal/leadership" className="nav-link" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                    <Link to="/portal" className="nav-link" onClick={() => setIsMenuOpen(false)}>Portal</Link>
                   </li>
                   <li className="nav-item nav-menu-account-item">
                     <Link to="/platform/profile" className="nav-link" onClick={() => setIsMenuOpen(false)}>Profile settings</Link>
@@ -136,17 +170,17 @@ const Navigation: React.FC = () => {
             </button>
           )}
 
-          {/* Avatar + account dropdown when logged in */}
+          {/* Avatar + name + account dropdown when logged in */}
           {user && (
             <>
               <div className="nav-avatar-wrap">
-                {!profileLoading && (
-                  <button
-                    type="button"
-                    className="nav-avatar-link"
-                    aria-label="Account menu"
-                    onClick={() => setAccountOpen((prev) => !prev)}
-                  >
+                <button
+                  type="button"
+                  className="nav-avatar-link"
+                  aria-label="Account menu"
+                  onClick={() => setAccountOpen((prev) => !prev)}
+                >
+                  <span className="nav-avatar-circle">
                     {profile?.avatar || user.photoURL ? (
                       <img
                         src={profile?.avatar || user.photoURL || ''}
@@ -154,38 +188,36 @@ const Navigation: React.FC = () => {
                         className="nav-avatar-img"
                       />
                     ) : (
-                      <span className="nav-avatar-initial">
-                        {(() => {
-                          const n = (profile?.name || '').trim();
-                          if (n) {
-                            const parts = n.split(/\s+/);
-                            return parts.length >= 2
-                              ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
-                              : parts[0][0].toUpperCase();
-                          }
-                          return (user.email || '?').charAt(0).toUpperCase();
-                        })()}
-                      </span>
+                      <span className="nav-avatar-initial">{initials}</span>
                     )}
-                  </button>
-                )}
+                  </span>
+                  {isDesktop && displayName && (
+                    <span className="nav-avatar-name">{displayName}</span>
+                  )}
+                  <i className="fas fa-chevron-down nav-avatar-chevron"></i>
+                </button>
               </div>
               {accountOpen && isDesktop && (
                 <div className="nav-account-dropdown">
+                  <div className="nav-account-dropdown-header">
+                    <span className="nav-account-dropdown-name">{profile?.name || user.displayName || 'User'}</span>
+                    <span className="nav-account-dropdown-email">{user.email}</span>
+                  </div>
+                  <div className="nav-account-dropdown-divider" />
                   <Link
-                    to="/portal/leadership"
+                    to="/portal"
                     className="nav-account-dropdown-item"
                     onClick={() => setAccountOpen(false)}
                   >
-                    <i className="fas fa-columns" style={{ marginRight: 8, fontSize: '0.8rem', opacity: 0.6 }}></i>
-                    Dashboard
+                    <i className="fas fa-th-large nav-dropdown-icon"></i>
+                    Portal
                   </Link>
                   <Link
                     to="/platform/profile"
                     className="nav-account-dropdown-item"
                     onClick={() => setAccountOpen(false)}
                   >
-                    <i className="fas fa-user-cog" style={{ marginRight: 8, fontSize: '0.8rem', opacity: 0.6 }}></i>
+                    <i className="fas fa-user-cog nav-dropdown-icon"></i>
                     Profile settings
                   </Link>
                   <div className="nav-account-dropdown-divider" />
@@ -194,7 +226,7 @@ const Navigation: React.FC = () => {
                     className="nav-account-dropdown-item nav-account-dropdown-btn"
                     onClick={handlePortalLogout}
                   >
-                    <i className="fas fa-sign-out-alt" style={{ marginRight: 8, fontSize: '0.8rem', opacity: 0.6 }}></i>
+                    <i className="fas fa-sign-out-alt nav-dropdown-icon"></i>
                     Logout
                   </button>
                 </div>

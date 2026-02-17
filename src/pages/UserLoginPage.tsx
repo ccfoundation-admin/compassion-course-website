@@ -12,10 +12,10 @@ const UserLoginPage: React.FC = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Redirect to portal when user is authenticated (after initial check completes)
+  // Redirect home when user is already authenticated
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/portal', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [user, authLoading, navigate]);
 

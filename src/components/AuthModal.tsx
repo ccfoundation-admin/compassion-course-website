@@ -13,7 +13,7 @@ const AuthModal: React.FC = () => {
   const { login, signInWithGoogle } = useAuth();
   const [googleLoading, setGoogleLoading] = useState(false);
   const { authModalOpen, closeAuthModal } = useAuthModal();
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // kept for register redirect only
 
   if (!authModalOpen) return null;
 
@@ -28,7 +28,7 @@ const AuthModal: React.FC = () => {
     try {
       await login(email, password);
       closeAuthModal();
-      navigate('/portal');
+      // Stay on current page — no redirect
     } catch (err: any) {
       console.error('Login error:', err);
       if (isDomainBlockingError(err)) {
@@ -61,7 +61,7 @@ const AuthModal: React.FC = () => {
     try {
       await signInWithGoogle();
       closeAuthModal();
-      navigate('/portal');
+      // Stay on current page — no redirect
     } catch (err: any) {
       console.error('Google sign-in error:', err);
       setError(err.message || 'Failed to sign in with Google.');
