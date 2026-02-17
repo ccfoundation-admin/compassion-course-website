@@ -11,11 +11,11 @@ const STATUS_OPTIONS: { value: WorkItemStatus; label: string; color: string }[] 
   { value: 'done', label: 'Done', color: '#22c55e' },
 ];
 
-const LANE_OPTIONS: { value: WorkItemLane; label: string }[] = [
-  { value: 'expedited', label: 'Expedited' },
-  { value: 'fixed_date', label: 'Fixed Date' },
-  { value: 'standard', label: 'Standard' },
-  { value: 'intangible', label: 'Intangible' },
+const LANE_OPTIONS: { value: WorkItemLane; label: string; icon: string; desc: string; color: string }[] = [
+  { value: 'expedited', label: 'Urgent', icon: 'fas fa-bolt', desc: 'Drop everything — fix now', color: '#ef4444' },
+  { value: 'fixed_date', label: 'Deadline', icon: 'fas fa-calendar-day', desc: 'Must ship by a specific date', color: '#f59e0b' },
+  { value: 'standard', label: 'Standard', icon: 'fas fa-stream', desc: 'Normal priority work', color: '#3b82f6' },
+  { value: 'intangible', label: 'Background', icon: 'fas fa-wrench', desc: 'Tech debt, maintenance, improvements', color: '#8b5cf6' },
 ];
 
 const ESTIMATE_OPTIONS = [0.5, 1, 1.5, 2, 3, 5];
@@ -224,7 +224,7 @@ export const TaskForm: React.FC<TaskFormProps> = ({
         {uniqueId && (
           <div className="tf-meta">
             <span className="tf-meta-label">ID:</span>
-            <span className="tf-meta-value">{uniqueId.slice(0, 8)}…</span>
+            <span className="tf-meta-value">{uniqueId}</span>
           </div>
         )}
 
@@ -279,15 +279,25 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             </div>
           </div>
 
-          {/* Two-column row: Lane + Estimate */}
+          {/* Priority + Estimate row */}
           <div className="tf-row">
             <div className="tf-field tf-field--half">
-              <label className="tf-label" htmlFor="tf-lane">Lane</label>
-              <select id="tf-lane" value={lane} onChange={(e) => setLane(e.target.value as WorkItemLane)} className="tf-input tf-select">
+              <label className="tf-label">Priority</label>
+              <div className="tf-lane-group">
                 {LANE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
+                  <button
+                    key={o.value}
+                    type="button"
+                    className={`tf-lane-btn ${lane === o.value ? 'tf-lane-btn--active' : ''}`}
+                    onClick={() => setLane(o.value)}
+                    title={o.desc}
+                    style={lane === o.value ? { borderColor: o.color, color: o.color, background: `${o.color}0d` } : undefined}
+                  >
+                    <i className={o.icon} style={{ fontSize: '0.7rem', color: o.color }}></i>
+                    <span>{o.label}</span>
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
 
             <div className="tf-field tf-field--half">
@@ -403,11 +413,15 @@ export const TaskForm: React.FC<TaskFormProps> = ({
                   ))}
                 </ul>
               )}
-              {newCommentText.trim() && (
-                <button type="button" className="tf-comment-add-btn" onClick={addComment} disabled={!user}>
-                  Post comment
-                </button>
-              )}
+              <button
+                type="button"
+                className="tf-comment-add-btn"
+                onClick={addComment}
+                disabled={!user}
+                style={{ visibility: newCommentText.trim() ? 'visible' : 'hidden' }}
+              >
+                Post comment
+              </button>
             </div>
           </div>
 

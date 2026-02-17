@@ -2,14 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { getTeamBoardSettings, setTeamBoardSettings } from '../../services/teamBoardSettingsService';
 import { deleteTeamWithData } from '../../services/leadershipTeamsService';
 import { usePermissions } from '../../context/PermissionsContext';
-import type { WorkItemLane, WorkItemStatus } from '../../types/leadership';
-
-const LANE_OPTIONS: { id: WorkItemLane; label: string }[] = [
-  { id: 'expedited', label: 'Expedite' },
-  { id: 'fixed_date', label: 'Fixed Delivery Date' },
-  { id: 'standard', label: 'Standard' },
-  { id: 'intangible', label: 'Intangible' },
-];
+import type { WorkItemStatus } from '../../types/leadership';
 
 const DEFAULT_COLUMN_LABELS: Record<WorkItemStatus, string> = {
   backlog: 'Backlog',
@@ -34,7 +27,6 @@ const SettingsTabView: React.FC<SettingsTabViewProps> = ({ teamId, teamName, onS
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [visibleLanes, setVisibleLanes] = useState<Set<WorkItemLane>>(new Set(LANE_OPTIONS.map((l) => l.id)));
   const [columnHeaders, setColumnHeaders] = useState<Partial<Record<WorkItemStatus, string>>>({});
 
   // Delete team state
@@ -62,7 +54,6 @@ const SettingsTabView: React.FC<SettingsTabViewProps> = ({ teamId, teamName, onS
       setHoldProgress(pct);
       if (pct >= 1) {
         clearHoldTimer();
-        // Trigger delete
         setDeleting(true);
         setDeleteError('');
         deleteTeamWithData(teamId)
@@ -82,7 +73,6 @@ const SettingsTabView: React.FC<SettingsTabViewProps> = ({ teamId, teamName, onS
     if (!deleting) clearHoldTimer();
   }, [deleting, clearHoldTimer]);
 
-  // Cleanup on unmount
   useEffect(() => () => clearHoldTimer(), [clearHoldTimer]);
 
   useEffect(() => {
@@ -90,28 +80,13 @@ const SettingsTabView: React.FC<SettingsTabViewProps> = ({ teamId, teamName, onS
     setSaved(false);
     getTeamBoardSettings(teamId)
       .then((s) => {
-        setVisibleLanes(
-          s.visibleLanes && s.visibleLanes.length > 0
-            ? new Set(s.visibleLanes)
-            : new Set(LANE_OPTIONS.map((l) => l.id))
-        );
         setColumnHeaders(s.columnHeaders ?? {});
       })
       .catch(() => {
-        setVisibleLanes(new Set(LANE_OPTIONS.map((l) => l.id)));
         setColumnHeaders({});
       })
       .finally(() => setLoading(false));
   }, [teamId]);
-
-  const toggleLane = (laneId: WorkItemLane) => {
-    setVisibleLanes((prev) => {
-      const next = new Set(prev);
-      if (next.has(laneId)) next.delete(laneId);
-      else next.add(laneId);
-      return next;
-    });
-  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,7 +95,6 @@ const SettingsTabView: React.FC<SettingsTabViewProps> = ({ teamId, teamName, onS
     try {
       await setTeamBoardSettings(teamId, {
         boardMode: 'kanban',
-        visibleLanes: Array.from(visibleLanes),
         columnHeaders: Object.fromEntries(
           COLUMN_KEYS.map((k) => [k, (columnHeaders[k] ?? '').trim() || undefined]).filter(([, v]) => v != null)
         ) as Partial<Record<WorkItemStatus, string>>,
@@ -140,49 +114,34 @@ const SettingsTabView: React.FC<SettingsTabViewProps> = ({ teamId, teamName, onS
     <>
     <form onSubmit={handleSave}>
       <div className="ld-settings-card">
-        <h2 className="ld-settings-title">Kanban Lanes</h2>
+        <h2 className="ld-settings-title">
+          <i className="fas fa-pen" style={{ marginRight: 8, fontSize: '0.85rem', opacity: 0.5 }}></i>
+          Column Names
+        </h2>
         <p className="ld-settings-desc">
-          Choose which swim lanes to show on {teamName || 'this team'}'s board.
+          Customize how columns are labeled on the board. Leave blank to use the defaults.
         </p>
-        <label className="ld-settings-label">Show lanes on Kanban board</label>
-        <div className="ld-settings-checkbox-group">
-          {LANE_OPTIONS.map((lane) => (
-            <label key={lane.id} className="ld-settings-checkbox-label">
+        <div className="ld-settings-cols-grid">
+          {COLUMN_KEYS.map((key) => (
+            <div key={key} className="ld-settings-col-field">
+              <span className="ld-settings-col-default">{DEFAULT_COLUMN_LABELS[key]}</span>
               <input
-                type="checkbox"
-                checked={visibleLanes.has(lane.id)}
-                onChange={() => toggleLane(lane.id)}
+                type="text"
+                value={columnHeaders[key] ?? ''}
+                onChange={(e) => setColumnHeaders((prev) => ({ ...prev, [key]: e.target.value }))}
+                placeholder="Default"
+                className="ld-settings-col-input"
               />
-              <span>{lane.label}</span>
-            </label>
+            </div>
           ))}
         </div>
       </div>
 
-      <div className="ld-settings-card">
-        <h2 className="ld-settings-title">Column headers for {teamName || 'this team'}</h2>
-        <p className="ld-settings-desc">
-          Override column names. Leave blank to use the default.
-        </p>
-        {COLUMN_KEYS.map((key) => (
-          <div key={key} className="ld-settings-input-group">
-            <label className="ld-settings-input-label">{DEFAULT_COLUMN_LABELS[key]}:</label>
-            <input
-              type="text"
-              value={columnHeaders[key] ?? ''}
-              onChange={(e) => setColumnHeaders((prev) => ({ ...prev, [key]: e.target.value }))}
-              placeholder={`Custom header for ${DEFAULT_COLUMN_LABELS[key]}`}
-              className="ld-settings-input"
-            />
-          </div>
-        ))}
-      </div>
-
       <div className="ld-settings-actions">
         <button type="submit" className="ld-settings-save-btn" disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
+          {saving ? 'Saving…' : 'Save Settings'}
         </button>
-        {saved && <span className="ld-settings-saved">Settings saved.</span>}
+        {saved && <span className="ld-settings-saved"><i className="fas fa-check"></i> Saved</span>}
       </div>
     </form>
 

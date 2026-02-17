@@ -11,6 +11,19 @@ import { getTeam } from '../../services/leadershipTeamsService';
 import { getUserProfile } from '../../services/userProfileService';
 import type { LeadershipWorkItem, LeadershipTeam } from '../../types/leadership';
 
+function formatTimeAgo(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
 interface BacklogTabViewProps {
   teams: LeadershipTeam[];
   onSwitchToTeamBoard: (teamId: string) => void;
@@ -181,7 +194,12 @@ const BacklogTabView: React.FC<BacklogTabViewProps> = ({ teams, onSwitchToTeamBo
             const hasTeam = Boolean(item.teamId && item.teamId !== '');
             return (
               <div key={item.id} className="ld-backlog-item">
-                <div className="ld-backlog-item-title">{item.title}</div>
+                <div className="ld-backlog-item-header">
+                  <div className="ld-backlog-item-title">{item.title}</div>
+                  <span className="ld-backlog-item-time">
+                    Created {formatTimeAgo(item.createdAt instanceof Date ? item.createdAt : new Date(item.createdAt))}
+                  </span>
+                </div>
                 {item.description && <div className="ld-backlog-item-desc">{item.description}</div>}
                 {hasTeam && team && (
                   <div className="ld-backlog-item-team">

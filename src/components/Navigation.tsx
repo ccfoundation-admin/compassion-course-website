@@ -102,6 +102,9 @@ const Navigation: React.FC = () => {
               {user ? (
                 <>
                   <li className="nav-item nav-menu-account-item">
+                    <Link to="/portal/leadership" className="nav-link" onClick={() => setIsMenuOpen(false)}>Dashboard</Link>
+                  </li>
+                  <li className="nav-item nav-menu-account-item">
                     <Link to="/platform/profile" className="nav-link" onClick={() => setIsMenuOpen(false)}>Profile settings</Link>
                   </li>
                   <li className="nav-item nav-menu-account-item">
@@ -152,7 +155,16 @@ const Navigation: React.FC = () => {
                       />
                     ) : (
                       <span className="nav-avatar-initial">
-                        {(profile?.name || user.email || '?').charAt(0).toUpperCase()}
+                        {(() => {
+                          const n = (profile?.name || '').trim();
+                          if (n) {
+                            const parts = n.split(/\s+/);
+                            return parts.length >= 2
+                              ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+                              : parts[0][0].toUpperCase();
+                          }
+                          return (user.email || '?').charAt(0).toUpperCase();
+                        })()}
                       </span>
                     )}
                   </button>
@@ -161,17 +173,28 @@ const Navigation: React.FC = () => {
               {accountOpen && isDesktop && (
                 <div className="nav-account-dropdown">
                   <Link
+                    to="/portal/leadership"
+                    className="nav-account-dropdown-item"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    <i className="fas fa-columns" style={{ marginRight: 8, fontSize: '0.8rem', opacity: 0.6 }}></i>
+                    Dashboard
+                  </Link>
+                  <Link
                     to="/platform/profile"
                     className="nav-account-dropdown-item"
                     onClick={() => setAccountOpen(false)}
                   >
+                    <i className="fas fa-user-cog" style={{ marginRight: 8, fontSize: '0.8rem', opacity: 0.6 }}></i>
                     Profile settings
                   </Link>
+                  <div className="nav-account-dropdown-divider" />
                   <button
                     type="button"
                     className="nav-account-dropdown-item nav-account-dropdown-btn"
                     onClick={handlePortalLogout}
                   >
+                    <i className="fas fa-sign-out-alt" style={{ marginRight: 8, fontSize: '0.8rem', opacity: 0.6 }}></i>
                     Logout
                   </button>
                 </div>

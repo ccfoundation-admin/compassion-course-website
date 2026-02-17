@@ -3,6 +3,7 @@ import { FaHistory } from 'react-icons/fa';
 import {
   DndContext,
   DragEndEvent,
+  DragOverEvent,
   DragOverlay,
   DragStartEvent,
   PointerSensor,
@@ -10,10 +11,15 @@ import {
   TouchSensor,
   useSensor,
   useSensors,
-  useDraggable,
   useDroppable,
-  closestCenter,
 } from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { updateWorkItem, createWorkItem, deleteWorkItem } from '../../services/leadershipWorkItemsService';
 import { createMentionNotifications } from '../../services/notificationService';
 import TaskForm, { type TaskFormPayload, type TaskFormSaveContext } from './TaskForm';
@@ -25,13 +31,54 @@ const COLUMNS: { id: WorkItemStatus; label: string; color: string }[] = [
   { id: 'done', label: 'Done', color: '#22c55e' },
 ];
 
-const MAX_VISIBLE_AVATARS = 3;
+const LANE_META: Record<WorkItemLane, { label: string; color: string; icon: string }> = {
+  expedited: { label: 'Urgent', color: '#ef4444', icon: 'fas fa-bolt' },
+  fixed_date: { label: 'Deadline', color: '#f59e0b', icon: 'fas fa-calendar-day' },
+  standard: { label: 'Standard', color: '#3b82f6', icon: 'fas fa-stream' },
+  intangible: { label: 'Background', color: '#8b5cf6', icon: 'fas fa-wrench' },
+};
 
-/** Get effective assignee IDs from an item (prefers assigneeIds, falls back to assigneeId). */
+const MAX_VISIBLE_AVATARS = 3;
+const DONE_PREVIEW_LIMIT = 5;
+
+/** Get effective assignee IDs from an item */
 function getItemAssigneeIds(item: LeadershipWorkItem): string[] {
   if (item.assigneeIds?.length) return item.assigneeIds;
   if (item.assigneeId) return [item.assigneeId];
   return [];
+}
+
+/** Get initials from a name: "John Doe" → "JD", "John" → "J" */
+function getInitials(name: string): string {
+  const parts = name.trim().split(/\s+/);
+  if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  return (parts[0]?.[0] || '?').toUpperCase();
+}
+
+/** Format a date as a short relative or absolute string */
+function formatRelativeDate(date: Date): string {
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins}m ago`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+/** Format duration between two dates */
+function formatDuration(start: Date, end: Date): string {
+  const diffMs = end.getTime() - start.getTime();
+  if (diffMs < 0) return '';
+  const diffMins = Math.floor(diffMs / 60000);
+  if (diffMins < 60) return `${diffMins}m`;
+  const diffHours = Math.floor(diffMins / 60);
+  if (diffHours < 24) return `${diffHours}h`;
+  const diffDays = Math.floor(diffHours / 24);
+  return `${diffDays}d`;
 }
 
 /* ─── Card content (shared by card + drag overlay) ─── */
@@ -39,21 +86,31 @@ function CardContent({
   item,
   memberLabels,
   memberAvatars,
+  isDone,
 }: {
   item: LeadershipWorkItem;
   memberLabels: Record<string, string>;
   memberAvatars: Record<string, string>;
+  isDone?: boolean;
 }) {
   const ids = getItemAssigneeIds(item);
   const [showOverflow, setShowOverflow] = useState(false);
   const visibleIds = ids.slice(0, MAX_VISIBLE_AVATARS);
   const overflowCount = ids.length - MAX_VISIBLE_AVATARS;
+  const laneMeta = item.lane && item.lane !== 'standard' ? LANE_META[item.lane] : null;
 
   return (
     <>
+      {/* Priority indicator — only show for non-standard lanes */}
+      {laneMeta && (
+        <div className="ld-board-card-priority" style={{ color: laneMeta.color }}>
+          <i className={laneMeta.icon} style={{ fontSize: '0.6rem' }}></i>
+          <span>{laneMeta.label}</span>
+        </div>
+      )}
       <div className="ld-board-card-title">{item.title}</div>
       {item.description && (
-        <div style={{ fontSize: '0.8rem', color: '#6b7280', marginBottom: '6px', lineHeight: 1.3 }}>
+        <div className="ld-board-card-desc">
           {item.description.length > 80 ? item.description.slice(0, 80) + '…' : item.description}
         </div>
       )}
@@ -65,7 +122,7 @@ function CardContent({
                 <img key={id} src={memberAvatars[id]} alt="" className="ld-board-card-avatar" style={{ zIndex: visibleIds.length - i }} title={memberLabels[id] || id} />
               ) : (
                 <span key={id} className="ld-board-card-avatar-initial" style={{ zIndex: visibleIds.length - i }} title={memberLabels[id] || id}>
-                  {(memberLabels[id] || '?').charAt(0).toUpperCase()}
+                  {getInitials(memberLabels[id] || '?')}
                 </span>
               )
             ))}
@@ -92,7 +149,7 @@ function CardContent({
                     <img src={memberAvatars[id]} alt="" className="ld-board-card-overflow-avatar" />
                   ) : (
                     <span className="ld-board-card-overflow-initial">
-                      {(memberLabels[id] || '?').charAt(0).toUpperCase()}
+                      {getInitials(memberLabels[id] || '?')}
                     </span>
                   )}
                   <span>{memberLabels[id] || id}</span>
@@ -102,61 +159,82 @@ function CardContent({
           )}
         </div>
       )}
+      {/* Done timestamp — inside the card */}
+      {isDone && (
+        <div className="ld-board-card-timestamp">
+          {item.completedAt ? (
+            <>
+              Done {formatRelativeDate(item.completedAt instanceof Date ? item.completedAt : new Date(item.completedAt))}
+              {item.startedAt && item.completedAt && (
+                <span className="ld-board-card-duration">
+                  {' · '}{formatDuration(
+                    item.startedAt instanceof Date ? item.startedAt : new Date(item.startedAt),
+                    item.completedAt instanceof Date ? item.completedAt : new Date(item.completedAt)
+                  )} in progress
+                </span>
+              )}
+            </>
+          ) : (
+            <>Done {formatRelativeDate(item.updatedAt instanceof Date ? item.updatedAt : new Date(item.updatedAt))}</>
+          )}
+        </div>
+      )}
     </>
   );
 }
 
-/* ─── Draggable card ─── */
-function DraggableCard({
+/* ─── Sortable card ─── */
+function SortableCard({
   item,
   memberLabels,
   memberAvatars,
+  isDone,
   onEdit,
 }: {
   item: LeadershipWorkItem;
   memberLabels: Record<string, string>;
   memberAvatars: Record<string, string>;
+  isDone?: boolean;
   onEdit: (item: LeadershipWorkItem) => void;
 }) {
-  const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `item-${item.id}`,
-    data: { item },
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id: item.id,
+    data: { item, type: 'card' },
   });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    touchAction: 'none',
+    opacity: isDragging ? 0.4 : 1,
+  };
+
   return (
     <div
       ref={setNodeRef}
+      style={style}
       {...listeners}
       {...attributes}
       onClick={(e) => { e.stopPropagation(); onEdit(item); }}
       role="button"
       tabIndex={0}
       onKeyDown={(e) => e.key === 'Enter' && onEdit(item)}
-      style={{ touchAction: 'none' }}
     >
       <div className={`ld-board-card ${isDragging ? 'ld-board-card--dragging' : ''}`}>
-        <CardContent item={item} memberLabels={memberLabels} memberAvatars={memberAvatars} />
+        <CardContent item={item} memberLabels={memberLabels} memberAvatars={memberAvatars} isDone={isDone} />
       </div>
     </div>
   );
 }
 
-const DONE_PREVIEW_LIMIT = 5;
-
-/** Format a date as a short relative or absolute string */
-function formatCompletedDate(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Just now';
-  if (diffMins < 60) return `${diffMins}m ago`;
-  const diffHours = Math.floor(diffMins / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-  return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
-}
-
-/* ─── Droppable column ─── */
+/* ─── Droppable + sortable column ─── */
 function BoardColumn({
   column,
   items,
@@ -176,12 +254,14 @@ function BoardColumn({
   showHistory?: boolean;
   onToggleHistory?: () => void;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+  const { setNodeRef, isOver } = useDroppable({
+    id: `column-${column.id}`,
+    data: { type: 'column', status: column.id },
+  });
 
   const isDone = column.id === 'done';
   const totalCount = items.length;
 
-  // For the Done column: sort by updatedAt desc, limit to 5 unless history is shown
   const sortedItems = useMemo(() => {
     if (!isDone) return items;
     return [...items].sort((a, b) => {
@@ -195,6 +275,8 @@ function BoardColumn({
     ? sortedItems.slice(0, DONE_PREVIEW_LIMIT)
     : sortedItems;
   const hiddenCount = isDone ? totalCount - DONE_PREVIEW_LIMIT : 0;
+
+  const itemIds = useMemo(() => visibleItems.map((item) => item.id), [visibleItems]);
 
   return (
     <div
@@ -215,26 +297,23 @@ function BoardColumn({
           + Add task
         </button>
       )}
-      {items.length === 0 && (
-        <p style={{ color: '#d1d5db', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>
-          {isOver ? 'Drop here' : 'No tasks'}
-        </p>
-      )}
-      {visibleItems.map((item) => (
-        <div key={item.id}>
-          <DraggableCard
+      <SortableContext items={itemIds} strategy={verticalListSortingStrategy}>
+        {visibleItems.length === 0 && (
+          <p className="ld-board-empty-col">
+            {isOver ? 'Drop here' : 'No tasks'}
+          </p>
+        )}
+        {visibleItems.map((item) => (
+          <SortableCard
+            key={item.id}
             item={item}
             memberLabels={memberLabels}
             memberAvatars={memberAvatars}
+            isDone={isDone}
             onEdit={onEditItem}
           />
-          {isDone && showHistory && item.updatedAt && (
-            <div className="ld-board-card-timestamp">
-              Completed {formatCompletedDate(item.updatedAt instanceof Date ? item.updatedAt : new Date(item.updatedAt))}
-            </div>
-          )}
-        </div>
-      ))}
+        ))}
+      </SortableContext>
       {isDone && hiddenCount > 0 && (
         <button
           type="button"
@@ -247,6 +326,18 @@ function BoardColumn({
       )}
     </div>
   );
+}
+
+/** Find which column an item ID belongs to */
+function findColumnForItem(
+  itemId: string,
+  columns: { id: WorkItemStatus }[],
+  items: LeadershipWorkItem[]
+): WorkItemStatus | null {
+  const item = items.find((w) => w.id === itemId);
+  if (!item) return null;
+  if (columns.some((c) => c.id === item.status)) return item.status;
+  return null;
 }
 
 /* ─── Main board tab ─── */
@@ -282,16 +373,13 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
   const [saveError, setSaveError] = useState<string | null>(null);
   const [showDoneHistory, setShowDoneHistory] = useState(false);
 
-  // Local optimistic state for work items (allows instant DnD updates)
   const [optimisticItems, setOptimisticItems] = useState<LeadershipWorkItem[] | null>(null);
   const displayItems = optimisticItems ?? workItems;
 
-  // Clear optimistic state when workItems prop changes (fresh data from parent)
   React.useEffect(() => {
     setOptimisticItems(null);
   }, [workItems]);
 
-  // Multi-sensor: pointer (mouse) + touch + keyboard for reliable DnD
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 5 } }),
@@ -300,41 +388,99 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
 
   const handleDragStart = (e: DragStartEvent) => setActiveId(e.active.id as string);
 
+  const handleDragOver = useCallback((e: DragOverEvent) => {
+    const { active, over } = e;
+    if (!over) return;
+
+    const activeItemId = active.id as string;
+    const overId = over.id as string;
+
+    // Determine target column
+    let targetStatus: WorkItemStatus | null = null;
+    if (overId.startsWith('column-')) {
+      targetStatus = overId.replace('column-', '') as WorkItemStatus;
+    } else {
+      // Hovering over another card — find its column
+      targetStatus = findColumnForItem(overId, COLUMNS, optimisticItems ?? workItems);
+    }
+
+    if (!targetStatus) return;
+
+    const currentItems = optimisticItems ?? workItems;
+    const item = currentItems.find((w) => w.id === activeItemId);
+    if (!item || item.status === targetStatus) return;
+
+    // Move item to new column optimistically
+    setOptimisticItems(
+      currentItems.map((w) =>
+        w.id === activeItemId ? { ...w, status: targetStatus! } : w
+      )
+    );
+  }, [workItems, optimisticItems]);
+
   const handleDragEnd = useCallback(async (e: DragEndEvent) => {
     setActiveId(null);
     const { active, over } = e;
-    if (!over || typeof active.id !== 'string') return;
-    if (!active.id.startsWith('item-')) return;
-    const itemId = (active.id as string).replace(/^item-/, '');
-    const targetStatus = String(over.id) as WorkItemStatus;
-
-    // Validate it's a real column
-    if (!COLUMNS.some((c) => c.id === targetStatus)) return;
-
-    // Find the item and check if status actually changed
-    const currentItems = optimisticItems ?? workItems;
-    const item = currentItems.find((w) => w.id === itemId);
-    if (!item || item.status === targetStatus) return;
-
-    // Optimistic update: immediately move the card to the new column
-    setOptimisticItems(
-      currentItems.map((w) =>
-        w.id === itemId ? { ...w, status: targetStatus } : w
-      )
-    );
-
-    try {
-      await updateWorkItem(itemId, { status: targetStatus });
-      // Quietly sync with server (no loading spinner)
-      if (onQuietRefresh) {
-        onQuietRefresh();
-      }
-    } catch (err) {
-      console.error(err);
-      // Revert optimistic update on error
+    if (!over) {
       setOptimisticItems(null);
+      return;
+    }
+
+    const activeItemId = active.id as string;
+    const overId = over.id as string;
+
+    // Determine final target column
+    let targetStatus: WorkItemStatus | null = null;
+    if (overId.startsWith('column-')) {
+      targetStatus = overId.replace('column-', '') as WorkItemStatus;
+    } else {
+      targetStatus = findColumnForItem(overId, COLUMNS, optimisticItems ?? workItems);
+    }
+
+    if (!targetStatus || !COLUMNS.some((c) => c.id === targetStatus)) {
+      setOptimisticItems(null);
+      return;
+    }
+
+    const currentItems = optimisticItems ?? workItems;
+    const item = currentItems.find((w) => w.id === activeItemId);
+    if (!item) {
+      setOptimisticItems(null);
+      return;
+    }
+
+    // Handle reordering within same column
+    if (item.status === targetStatus && overId !== `column-${targetStatus}`) {
+      const columnItems = currentItems.filter((w) => w.status === targetStatus);
+      const oldIndex = columnItems.findIndex((w) => w.id === activeItemId);
+      const newIndex = columnItems.findIndex((w) => w.id === overId);
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const reordered = arrayMove(columnItems, oldIndex, newIndex);
+        const otherItems = currentItems.filter((w) => w.status !== targetStatus);
+        setOptimisticItems([...otherItems, ...reordered]);
+      }
+    }
+
+    // Always persist status change if it differs from original
+    const originalItem = workItems.find((w) => w.id === activeItemId);
+    if (originalItem && originalItem.status !== targetStatus) {
+      try {
+        await updateWorkItem(activeItemId, { status: targetStatus });
+        if (onQuietRefresh) onQuietRefresh();
+      } catch (err) {
+        console.error(err);
+        setOptimisticItems(null);
+      }
+    } else {
+      // No status change — just clear optimistic after a tick
+      setTimeout(() => setOptimisticItems(null), 50);
     }
   }, [workItems, optimisticItems, onQuietRefresh]);
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    setOptimisticItems(null);
+  }, []);
 
   const handleCreateSave = async (data: TaskFormPayload, context?: TaskFormSaveContext) => {
     setSaveError(null);
@@ -345,7 +491,6 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
         teamId,
         status: data.status,
         lane: data.lane,
-        type: data.type,
         estimate: data.estimate,
         assigneeIds: data.assigneeIds,
         assigneeId: data.assigneeId,
@@ -375,7 +520,6 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
         description: data.description,
         status: data.status,
         lane: data.lane,
-        type: data.type,
         estimate: data.estimate,
         assigneeIds: data.assigneeIds,
         assigneeId: data.assigneeId,
@@ -407,18 +551,15 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
     }
   };
 
-  // Apply custom column headers from settings
   const effectiveColumns = COLUMNS.map((c) => ({
     ...c,
     label: (boardSettings?.columnHeaders?.[c.id]?.trim() || c.label) as string,
   }));
 
-  // Filter items for each column (non-backlog items shown on the board)
   const itemsForColumn = (status: WorkItemStatus) =>
     displayItems.filter((w) => w.status === status);
 
-  const activeItem = activeId ? displayItems.find((w) => `item-${w.id}` === activeId) : null;
-  // Count backlog items separately
+  const activeItem = activeId ? displayItems.find((w) => w.id === activeId) : null;
   const backlogCount = displayItems.filter((w) => w.status === 'backlog').length;
 
   if (boardMissingError) {
@@ -434,7 +575,6 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
 
   return (
     <>
-      {/* Backlog count hint */}
       {backlogCount > 0 && (
         <p style={{ color: '#6b7280', fontSize: '0.85rem', marginBottom: '12px' }}>
           {backlogCount} task{backlogCount !== 1 ? 's' : ''} in backlog — use the Team tab to move them onto the board.
@@ -443,11 +583,12 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
 
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCenter}
         onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
       >
-        <div className="ld-board-columns" style={{ display: 'flex', gap: '16px' }}>
+        <div className="ld-board-columns">
           {effectiveColumns.map((col) => (
             <BoardColumn
               key={col.id}
@@ -463,7 +604,7 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
           ))}
         </div>
 
-        <DragOverlay>
+        <DragOverlay dropAnimation={null}>
           {activeItem ? (
             <div className="ld-drag-overlay">
               <CardContent item={activeItem} memberLabels={memberLabels} memberAvatars={memberAvatars ?? {}} />

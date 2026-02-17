@@ -104,12 +104,17 @@ const LeadershipDashboardPage: React.FC = () => {
       setTeams(teamList as LeadershipTeam[]);
       setNotifications(notifs as UserNotification[]);
 
-      // Auto-select team from URL or first team
+      // Auto-select team: URL param → localStorage → first team
       const urlTeamId = searchParams.get('team');
-      if (urlTeamId && (teamList as LeadershipTeam[]).some((t) => t.id === urlTeamId)) {
+      let savedTeamId: string | null = null;
+      try { savedTeamId = localStorage.getItem('ld_last_team'); } catch {}
+      const tl = teamList as LeadershipTeam[];
+      if (urlTeamId && tl.some((t) => t.id === urlTeamId)) {
         setSelectedTeamId(urlTeamId);
-      } else if (!selectedTeamId && (teamList as LeadershipTeam[]).length > 0) {
-        setSelectedTeamId((teamList as LeadershipTeam[])[0].id);
+      } else if (savedTeamId && tl.some((t) => t.id === savedTeamId)) {
+        setSelectedTeamId(savedTeamId);
+      } else if (!selectedTeamId && tl.length > 0) {
+        setSelectedTeamId(tl[0].id);
       }
     }).finally(() => {
       if (!cancelled) {
@@ -221,10 +226,12 @@ const LeadershipDashboardPage: React.FC = () => {
       .catch(() => {});
   }, [user?.uid]);
 
-  // Handle team selector change
+  // Handle team selector change — save to localStorage for persistence
   const handleTeamChange = (newTeamId: string) => {
     setSelectedTeamId(newTeamId);
-    // If on a team-required tab, stay; otherwise switch to board
+    if (newTeamId) {
+      try { localStorage.setItem('ld_last_team', newTeamId); } catch {}
+    }
     const currentTab = TABS.find((t) => t.id === activeTab);
     if (currentTab?.requiresTeam && !newTeamId) {
       setActiveTab('backlog');
@@ -311,22 +318,33 @@ const LeadershipDashboardPage: React.FC = () => {
 
         {/* ── Top bar: team selector + create team ── */}
         <div className="ld-top-bar">
-          <select
-            className="ld-team-selector"
-            value={selectedTeamId}
-            onChange={(e) => handleTeamChange(e.target.value)}
-          >
-            {teams.length === 0 && <option value="">No teams</option>}
-            {teams.map((t) => (
-              <option key={t.id} value={t.id}>{t.name}</option>
-            ))}
-          </select>
+          <div className="ld-team-selector-wrap">
+            {teams.length === 0 ? (
+              <div className="ld-team-selector-empty">
+                <i className="fas fa-users"></i>
+                <span>No teams yet</span>
+              </div>
+            ) : (
+              <select
+                className="ld-team-dropdown"
+                value={selectedTeamId}
+                onChange={(e) => handleTeamChange(e.target.value)}
+              >
+                <option value="" disabled>Select a team…</option>
+                {teams.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name} ({t.memberIds?.length ?? 0} members)
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
           <button
             type="button"
             className="ld-create-team-btn"
             onClick={() => setShowCreateTeamModal(true)}
           >
-            + Create Team
+            <i className="fas fa-plus"></i> New Team
           </button>
           {teamsLoading && <span className="ld-empty" style={{ fontSize: '0.85rem' }}>Loading teams…</span>}
         </div>
@@ -387,6 +405,7 @@ const LeadershipDashboardPage: React.FC = () => {
                   memberIds={memberIds}
                   memberLabels={memberLabels}
                   memberAvatars={memberAvatars}
+                  workItems={workItems}
                   onRefresh={refreshTeamData}
                 />
               )}
