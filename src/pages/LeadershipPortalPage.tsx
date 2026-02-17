@@ -141,21 +141,43 @@ const LeadershipPortalPage: React.FC = () => {
         }
         if (r2.status === 'fulfilled') {
           const allTeamsList = r2.value as LeadershipTeam[];
-          setTeams(allTeamsList);
-          setAllTeams(allTeamsList);
-          setTeamsLoadError(null);
-          setTeamsLoaded(true);
-          console.log('[LeadershipPortalPage] team list', { currentUserUid: user?.uid, teamCount: allTeamsList.length });
-          if (allTeamsList.length === 0) {
-            console.warn('[LeadershipPortalPage] Zero teams returned. Ensure Firestore users/' + user?.uid + ' exists with status "active" and role "manager" or "admin", or that your uid is in each team\'s memberIds.');
+          if (allTeamsList.length > 0) {
+            setTeams(allTeamsList);
+            setAllTeams(allTeamsList);
+            setTeamsLoadError(null);
+            setTeamsLoaded(true);
+            console.log('[LeadershipPortalPage] team list', { currentUserUid: user?.uid, teamCount: allTeamsList.length });
+          } else {
+            const userTeamsList = r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : [];
+            if (userTeamsList.length > 0) {
+              setTeams(userTeamsList);
+              setAllTeams(userTeamsList);
+              setTeamsLoadError('Could not load all teams; showing your teams.');
+              setTeamsLoaded(true);
+              console.log('[LeadershipPortalPage] team list (fallback)', { currentUserUid: user?.uid, teamCount: userTeamsList.length });
+            } else {
+              setTeams([]);
+              setAllTeams([]);
+              setTeamsLoadError(null);
+              setTeamsLoaded(true);
+              console.warn('[LeadershipPortalPage] Zero teams returned. Ensure Firestore users/' + user?.uid + ' exists with status "active" and role "manager" or "admin", or that your uid is in each team\'s memberIds.');
+            }
           }
         } else {
           const reason = (r2 as PromiseRejectedResult).reason;
           if (!isPermissionDenied(r2)) console.error('Dashboard load item failed:', 2, reason);
-          setTeamsLoadError(isPermissionDenied(r2) ? 'Permission denied loading teams.' : 'Could not load teams. Check console.');
-          setTeams([]);
-          setAllTeams([]);
-          setTeamsLoaded(true);
+          const userTeamsList = r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : [];
+          if (userTeamsList.length > 0) {
+            setTeams(userTeamsList);
+            setAllTeams(userTeamsList);
+            setTeamsLoadError(isPermissionDenied(r2) ? 'Permission denied loading all teams; showing your teams.' : 'Could not load all teams; showing your teams.');
+            setTeamsLoaded(true);
+          } else {
+            setTeamsLoadError(isPermissionDenied(r2) ? 'Permission denied loading teams.' : 'Could not load teams. Check console.');
+            setTeams([]);
+            setAllTeams([]);
+            setTeamsLoaded(true);
+          }
         }
         let finalItems: LeadershipWorkItem[] = r3.status === 'fulfilled' ? r3.value : [];
         if (r3.status === 'rejected' && !isPermissionDenied(r3)) {

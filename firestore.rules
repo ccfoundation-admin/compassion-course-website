@@ -285,13 +285,15 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     match /boards/{boardId} {
-      allow read: if isActiveAdmin()
+      allow read: if isAdmin()
+        || isActiveAdmin()
         || (isActiveUser() && (roleOf(request.auth.uid) == 'manager' || roleOf(request.auth.uid) == 'admin'))
         || (isActiveUser() && resource.data.get('teamId', '') != '' && request.auth.uid in get(/databases/$(database)/documents/teams/$(resource.data.teamId)).data.get('memberIds', []));
       allow create, update, delete: if false;
     }
     match /teams/{teamId} {
-      allow read: if isActiveAdmin()
+      allow read: if isAdmin()
+        || isActiveAdmin()
         || (isActiveUser() && (roleOf(request.auth.uid) == 'manager' || roleOf(request.auth.uid) == 'admin'))
         || (isActiveUser() && request.auth.uid in resource.data.get('memberIds', []));
       allow create, update, delete: if false;
