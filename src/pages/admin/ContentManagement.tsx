@@ -1052,14 +1052,14 @@ const ContentManagement: React.FC = () => {
                 style={{
                   padding: '20px',
                   border: '2px solid',
-                  borderColor: activeSection === section.id ? '#002B4D' : '#e5e7eb',
+                  borderColor: activeSection === section.id ? '#93C5FD' : '#e5e7eb',
                   borderRadius: '12px',
-                  backgroundColor: activeSection === section.id ? '#002B4D' : '#ffffff',
-                  color: activeSection === section.id ? '#ffffff' : '#002B4D',
+                  backgroundColor: activeSection === section.id ? '#93C5FD' : '#ffffff',
+                  color: activeSection === section.id ? '#002B4D' : '#002B4D',
                   cursor: 'pointer',
                   textAlign: 'left',
                   transition: 'all 0.2s ease',
-                  boxShadow: activeSection === section.id ? '0 4px 12px rgba(0, 43, 77, 0.2)' : '0 2px 4px rgba(0,0,0,0.1)',
+                  boxShadow: activeSection === section.id ? '0 4px 12px rgba(147, 197, 253, 0.35)' : '0 2px 4px rgba(0,0,0,0.1)',
                 }}
                 onMouseEnter={(e) => {
                   if (activeSection !== section.id) {
@@ -1082,7 +1082,7 @@ const ContentManagement: React.FC = () => {
                   margin: 0, 
                   fontSize: '0.875rem', 
                   opacity: 0.9,
-                  color: activeSection === section.id ? '#ffffff' : '#6b7280'
+                  color: activeSection === section.id ? '#002B4D' : '#6b7280'
                 }}>
                   {section.description}
                 </p>
