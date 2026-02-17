@@ -75,6 +75,7 @@ const LeadershipPortalPage: React.FC = () => {
   const [notificationsPermissionDenied, setNotificationsPermissionDenied] = useState(false);
   const [teamsLoadError, setTeamsLoadError] = useState<string | null>(null);
   const [teamsLoaded, setTeamsLoaded] = useState(false);
+  const [teamsRefreshLoading, setTeamsRefreshLoading] = useState(false);
   const dashboardPermissionDeniedRef = useRef(false);
 
   useEffect(() => {
@@ -148,19 +149,36 @@ const LeadershipPortalPage: React.FC = () => {
             setTeamsLoaded(true);
             console.log('[LeadershipPortalPage] team list', { currentUserUid: user?.uid, teamCount: allTeamsList.length });
           } else {
-            const userTeamsList = r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : [];
-            if (userTeamsList.length > 0) {
-              setTeams(userTeamsList);
-              setAllTeams(userTeamsList);
-              setTeamsLoadError('Could not load all teams; showing your teams.');
-              setTeamsLoaded(true);
-              console.log('[LeadershipPortalPage] team list (fallback)', { currentUserUid: user?.uid, teamCount: userTeamsList.length });
-            } else {
-              setTeams([]);
-              setAllTeams([]);
+            await new Promise((r) => setTimeout(r, 400));
+            if (cancelled) return;
+            let retryList: LeadershipTeam[] = [];
+            try {
+              retryList = await listTeams();
+            } catch (_) {
+              /* use r1 fallback below */
+            }
+            if (cancelled) return;
+            if (retryList.length > 0) {
+              setTeams(retryList);
+              setAllTeams(retryList);
               setTeamsLoadError(null);
               setTeamsLoaded(true);
-              console.warn('[LeadershipPortalPage] Zero teams returned. Ensure Firestore users/' + user?.uid + ' exists with status "active" and role "manager" or "admin", or that your uid is in each team\'s memberIds.');
+              console.log('[LeadershipPortalPage] team list (retry)', { currentUserUid: user?.uid, teamCount: retryList.length });
+            } else {
+              const userTeamsList = r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : [];
+              if (userTeamsList.length > 0) {
+                setTeams(userTeamsList);
+                setAllTeams(userTeamsList);
+                setTeamsLoadError('Could not load all teams; showing your teams.');
+                setTeamsLoaded(true);
+                console.log('[LeadershipPortalPage] team list (fallback)', { currentUserUid: user?.uid, teamCount: userTeamsList.length });
+              } else {
+                setTeams([]);
+                setAllTeams([]);
+                setTeamsLoadError(null);
+                setTeamsLoaded(true);
+                console.warn('[LeadershipPortalPage] Zero teams returned. Ensure Firestore users/' + user?.uid + ' exists with status "active" and role "manager" or "admin", or that your uid is in each team\'s memberIds.');
+              }
             }
           }
         } else {
@@ -224,6 +242,22 @@ const LeadershipPortalPage: React.FC = () => {
     allTeams.forEach((t) => m.set(t.id, t.name));
     return m;
   }, [allTeams]);
+
+  const refreshTeams = () => {
+    setTeamsRefreshLoading(true);
+    setTeamsLoadError(null);
+    listTeams()
+      .then((list) => {
+        setTeams(list);
+        setAllTeams(list);
+        setTeamsLoaded(true);
+      })
+      .catch((err) => {
+        console.error('[LeadershipPortalPage] refreshTeams failed', err);
+        setTeamsLoadError('Could not refresh teams. Try again.');
+      })
+      .finally(() => setTeamsRefreshLoading(false));
+  };
 
   const loadNotifications = () => {
     if (!user?.uid) return;
@@ -493,9 +527,19 @@ const LeadershipPortalPage: React.FC = () => {
                     ))}
                   </ul>
                 )}
-                <Link to="/portal/leadership/teams" style={{ ...buttonStyle, marginTop: '16px' }}>
-                  View all teams
-                </Link>
+                <div style={{ marginTop: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Link to="/portal/leadership/teams" style={{ ...buttonStyle }}>
+                    View all teams
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={refreshTeams}
+                    disabled={teamsRefreshLoading}
+                    style={{ ...buttonStyle }}
+                  >
+                    {teamsRefreshLoading ? 'Loading…' : 'Refresh'}
+                  </button>
+                </div>
               </div>
 
               {isAdmin && (
