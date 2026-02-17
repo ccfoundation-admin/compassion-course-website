@@ -79,6 +79,7 @@ const LeadershipPortalPage: React.FC = () => {
   const dashboardPermissionDeniedRef = useRef(false);
   const refreshTeamsRef = useRef<() => void>(() => {});
   const autoRefreshTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!user?.uid || !isActive) {
@@ -105,7 +106,9 @@ const LeadershipPortalPage: React.FC = () => {
         console.error(`[LeadershipPortalPage] ${label} FAILED: code=${code} message=${msg}`, err);
         throw err;
       });
-    Promise.allSettled([
+    initialLoadDelayRef.current = setTimeout(() => {
+      if (cancelled) return;
+      Promise.allSettled([
       wrap('notifications', listNotificationsForUser(user.uid, 20)),
       wrap('teamsForUser', listTeamsForUser(user.uid)),
       wrap('teams', listTeams()),
@@ -239,7 +242,7 @@ const LeadershipPortalPage: React.FC = () => {
         if (!cancelled) {
           autoRefreshTimeoutIdRef.current = setTimeout(() => {
             refreshTeamsRef.current?.();
-          }, 2000);
+          }, 4000);
         }
       })
       .catch((err) => {
@@ -251,8 +254,13 @@ const LeadershipPortalPage: React.FC = () => {
           setNotificationsLoading(false);
         }
       });
+    }, 400);
     return () => {
       cancelled = true;
+      if (initialLoadDelayRef.current != null) {
+        clearTimeout(initialLoadDelayRef.current);
+        initialLoadDelayRef.current = null;
+      }
       if (autoRefreshTimeoutIdRef.current != null) {
         clearTimeout(autoRefreshTimeoutIdRef.current);
         autoRefreshTimeoutIdRef.current = null;
