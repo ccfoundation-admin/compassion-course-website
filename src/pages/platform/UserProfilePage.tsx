@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth, hasPasswordProvider } from '../../context/AuthContext';
 import { getUserProfile, updateUserProfile } from '../../services/userProfileService';
 import { getUserEnrollments } from '../../services/enrollmentService';
+import { uploadUserAvatar, createImagePreview, validateImageFile } from '../../services/photoUploadService';
 import { UserProfile } from '../../types/platform';
 import Layout from '../../components/Layout';
 
@@ -14,6 +15,9 @@ const UserProfilePage: React.FC = () => {
   const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [avatar, setAvatar] = useState('');
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState('');
   const [saving, setSaving] = useState(false);
   const [enrollmentCount, setEnrollmentCount] = useState<number | null>(null);
   const [setPasswordValue, setSetPasswordValue] = useState('');
@@ -59,12 +63,20 @@ const UserProfilePage: React.FC = () => {
 
     try {
       setSaving(true);
-      await updateUserProfile(user.uid, { name, bio, avatar });
+      setUploadError('');
+      let avatarUrl = avatar;
+      if (avatarFile) {
+        avatarUrl = await uploadUserAvatar(avatarFile, user.uid);
+        setAvatar(avatarUrl);
+        setAvatarFile(null);
+        setAvatarPreview(null);
+      }
+      await updateUserProfile(user.uid, { name, bio, avatar: avatarUrl });
       await loadProfile();
       setEditing(false);
     } catch (error) {
       console.error('Error saving profile:', error);
-      alert('Failed to save profile');
+      setUploadError(error instanceof Error ? error.message : 'Failed to save profile');
     } finally {
       setSaving(false);
     }
@@ -152,12 +164,51 @@ const UserProfilePage: React.FC = () => {
             </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 600 }}>
-                Avatar URL
+                Avatar
               </label>
+              {(avatarPreview || avatar || profile.avatar) && (
+                <img
+                  src={avatarPreview || avatar || profile.avatar || ''}
+                  alt="Avatar preview"
+                  style={{ width: '100px', height: '100px', borderRadius: '50%', marginBottom: '12px', objectFit: 'cover' }}
+                />
+              )}
+              <div style={{ marginBottom: '8px' }}>
+                <input
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) {
+                      setAvatarFile(null);
+                      setAvatarPreview(null);
+                      return;
+                    }
+                    const validation = validateImageFile(file);
+                    if (!validation.valid) {
+                      setUploadError(validation.error || 'Invalid image');
+                      return;
+                    }
+                    setUploadError('');
+                    setAvatarFile(file);
+                    setAvatar('');
+                    try {
+                      const preview = await createImagePreview(file);
+                      setAvatarPreview(preview);
+                    } catch {
+                      setAvatarPreview(null);
+                    }
+                  }}
+                  style={{ fontSize: '14px' }}
+                />
+                <p style={{ fontSize: '12px', color: '#6b7280', margin: '4px 0 0 0' }}>JPEG, PNG or WebP, max 5MB</p>
+              </div>
+              <label style={{ display: 'block', marginBottom: '4px', fontSize: '14px', color: '#6b7280' }}>Or paste avatar URL</label>
               <input
                 type="text"
                 value={avatar}
                 onChange={(e) => setAvatar(e.target.value)}
+                placeholder="https://..."
                 style={{
                   width: '100%',
                   padding: '10px',
@@ -166,6 +217,9 @@ const UserProfilePage: React.FC = () => {
                   fontSize: '16px',
                 }}
               />
+              {uploadError && (
+                <p style={{ color: '#dc2626', fontSize: '14px', marginTop: '8px' }}>{uploadError}</p>
+              )}
             </div>
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '5px', fontWeight: 600 }}>
@@ -207,6 +261,9 @@ const UserProfilePage: React.FC = () => {
                   setName(profile.name);
                   setBio(profile.bio || '');
                   setAvatar(profile.avatar || '');
+                  setAvatarFile(null);
+                  setAvatarPreview(null);
+                  setUploadError('');
                 }}
                 style={{
                   padding: '10px 20px',

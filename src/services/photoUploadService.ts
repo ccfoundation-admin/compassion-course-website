@@ -63,6 +63,34 @@ export const uploadTeamMemberPhoto = async (
 };
 
 /**
+ * Upload user avatar to Firebase Storage (for profile avatar)
+ * @param file - Image file to upload
+ * @param userId - Authenticated user's ID
+ * @returns Promise resolving to the public download URL
+ */
+export const uploadUserAvatar = async (
+  file: File,
+  userId: string
+): Promise<string> => {
+  try {
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      throw new Error(validation.error || 'Invalid image file');
+    }
+    const timestamp = Date.now();
+    const fileName = `${timestamp}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+    const storagePath = `user-avatars/${userId}/${fileName}`;
+    const storageRef = ref(storage, storagePath);
+    const snapshot = await uploadBytes(storageRef, file);
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    return downloadURL;
+  } catch (error: any) {
+    console.error('Error uploading user avatar:', error);
+    throw new Error(error.message || 'Failed to upload photo');
+  }
+};
+
+/**
  * Delete a photo from Firebase Storage
  * @param photoUrl - The Firebase Storage URL of the photo to delete
  */
