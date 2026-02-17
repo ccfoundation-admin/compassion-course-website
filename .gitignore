@@ -37,3 +37,5 @@ pnpm-debug.log*
 firebase-current-state.json
 firebase-export.json
 my-backup.json
+
+nul

@@ -33,6 +33,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
   const [assignTeamId, setAssignTeamId] = useState('');
   const [assigneeId, setAssigneeId] = useState('');
   const [teamMembers, setTeamMembers] = useState<{ id: string; label: string }[]>([]);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const loadRef = React.useRef<() => void>();
 
@@ -90,6 +91,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
   }, [assignTeamId]);
 
   const handleCreateSave = async (data: TaskFormPayload, context?: TaskFormSaveContext) => {
+    setSaveError(null);
     try {
       const created = await createWorkItem({
         title: data.title,
@@ -120,11 +122,13 @@ const LeadershipMainBacklogPage: React.FC = () => {
       loadRef.current?.();
     } catch (err) {
       console.error(err);
+      setSaveError(err instanceof Error ? err.message : 'Failed to save task');
     }
   };
 
   const handleEditSave = async (data: TaskFormPayload, context?: TaskFormSaveContext) => {
     if (!editingItem) return;
+    setSaveError(null);
     try {
       await updateWorkItem(editingItem.id, {
         title: data.title,
@@ -155,6 +159,7 @@ const LeadershipMainBacklogPage: React.FC = () => {
       loadRef.current?.();
     } catch (err) {
       console.error(err);
+      setSaveError(err instanceof Error ? err.message : 'Failed to save task');
     }
   };
 
@@ -207,19 +212,25 @@ const LeadershipMainBacklogPage: React.FC = () => {
         </button>
 
         {showCreateForm && (
-          <TaskForm
-            mode="create"
-            onSave={handleCreateSave}
-            onCancel={() => setShowCreateForm(false)}
-          />
+          <>
+            {saveError && <p style={{ color: '#dc2626', marginBottom: '16px' }}>{saveError}</p>}
+            <TaskForm
+              mode="create"
+              onSave={handleCreateSave}
+              onCancel={() => { setShowCreateForm(false); setSaveError(null); }}
+            />
+          </>
         )}
         {editingItem && (
-          <TaskForm
-            mode="edit"
-            initialItem={editingItem}
-            onSave={handleEditSave}
-            onCancel={() => setEditingItem(null)}
-          />
+          <>
+            {saveError && <p style={{ color: '#dc2626', marginBottom: '16px' }}>{saveError}</p>}
+            <TaskForm
+              mode="edit"
+              initialItem={editingItem}
+              onSave={handleEditSave}
+              onCancel={() => { setEditingItem(null); setSaveError(null); }}
+            />
+          </>
         )}
 
         {loading ? (

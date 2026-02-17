@@ -1528,9 +1528,11 @@ section {
 /* ==========================================
    ELEVENLABS CHATBOT
    ========================================== */
-.chatbot-widget-container elevenlabs-convai {
-    transform: scale(0.5);
-    transform-origin: bottom right;
+.chatbot-widget {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    z-index: 999;
 }
 
 /* ==========================================

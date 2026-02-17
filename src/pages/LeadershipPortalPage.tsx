@@ -73,7 +73,13 @@ const LeadershipPortalPage: React.FC = () => {
   const [allBlockedItems, setAllBlockedItems] = useState<LeadershipWorkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [notificationsPermissionDenied, setNotificationsPermissionDenied] = useState(false);
+  const [teamsLoadError, setTeamsLoadError] = useState<string | null>(null);
+  const [teamsLoaded, setTeamsLoaded] = useState(false);
+  const [teamsRefreshLoading, setTeamsRefreshLoading] = useState(false);
   const dashboardPermissionDeniedRef = useRef(false);
+  const refreshTeamsRef = useRef<() => void>(() => {});
+  const autoRefreshTimeoutIdRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!user?.uid || !isActive) {
@@ -85,6 +91,8 @@ const LeadershipPortalPage: React.FC = () => {
       setAllTeams([]);
       setWorkItems([]);
       setAllBlockedItems([]);
+      setTeamsLoadError(null);
+      setTeamsLoaded(false);
       setLoading(false);
       return;
     }
@@ -98,7 +106,9 @@ const LeadershipPortalPage: React.FC = () => {
         console.error(`[LeadershipPortalPage] ${label} FAILED: code=${code} message=${msg}`, err);
         throw err;
       });
-    Promise.allSettled([
+    initialLoadDelayRef.current = setTimeout(() => {
+      if (cancelled) return;
+      Promise.allSettled([
       wrap('notifications', listNotificationsForUser(user.uid, 20)),
       wrap('teamsForUser', listTeamsForUser(user.uid)),
       wrap('teams', listTeams()),
@@ -132,23 +142,83 @@ const LeadershipPortalPage: React.FC = () => {
           setNotificationsLoadFailed(true);
           if (isPermissionDenied(r0)) setNotificationsPermissionDenied(true);
         }
-        if (r1.status === 'fulfilled') {
-          setTeams(r1.value);
-        } else {
-          if (!isPermissionDenied(r1)) console.error('Dashboard load item failed:', 1, r1.reason);
-          setTeams([]);
-        }
-        if (r2.status === 'fulfilled') {
-          setAllTeams(r2.value);
-        } else {
-          if (!isPermissionDenied(r2)) console.error('Dashboard load item failed:', 2, r2.reason);
-          setAllTeams([]);
+        if (r1.status === 'rejected' && !isPermissionDenied(r1)) {
+          console.error('Dashboard load item failed:', 1, r1.reason);
         }
         let finalItems: LeadershipWorkItem[] = r3.status === 'fulfilled' ? r3.value : [];
         if (r3.status === 'rejected' && !isPermissionDenied(r3)) {
           console.error('Dashboard load item failed:', 3, r3.reason);
         }
-        const teamList = r1.status === 'fulfilled' ? r1.value : [];
+        const teamList = r2.status === 'fulfilled' ? (r2.value as LeadershipTeam[]) : (r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : []);
+        if (r2.status === 'fulfilled') {
+          const allTeamsList = r2.value as LeadershipTeam[];
+          if (allTeamsList.length > 0) {
+            setTeams(allTeamsList);
+            setAllTeams(allTeamsList);
+            setTeamsLoadError(null);
+            setTeamsLoaded(true);
+            console.log('[LeadershipPortalPage] team list', { currentUserUid: user?.uid, teamCount: allTeamsList.length });
+          } else {
+            await new Promise((r) => setTimeout(r, 400));
+            if (cancelled) return;
+            let retryList: LeadershipTeam[] = [];
+            try {
+              retryList = await listTeams();
+            } catch (_) {
+              /* use r1 fallback below */
+            }
+            if (cancelled) return;
+            if (retryList.length > 0) {
+              setTeams(retryList);
+              setAllTeams(retryList);
+              setTeamsLoadError(null);
+              setTeamsLoaded(true);
+              console.log('[LeadershipPortalPage] team list (retry)', { currentUserUid: user?.uid, teamCount: retryList.length });
+              if (finalItems.length === 0) {
+                try {
+                  const teamItemsArrays = await Promise.all(retryList.map((team) => listWorkItems(team.id)));
+                  if (cancelled) return;
+                  const fromTeams = teamItemsArrays.flat().filter((item) => item.assigneeId === user?.uid);
+                  const byId = new Map<string, LeadershipWorkItem>();
+                  fromTeams.forEach((item) => byId.set(item.id, item));
+                  finalItems = Array.from(byId.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+                } catch (_) {
+                  // keep finalItems as is
+                }
+              }
+            } else {
+              const userTeamsList = r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : [];
+              if (userTeamsList.length > 0) {
+                setTeams(userTeamsList);
+                setAllTeams(userTeamsList);
+                setTeamsLoadError('Could not load all teams; showing your teams.');
+                setTeamsLoaded(true);
+                console.log('[LeadershipPortalPage] team list (fallback)', { currentUserUid: user?.uid, teamCount: userTeamsList.length });
+              } else {
+                setTeams([]);
+                setAllTeams([]);
+                setTeamsLoadError(null);
+                setTeamsLoaded(true);
+                console.warn('[LeadershipPortalPage] Zero teams returned. Ensure Firestore users/' + user?.uid + ' exists with status "active" and role "manager" or "admin", or that your uid is in each team\'s memberIds.');
+              }
+            }
+          }
+        } else {
+          const reason = (r2 as PromiseRejectedResult).reason;
+          if (!isPermissionDenied(r2)) console.error('Dashboard load item failed:', 2, reason);
+          const userTeamsList = r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : [];
+          if (userTeamsList.length > 0) {
+            setTeams(userTeamsList);
+            setAllTeams(userTeamsList);
+            setTeamsLoadError(isPermissionDenied(r2) ? 'Permission denied loading all teams; showing your teams.' : 'Could not load all teams; showing your teams.');
+            setTeamsLoaded(true);
+          } else {
+            setTeamsLoadError(isPermissionDenied(r2) ? 'Permission denied loading teams.' : 'Could not load teams. Check console.');
+            setTeams([]);
+            setAllTeams([]);
+            setTeamsLoaded(true);
+          }
+        }
         if (finalItems.length === 0 && teamList.length > 0) {
           try {
             const teamItemsArrays = await Promise.all(teamList.map((team) => listWorkItems(team.id)));
@@ -169,6 +239,11 @@ const LeadershipPortalPage: React.FC = () => {
           }
           setWorkItems(finalItems);
         }
+        if (!cancelled) {
+          autoRefreshTimeoutIdRef.current = setTimeout(() => {
+            refreshTeamsRef.current?.();
+          }, 4000);
+        }
       })
       .catch((err) => {
         console.error('Dashboard load failed:', err);
@@ -179,8 +254,17 @@ const LeadershipPortalPage: React.FC = () => {
           setNotificationsLoading(false);
         }
       });
+    }, 400);
     return () => {
       cancelled = true;
+      if (initialLoadDelayRef.current != null) {
+        clearTimeout(initialLoadDelayRef.current);
+        initialLoadDelayRef.current = null;
+      }
+      if (autoRefreshTimeoutIdRef.current != null) {
+        clearTimeout(autoRefreshTimeoutIdRef.current);
+        autoRefreshTimeoutIdRef.current = null;
+      }
     };
   }, [user?.uid, isActive]);
 
@@ -189,6 +273,45 @@ const LeadershipPortalPage: React.FC = () => {
     allTeams.forEach((t) => m.set(t.id, t.name));
     return m;
   }, [allTeams]);
+
+  const refreshTeams = () => {
+    if (!user?.uid) return;
+    setTeamsRefreshLoading(true);
+    setTeamsLoadError(null);
+    listTeams()
+      .then(async (teamsList) => {
+        setTeams(teamsList);
+        setAllTeams(teamsList);
+        setTeamsLoaded(true);
+        const [userItems, blocked] = await Promise.all([
+          listWorkItemsForUser(user.uid),
+          listAllBlockedItems(),
+        ]).catch((err) => {
+          console.error('[LeadershipPortalPage] refresh work items failed', err);
+          return [[], []] as [LeadershipWorkItem[], LeadershipWorkItem[]];
+        });
+        let workItemsList: LeadershipWorkItem[] = Array.isArray(userItems) ? userItems : [];
+        if (workItemsList.length === 0 && teamsList.length > 0) {
+          try {
+            const teamItemsArrays = await Promise.all(teamsList.map((team) => listWorkItems(team.id)));
+            const fromTeams = teamItemsArrays.flat().filter((item) => item.assigneeId === user.uid);
+            const byId = new Map<string, LeadershipWorkItem>();
+            fromTeams.forEach((item) => byId.set(item.id, item));
+            workItemsList = Array.from(byId.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+          } catch (_) {
+            // keep workItemsList as is
+          }
+        }
+        setWorkItems(workItemsList);
+        setAllBlockedItems(Array.isArray(blocked) ? blocked : []);
+      })
+      .catch((err) => {
+        console.error('[LeadershipPortalPage] refreshTeams failed', err);
+        setTeamsLoadError('Could not refresh teams. Try again.');
+      })
+      .finally(() => setTeamsRefreshLoading(false));
+  };
+  refreshTeamsRef.current = refreshTeams;
 
   const loadNotifications = () => {
     if (!user?.uid) return;
@@ -439,8 +562,14 @@ const LeadershipPortalPage: React.FC = () => {
               {/* My Teams */}
               <div style={widgetStyle}>
                 <h2 style={cardTitleStyle}>My Teams</h2>
-                {teams.length === 0 ? (
-                  <p style={{ ...secondaryTextStyle, margin: 0 }}>No teams yet.</p>
+                {teamsLoadError ? (
+                  <p style={{ color: '#b91c1c', fontSize: '0.9rem', margin: 0 }}>{teamsLoadError}</p>
+                ) : teams.length === 0 && teamsLoaded ? (
+                  <p style={{ ...secondaryTextStyle, margin: 0 }}>
+                    No teams were returned. Open the browser console (F12) and look for &quot;team list&quot; to see your user ID. In Firestore, ensure <strong>users/{user?.uid ?? '…'}</strong> exists with <strong>status: &quot;active&quot;</strong> and <strong>role: &quot;manager&quot;</strong> or <strong>&quot;admin&quot;</strong>, or that your ID is in each team&apos;s <strong>memberIds</strong>.
+                  </p>
+                ) : teams.length === 0 ? (
+                  <p style={{ ...secondaryTextStyle, margin: 0 }}>Loading teams…</p>
                 ) : (
                   <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
                     {teams.map((t) => (
@@ -452,9 +581,19 @@ const LeadershipPortalPage: React.FC = () => {
                     ))}
                   </ul>
                 )}
-                <Link to="/portal/leadership/teams" style={{ ...buttonStyle, marginTop: '16px' }}>
-                  View all teams
-                </Link>
+                <div style={{ marginTop: '16px', display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <Link to="/portal/leadership/teams" style={{ ...buttonStyle }}>
+                    View all teams
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={refreshTeams}
+                    disabled={teamsRefreshLoading}
+                    style={{ ...buttonStyle }}
+                  >
+                    {teamsRefreshLoading ? 'Loading…' : 'Refresh'}
+                  </button>
+                </div>
               </div>
 
               {isAdmin && (
