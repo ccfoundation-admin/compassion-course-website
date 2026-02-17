@@ -305,10 +305,10 @@ service cloud.firestore {
       allow read: if isAdmin() || isActiveUser();
       allow write: if canWrite();
     }
-    // User notifications: active user reads own; write only contributor+
+    // User notifications: active user reads own; any contributor+ can create (for @-mentions to other users)
     match /userNotifications/{notifId} {
       allow read: if isAdmin() || (isActiveUser() && resource.data.userId == request.auth.uid);
-      allow create: if canWrite() && request.resource.data.userId == request.auth.uid;
+      allow create: if canWrite();
       allow update: if canWrite() && resource.data.userId == request.auth.uid;
       allow delete: if false;
     }

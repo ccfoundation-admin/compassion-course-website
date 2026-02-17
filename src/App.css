@@ -2894,9 +2894,21 @@ section {
     font-size: 0.9rem;
     color: #111827;
 }
+.ld-backlog-item-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+}
 .ld-backlog-item-title {
     font-weight: 500;
-    margin-bottom: 4px;
+}
+.ld-backlog-item-time {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    white-space: nowrap;
 }
 .ld-backlog-item-desc {
     font-size: 0.85rem;
