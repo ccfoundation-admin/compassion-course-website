@@ -1832,8 +1832,8 @@ button:focus {
     }
 }
 
-/* ElevenLabs need-help chatbot widget - half size */
+/* ElevenLabs need-help chatbot widget - scaled to ~67% (was 50%, increased by 1/3) */
 .chatbot-widget-container elevenlabs-convai {
-    transform: scale(0.5);
+    transform: scale(0.667);
     transform-origin: bottom right;
 }
