@@ -140,6 +140,11 @@ const LeadershipPortalPage: React.FC = () => {
         if (r1.status === 'rejected' && !isPermissionDenied(r1)) {
           console.error('Dashboard load item failed:', 1, r1.reason);
         }
+        let finalItems: LeadershipWorkItem[] = r3.status === 'fulfilled' ? r3.value : [];
+        if (r3.status === 'rejected' && !isPermissionDenied(r3)) {
+          console.error('Dashboard load item failed:', 3, r3.reason);
+        }
+        const teamList = r2.status === 'fulfilled' ? (r2.value as LeadershipTeam[]) : (r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : []);
         if (r2.status === 'fulfilled') {
           const allTeamsList = r2.value as LeadershipTeam[];
           if (allTeamsList.length > 0) {
@@ -164,6 +169,18 @@ const LeadershipPortalPage: React.FC = () => {
               setTeamsLoadError(null);
               setTeamsLoaded(true);
               console.log('[LeadershipPortalPage] team list (retry)', { currentUserUid: user?.uid, teamCount: retryList.length });
+              if (finalItems.length === 0) {
+                try {
+                  const teamItemsArrays = await Promise.all(retryList.map((team) => listWorkItems(team.id)));
+                  if (cancelled) return;
+                  const fromTeams = teamItemsArrays.flat().filter((item) => item.assigneeId === user?.uid);
+                  const byId = new Map<string, LeadershipWorkItem>();
+                  fromTeams.forEach((item) => byId.set(item.id, item));
+                  finalItems = Array.from(byId.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+                } catch (_) {
+                  // keep finalItems as is
+                }
+              }
             } else {
               const userTeamsList = r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : [];
               if (userTeamsList.length > 0) {
@@ -197,11 +214,6 @@ const LeadershipPortalPage: React.FC = () => {
             setTeamsLoaded(true);
           }
         }
-        let finalItems: LeadershipWorkItem[] = r3.status === 'fulfilled' ? r3.value : [];
-        if (r3.status === 'rejected' && !isPermissionDenied(r3)) {
-          console.error('Dashboard load item failed:', 3, r3.reason);
-        }
-        const teamList = r2.status === 'fulfilled' ? (r2.value as LeadershipTeam[]) : (r1.status === 'fulfilled' ? (r1.value as LeadershipTeam[]) : []);
         if (finalItems.length === 0 && teamList.length > 0) {
           try {
             const teamItemsArrays = await Promise.all(teamList.map((team) => listWorkItems(team.id)));
@@ -244,13 +256,35 @@ const LeadershipPortalPage: React.FC = () => {
   }, [allTeams]);
 
   const refreshTeams = () => {
+    if (!user?.uid) return;
     setTeamsRefreshLoading(true);
     setTeamsLoadError(null);
     listTeams()
-      .then((list) => {
-        setTeams(list);
-        setAllTeams(list);
+      .then(async (teamsList) => {
+        setTeams(teamsList);
+        setAllTeams(teamsList);
         setTeamsLoaded(true);
+        const [userItems, blocked] = await Promise.all([
+          listWorkItemsForUser(user.uid),
+          listAllBlockedItems(),
+        ]).catch((err) => {
+          console.error('[LeadershipPortalPage] refresh work items failed', err);
+          return [[], []] as [LeadershipWorkItem[], LeadershipWorkItem[]];
+        });
+        let workItemsList: LeadershipWorkItem[] = Array.isArray(userItems) ? userItems : [];
+        if (workItemsList.length === 0 && teamsList.length > 0) {
+          try {
+            const teamItemsArrays = await Promise.all(teamsList.map((team) => listWorkItems(team.id)));
+            const fromTeams = teamItemsArrays.flat().filter((item) => item.assigneeId === user.uid);
+            const byId = new Map<string, LeadershipWorkItem>();
+            fromTeams.forEach((item) => byId.set(item.id, item));
+            workItemsList = Array.from(byId.values()).sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+          } catch (_) {
+            // keep workItemsList as is
+          }
+        }
+        setWorkItems(workItemsList);
+        setAllBlockedItems(Array.isArray(blocked) ? blocked : []);
       })
       .catch((err) => {
         console.error('[LeadershipPortalPage] refreshTeams failed', err);
