@@ -103,42 +103,6 @@ const PortalPage: React.FC = () => {
               </p>
             </Link>
 
-            <Link 
-              to="/platform/events"
-              style={cardStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#002B4D';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <h2 style={{ color: '#002B4D', marginBottom: '6px', fontSize: '1.1rem' }}>Events</h2>
-              <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                View upcoming events and sessions.
-              </p>
-            </Link>
-
-            <Link 
-              to="/platform/courses"
-              style={cardStyle}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = '#002B4D';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'transparent';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              <h2 style={{ color: '#002B4D', marginBottom: '6px', fontSize: '1.1rem' }}>Courses</h2>
-              <p style={{ color: '#6b7280', fontSize: '0.9rem' }}>
-                Browse and enroll in courses.
-              </p>
-            </Link>
-
             {showLeadership && (
               <Link 
                 to="/portal/leadership"
