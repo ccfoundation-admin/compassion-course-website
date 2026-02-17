@@ -341,7 +341,9 @@ const LeadershipPortalPage: React.FC = () => {
     if (!n.read) {
       markNotificationRead(n.id).catch(() => {});
     }
-    if (n.teamId) {
+    if (n.workItemId) {
+      navigate(`/portal/leadership/tasks/${n.workItemId}`);
+    } else if (n.teamId) {
       navigate(`/portal/leadership/teams/${n.teamId}/board`);
     } else {
       navigate('/portal/leadership/backlog');
