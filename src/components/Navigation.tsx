@@ -158,7 +158,7 @@ const Navigation: React.FC = () => {
           )}
         </ul>
 
-        <div className="nav-right" ref={accountRef}>
+        <div className="nav-right">
           {/* Visible Log in / Sign up button when not logged in */}
           {!user && !authLoading && (
             <button
@@ -172,31 +172,29 @@ const Navigation: React.FC = () => {
 
           {/* Avatar + name + account dropdown when logged in */}
           {user && (
-            <>
-              <div className="nav-avatar-wrap">
-                <button
-                  type="button"
-                  className="nav-avatar-link"
-                  aria-label="Account menu"
-                  onClick={() => setAccountOpen((prev) => !prev)}
-                >
-                  <span className="nav-avatar-circle">
-                    {profile?.avatar || user.photoURL ? (
-                      <img
-                        src={profile?.avatar || user.photoURL || ''}
-                        alt=""
-                        className="nav-avatar-img"
-                      />
-                    ) : (
-                      <span className="nav-avatar-initial">{initials}</span>
-                    )}
-                  </span>
-                  {isDesktop && displayName && (
-                    <span className="nav-avatar-name">{displayName}</span>
+            <div className="nav-avatar-wrap" ref={accountRef}>
+              <button
+                type="button"
+                className="nav-avatar-link"
+                aria-label="Account menu"
+                onClick={() => setAccountOpen((prev) => !prev)}
+              >
+                <span className="nav-avatar-circle">
+                  {profile?.avatar || user.photoURL ? (
+                    <img
+                      src={profile?.avatar || user.photoURL || ''}
+                      alt=""
+                      className="nav-avatar-img"
+                    />
+                  ) : (
+                    <span className="nav-avatar-initial">{initials}</span>
                   )}
-                  <i className="fas fa-chevron-down nav-avatar-chevron"></i>
-                </button>
-              </div>
+                </span>
+                {isDesktop && displayName && (
+                  <span className="nav-avatar-name">{displayName}</span>
+                )}
+                <i className="fas fa-chevron-down nav-avatar-chevron"></i>
+              </button>
               {accountOpen && isDesktop && (
                 <div className="nav-account-dropdown">
                   <div className="nav-account-dropdown-header">
@@ -231,7 +229,7 @@ const Navigation: React.FC = () => {
                   </button>
                 </div>
               )}
-            </>
+            </div>
           )}
 
           {/* Hamburger (mobile only) */}

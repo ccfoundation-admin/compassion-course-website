@@ -77,7 +77,11 @@ export const TaskForm: React.FC<TaskFormProps> = ({
   const [currentCommentMentionedIds, setCurrentCommentMentionedIds] = useState<string[]>([]);
   const [mentionableProfiles, setMentionableProfiles] = useState<UserProfile[]>([]);
   const [saving, setSaving] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingCommentText, setEditingCommentText] = useState('');
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
   const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
+  const editInputRef = useRef<HTMLTextAreaElement | null>(null);
   const addedCommentIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
@@ -203,6 +207,55 @@ export const TaskForm: React.FC<TaskFormProps> = ({
     ]);
     setNewCommentText('');
     setCurrentCommentMentionedIds([]);
+  };
+
+  const startEditComment = (c: WorkItemComment) => {
+    setEditingCommentId(c.id);
+    setEditingCommentText(c.text);
+    setDeletingCommentId(null);
+    setTimeout(() => editInputRef.current?.focus(), 0);
+  };
+
+  const saveEditComment = () => {
+    if (!editingCommentId) return;
+    const trimmed = editingCommentText.trim();
+    if (!trimmed) return;
+    setComments((prev) =>
+      prev.map((c) =>
+        c.id === editingCommentId
+          ? { ...c, text: trimmed, editedAt: new Date() }
+          : c
+      )
+    );
+    setEditingCommentId(null);
+    setEditingCommentText('');
+  };
+
+  const cancelEditComment = () => {
+    setEditingCommentId(null);
+    setEditingCommentText('');
+  };
+
+  const confirmDeleteComment = (commentId: string) => {
+    setDeletingCommentId(commentId);
+    setEditingCommentId(null);
+  };
+
+  const executeDeleteComment = () => {
+    if (!deletingCommentId) return;
+    setComments((prev) => prev.filter((c) => c.id !== deletingCommentId));
+    addedCommentIdsRef.current.delete(deletingCommentId);
+    setDeletingCommentId(null);
+  };
+
+  const formatCommentDate = (d: Date | undefined) => {
+    if (!d || !(d instanceof Date)) return '';
+    return d.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   };
 
   const uniqueId = mode === 'edit' && initialItem ? initialItem.id : null;
@@ -364,17 +417,81 @@ export const TaskForm: React.FC<TaskFormProps> = ({
             <label className="tf-label">Comments {comments.length > 0 && <span className="tf-comment-count">{comments.length}</span>}</label>
             {comments.length > 0 && (
               <div className="tf-comments-list">
-                {comments.map((c) => (
-                  <div key={c.id} className="tf-comment">
-                    <div className="tf-comment-header">
-                      <strong className="tf-comment-author">{c.userName || c.userId}</strong>
-                      <span className="tf-comment-date">
-                        {c.createdAt instanceof Date ? c.createdAt.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : ''}
-                      </span>
+                {comments.map((c) => {
+                  const isOwn = user?.uid === c.userId;
+                  const isEditing = editingCommentId === c.id;
+                  const isDeleting = deletingCommentId === c.id;
+                  return (
+                    <div key={c.id} className={`tf-comment ${isDeleting ? 'tf-comment--deleting' : ''}`}>
+                      <div className="tf-comment-header">
+                        <strong className="tf-comment-author">{c.userName || c.userId}</strong>
+                        <span className="tf-comment-date">{formatCommentDate(c.createdAt)}</span>
+                        {isOwn && !isEditing && !isDeleting && (
+                          <span className="tf-comment-actions">
+                            <button
+                              type="button"
+                              className="tf-comment-action-btn"
+                              onClick={() => startEditComment(c)}
+                              title="Edit comment"
+                            >
+                              <i className="fas fa-pen"></i>
+                            </button>
+                            <button
+                              type="button"
+                              className="tf-comment-action-btn tf-comment-action-btn--danger"
+                              onClick={() => confirmDeleteComment(c.id)}
+                              title="Delete comment"
+                            >
+                              <i className="fas fa-trash-alt"></i>
+                            </button>
+                          </span>
+                        )}
+                      </div>
+                      {isDeleting ? (
+                        <div className="tf-comment-delete-confirm">
+                          <span className="tf-comment-delete-prompt">Delete this comment?</span>
+                          <button type="button" className="tf-comment-delete-yes" onClick={executeDeleteComment}>
+                            Yes
+                          </button>
+                          <button type="button" className="tf-comment-delete-no" onClick={() => setDeletingCommentId(null)}>
+                            No
+                          </button>
+                        </div>
+                      ) : isEditing ? (
+                        <div className="tf-comment-edit-wrap">
+                          <textarea
+                            ref={editInputRef}
+                            value={editingCommentText}
+                            onChange={(e) => setEditingCommentText(e.target.value)}
+                            className="tf-input tf-textarea tf-comment-edit-input"
+                            rows={2}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); saveEditComment(); }
+                              if (e.key === 'Escape') cancelEditComment();
+                            }}
+                          />
+                          <div className="tf-comment-edit-actions">
+                            <button type="button" className="tf-comment-edit-save" onClick={saveEditComment} disabled={!editingCommentText.trim()}>
+                              Save
+                            </button>
+                            <button type="button" className="tf-comment-edit-cancel" onClick={cancelEditComment}>
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="tf-comment-text">{c.text}</div>
+                          {c.editedAt && (
+                            <div className="tf-comment-footer">
+                              <span className="tf-comment-edited" title={`Edited ${formatCommentDate(c.editedAt)}`}>edited</span>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
-                    <div className="tf-comment-text">{c.text}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
             <div className="tf-comment-input-wrap">

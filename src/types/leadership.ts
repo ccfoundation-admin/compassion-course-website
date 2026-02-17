@@ -33,6 +33,8 @@ export interface WorkItemComment {
   userName?: string;
   text: string;
   createdAt: Date;
+  /** Set when a comment is edited. */
+  editedAt?: Date;
   /** User IDs mentioned in this comment (for notifications). */
   mentionedUserIds?: string[];
 }
