@@ -1,22 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import Layout from '../../components/Layout';
-import TaskForm, { type TaskFormPayload, type TaskFormSaveContext } from '../../components/leadership/TaskForm';
 import { getTeam } from '../../services/leadershipTeamsService';
 import {
   getWorkingAgreementsByTeam,
   updateWorkingAgreements,
 } from '../../services/workingAgreementsService';
-import {
-  listTeamBacklog,
-  updateWorkItem,
-  createWorkItem,
-  deleteWorkItem,
-} from '../../services/leadershipWorkItemsService';
-import { createMentionNotifications } from '../../services/notificationService';
-import { getUserProfile } from '../../services/userProfileService';
 import type { LeadershipTeam } from '../../types/leadership';
-import type { LeadershipWorkItem } from '../../types/leadership';
 
 const sectionStyle: React.CSSProperties = {
   background: '#ffffff',
@@ -31,13 +21,8 @@ const LeadershipTeamPage: React.FC = () => {
   const [team, setTeam] = useState<LeadershipTeam | null>(null);
   const [agreementItems, setAgreementItems] = useState<string[]>([]);
   const [newAgreement, setNewAgreement] = useState('');
-  const [backlogItems, setBacklogItems] = useState<LeadershipWorkItem[]>([]);
-  const [memberLabels, setMemberLabels] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [savingAgreements, setSavingAgreements] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [editingBacklogItem, setEditingBacklogItem] = useState<LeadershipWorkItem | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!teamId) return;
@@ -46,30 +31,16 @@ const LeadershipTeamPage: React.FC = () => {
     Promise.all([
       getTeam(teamId),
       getWorkingAgreementsByTeam(teamId),
-      listTeamBacklog(teamId),
     ])
-      .then(([t, ag, backlog]) => {
+      .then(([t, ag]) => {
         if (cancelled) return;
         setTeam(t ?? null);
         setAgreementItems(ag?.items ?? []);
-        setBacklogItems(backlog ?? []);
-        if (t) {
-          Promise.all(
-            t.memberIds.map((uid) =>
-              getUserProfile(uid).then((p) => [uid, p?.name || p?.email || uid] as const)
-            )
-          ).then((pairs) => {
-            if (!cancelled) {
-              setMemberLabels(Object.fromEntries(pairs));
-            }
-          });
-        }
       })
       .catch(() => {
         if (!cancelled) {
           setTeam(null);
           setAgreementItems([]);
-          setBacklogItems([]);
         }
       })
       .finally(() => {
@@ -79,11 +50,6 @@ const LeadershipTeamPage: React.FC = () => {
       cancelled = true;
     };
   }, [teamId]);
-
-  const loadBacklog = () => {
-    if (!teamId) return;
-    listTeamBacklog(teamId).then(setBacklogItems);
-  };
 
   const handleAddAgreement = async () => {
     const text = newAgreement.trim();
@@ -108,113 +74,6 @@ const LeadershipTeamPage: React.FC = () => {
       await updateWorkingAgreements(teamId, next);
     } finally {
       setSavingAgreements(false);
-    }
-  };
-
-  const handleMoveToBoard = async (itemId: string) => {
-    try {
-      await updateWorkItem(itemId, { status: 'todo' });
-      loadBacklog();
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleAssignMember = async (itemId: string, assigneeId: string) => {
-    try {
-      await updateWorkItem(itemId, { assigneeId: assigneeId || undefined });
-      loadBacklog();
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleDeleteBacklogItem = async (item: LeadershipWorkItem) => {
-    if (!window.confirm(`Delete task "${item.title}"? This cannot be undone.`)) return;
-    try {
-      await deleteWorkItem(item.id);
-      loadBacklog();
-      if (editingBacklogItem?.id === item.id) setEditingBacklogItem(null);
-    } catch (e) {
-      console.error(e);
-      setSaveError(e instanceof Error ? e.message : 'Failed to delete task');
-    }
-  };
-
-  const handleCreateBacklogSave = async (data: TaskFormPayload, context?: TaskFormSaveContext) => {
-    if (!teamId) return;
-    setSaveError(null);
-    try {
-      const created = await createWorkItem({
-        title: data.title,
-        description: data.description,
-        teamId,
-        status: data.status,
-        lane: data.lane,
-        estimate: data.estimate,
-        blocked: data.blocked,
-        assigneeId: data.assigneeId,
-        comments: data.comments,
-      });
-      if (context?.newCommentsWithMentions?.length) {
-        for (const c of context.newCommentsWithMentions) {
-          if (c.mentionedUserIds?.length) {
-            await createMentionNotifications(
-              created.id,
-              data.title,
-              teamId,
-              c.id,
-              c.text,
-              c.userId,
-              c.userName || '',
-              c.mentionedUserIds
-            );
-          }
-        }
-      }
-      setShowCreateForm(false);
-      loadBacklog();
-    } catch (err) {
-      console.error(err);
-      setSaveError(err instanceof Error ? err.message : 'Failed to save task');
-    }
-  };
-
-  const handleEditBacklogSave = async (data: TaskFormPayload, context?: TaskFormSaveContext) => {
-    if (!editingBacklogItem) return;
-    setSaveError(null);
-    try {
-      await updateWorkItem(editingBacklogItem.id, {
-        title: data.title,
-        description: data.description,
-        status: data.status,
-        lane: data.lane,
-        estimate: data.estimate,
-        blocked: data.blocked,
-        assigneeId: data.assigneeId,
-        comments: data.comments,
-      });
-      if (context?.newCommentsWithMentions?.length) {
-        for (const c of context.newCommentsWithMentions) {
-          if (c.mentionedUserIds?.length) {
-            await createMentionNotifications(
-              editingBacklogItem.id,
-              data.title,
-              teamId ?? undefined,
-              c.id,
-              c.text,
-              c.userId,
-              c.userName || '',
-              c.mentionedUserIds
-            );
-          }
-        }
-      }
-      setEditingBacklogItem(null);
-      loadBacklog();
-    } catch (err) {
-      console.error(err);
-      setSaveError(err instanceof Error ? err.message : 'Failed to save task');
     }
   };
 
@@ -247,9 +106,7 @@ const LeadershipTeamPage: React.FC = () => {
           <>
             <h1 style={{ color: '#002B4D', marginBottom: '8px' }}>{team.name}</h1>
             <p style={{ color: '#6b7280', fontSize: '1rem', marginBottom: '24px' }}>
-              Members: {team.memberIds.length === 0
-                ? 'None'
-                : team.memberIds.map((id) => memberLabels[id] || id).join(', ')}
+              Members: {team.memberIds.length === 0 ? 'None' : `${team.memberIds.length} member(s)`}
             </p>
 
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
@@ -337,112 +194,6 @@ const LeadershipTeamPage: React.FC = () => {
                   Add
                 </button>
               </div>
-            </div>
-
-            <div style={sectionStyle}>
-              <h2 style={{ color: '#002B4D', marginBottom: '12px', fontSize: '1.25rem' }}>Team backlog</h2>
-              <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '12px' }}>
-                Items not yet on the board. Move to board to add to To Do.
-              </p>
-              <button
-                type="button"
-                onClick={() => setShowCreateForm(true)}
-                style={{
-                  padding: '8px 16px',
-                  background: '#e5e7eb',
-                  color: '#374151',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  marginBottom: '12px',
-                }}
-              >
-                Add to backlog
-              </button>
-              {showCreateForm && teamId && (
-                <>
-                  {saveError && <p style={{ color: '#dc2626', marginBottom: '16px' }}>{saveError}</p>}
-                  <TaskForm
-                    mode="create"
-                    defaultLane="standard"
-                    teamId={teamId}
-                    teamMemberIds={team?.memberIds ?? []}
-                    memberLabels={memberLabels}
-                    onSave={handleCreateBacklogSave}
-                    onCancel={() => { setShowCreateForm(false); setSaveError(null); }}
-                  />
-                </>
-              )}
-              {editingBacklogItem && (
-                <>
-                  {saveError && <p style={{ color: '#dc2626', marginBottom: '16px' }}>{saveError}</p>}
-                  <TaskForm
-                    mode="edit"
-                    initialItem={editingBacklogItem}
-                    teamId={teamId}
-                    teamMemberIds={team?.memberIds ?? []}
-                    memberLabels={memberLabels}
-                    onSave={handleEditBacklogSave}
-                    onCancel={() => { setEditingBacklogItem(null); setSaveError(null); }}
-                    onDelete={async () => {
-                      if (!editingBacklogItem || !window.confirm(`Delete task "${editingBacklogItem.title}"? This cannot be undone.`)) return;
-                      try {
-                        await deleteWorkItem(editingBacklogItem.id);
-                        setEditingBacklogItem(null);
-                        setSaveError(null);
-                        loadBacklog();
-                      } catch (e) {
-                        console.error(e);
-                        setSaveError(e instanceof Error ? e.message : 'Failed to delete task');
-                      }
-                    }}
-                  />
-                </>
-              )}
-              {backlogItems.length === 0 ? (
-                <p style={{ color: '#6b7280', margin: 0 }}>No items in team backlog.</p>
-              ) : (
-                <ul style={{ margin: 0, paddingLeft: '20px' }}>
-                  {backlogItems.map((item) => (
-                    <li key={item.id} style={{ marginBottom: '12px' }}>
-                      <span style={{ fontWeight: 500 }}>{item.title}</span>
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          onClick={() => setEditingBacklogItem(item)}
-                          style={{ padding: '4px 10px', fontSize: '0.8rem', background: '#e5e7eb', color: '#374151', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteBacklogItem(item)}
-                          style={{ padding: '4px 10px', fontSize: '0.8rem', background: '#dc2626', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          Delete
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleMoveToBoard(item.id)}
-                          style={{ padding: '4px 10px', fontSize: '0.8rem', background: '#002B4D', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                        >
-                          Move to board
-                        </button>
-                        <select
-                          value={item.assigneeId || ''}
-                          onChange={(e) => handleAssignMember(item.id, e.target.value)}
-                          style={{ padding: '4px 8px', fontSize: '0.8rem' }}
-                        >
-                          <option value="">Assign to…</option>
-                          {team.memberIds.map((uid) => (
-                            <option key={uid} value={uid}>{memberLabels[uid] || uid}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
           </>
         ) : null}
