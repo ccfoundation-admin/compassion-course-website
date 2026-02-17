@@ -10,7 +10,7 @@ import {
   where,
   serverTimestamp,
 } from 'firebase/firestore';
-import { db } from '../firebase/firebaseConfig';
+import { db, auth } from '../firebase/firebaseConfig';
 import type { LeadershipTeam } from '../types/leadership';
 import { createBoardForTeam } from './leadershipBoardsService';
 
@@ -80,11 +80,22 @@ export async function updateTeam(
   id: string,
   updates: Partial<Pick<LeadershipTeam, 'name' | 'memberIds'>>
 ): Promise<void> {
+  const path = `/${COLLECTION}/${id}`;
+  console.log('🧪 Attempting write to', path);
+  console.log('🧪 Current UID:', auth.currentUser?.uid);
   const ref = doc(db, COLLECTION, id);
   const data: Record<string, unknown> = { updatedAt: serverTimestamp() };
   if (updates.name !== undefined) data.name = updates.name;
   if (updates.memberIds !== undefined) data.memberIds = updates.memberIds;
-  await updateDoc(ref, data);
+  try {
+    await updateDoc(ref, data);
+    console.log('✅ SUCCESS writing', path);
+  } catch (error) {
+    console.error('❌ FAILED writing', path, error);
+    console.error('❌ Full error object:', error);
+    console.error('❌ auth.currentUser?.uid:', auth.currentUser?.uid);
+    throw error;
+  }
 }
 
 export async function deleteTeam(id: string): Promise<void> {
