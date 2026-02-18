@@ -105,7 +105,7 @@ const Globe: React.FC = () => {
         if (!pointerDown.current) {
           // Auto-rotate + momentum decay
           velocity.current *= 0.95; // friction
-          targetPhi.current += 0.003 + velocity.current;
+          targetPhi.current += 0.0012 + velocity.current;
         }
 
         // Lerp smoothPhi toward targetPhi for buttery interpolation

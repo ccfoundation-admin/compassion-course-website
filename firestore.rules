@@ -299,17 +299,17 @@ service cloud.firestore {
     }
     match /teamBoardSettings/{id} {
       allow read: if isAdmin() || isActiveUser();
-      allow write: if canWrite();
+      allow write: if isAdmin() || canWrite();
     }
     match /leadershipWorkingAgreements/{teamId} {
       allow read: if isAdmin() || isActiveUser();
-      allow write: if canWrite();
+      allow write: if isAdmin() || canWrite();
     }
     // User notifications: active user reads own; any contributor+ can create (for @-mentions to other users)
     match /userNotifications/{notifId} {
       allow read: if isAdmin() || (isActiveUser() && resource.data.userId == request.auth.uid);
-      allow create: if canWrite();
-      allow update: if canWrite() && resource.data.userId == request.auth.uid;
+      allow create: if isAdmin() || canWrite();
+      allow update: if isAdmin() || (canWrite() && resource.data.userId == request.auth.uid);
       allow delete: if false;
     }
   }

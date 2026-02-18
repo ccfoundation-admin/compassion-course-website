@@ -97,6 +97,16 @@ const HomePage: React.FC = () => {
           </div>
           <div className="hero-globe">
             <Globe />
+            <img
+              src="/mother-embrace-no-sphere.png"
+              alt="Woman compassionately embracing the globe"
+              className="hero-embrace-overlay"
+            />
+            <img
+              src="/top_hand.png"
+              alt="Hand reaching over the globe"
+              className="hero-hand-overlay"
+            />
           </div>
         </div>
       </section>

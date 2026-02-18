@@ -811,7 +811,7 @@
    HERO SECTION
    ========================================== */
 .hero {
-    background: linear-gradient(160deg, #0c4a44 0%, #0d7a70 35%, #10a89b 65%, #34d9c9 100%);
+    background: linear-gradient(160deg, #0a1628 0%, #0f2b3d 30%, #133d4a 55%, #1a5c5a 80%, #1e7a6e 100%);
     color: var(--color-white);
     padding: 0;
     margin-top: 0;
@@ -827,9 +827,9 @@
     position: absolute;
     inset: 0;
     background:
-        radial-gradient(ellipse at 20% 50%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(45, 212, 191, 0.15) 0%, transparent 50%),
-        radial-gradient(ellipse at 60% 80%, rgba(244, 63, 94, 0.06) 0%, transparent 40%);
+        radial-gradient(ellipse at 20% 50%, rgba(255, 255, 255, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 75% 40%, rgba(45, 212, 191, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(207, 151, 62, 0.06) 0%, transparent 40%);
     pointer-events: none;
 }
 
@@ -948,6 +948,32 @@
     align-items: center;
     justify-content: center;
     position: relative;
+}
+
+.hero-embrace-overlay {
+    position: absolute;
+    top: 46%;
+    left: 42%;
+    transform: translate(-50%, -50%);
+    width: 110%;
+    max-width: 660px;
+    height: auto;
+    pointer-events: none;
+    z-index: 4;
+    filter: drop-shadow(0 8px 32px rgba(0, 0, 0, 0.15));
+}
+
+.hero-hand-overlay {
+    position: absolute;
+    top: 8%;
+    left: 52%;
+    transform: translate(-50%, -50%) rotate(21deg);
+    width: 17%;
+    max-width: 110px;
+    height: auto;
+    pointer-events: none;
+    z-index: 1;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.1));
 }
 
 /* Globe Component */
@@ -2386,6 +2412,16 @@ section {
         margin: 0 auto;
     }
 
+    .hero-embrace-overlay {
+        width: 120%;
+        max-width: 420px;
+    }
+
+    .hero-hand-overlay {
+        width: 22%;
+        max-width: 110px;
+    }
+
     /* Value props */
     .value-props {
         padding: 80px 0;
@@ -2491,6 +2527,16 @@ section {
 
     .globe-container {
         max-width: 260px;
+    }
+
+    .hero-embrace-overlay {
+        width: 115%;
+        max-width: 340px;
+    }
+
+    .hero-hand-overlay {
+        width: 20%;
+        max-width: 90px;
     }
 
     .container {
