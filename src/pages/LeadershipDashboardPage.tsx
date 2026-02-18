@@ -31,7 +31,7 @@ const TABS: { id: TabId; label: string; requiresTeam: boolean }[] = [
 ];
 
 const LeadershipDashboardPage: React.FC = () => {
-  const { user, isActive, userStatus, isAdmin: isAdminUser, loading: authLoading } = useAuth();
+  const { user, isActive, userStatus, isAdmin: isAdminUser, loading: authLoading, userDocLoading } = useAuth();
   const { isAdmin } = usePermissions();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -334,7 +334,7 @@ const LeadershipDashboardPage: React.FC = () => {
   }, [boardSettings?.showBacklogOnBoard, activeTab]);
 
   // Auth gate
-  if (authLoading) {
+  if (authLoading || userDocLoading) {
     return (
       <Layout>
         <div className="ld-page">

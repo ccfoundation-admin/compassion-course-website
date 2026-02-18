@@ -51,6 +51,8 @@ interface AuthContextType {
   adminLoading: boolean;
   /** Canonical user doc (users/{uid}); null while loading or if not yet created. */
   userDoc: UserDoc | null;
+  /** True while the users/{uid} doc is being loaded/retried. */
+  userDocLoading: boolean;
   userRole: UserRole | null;
   userStatus: UserStatus | null;
   isActive: boolean;
@@ -81,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [adminLoading, setAdminLoading] = useState(false);
   const [userDoc, setUserDoc] = useState<UserDoc | null>(null);
+  const [userDocLoading, setUserDocLoading] = useState(false);
 
   // ✅ Auth listener (guarded when Firebase is disabled)
   useEffect(() => {
@@ -217,11 +220,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!user?.uid) {
       setUserDoc(null);
+      setUserDocLoading(false);
       return;
     }
     if (!db) {
       // Firebase disabled: keep app running; no userDoc available
       setUserDoc(null);
+      setUserDocLoading(false);
       return;
     }
 
@@ -230,6 +235,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const displayName = user.displayName ?? user.email?.split('@')[0] ?? 'User';
 
     let cancelled = false;
+    setUserDocLoading(true);
 
     const load = async () => {
       let userDocResult = await getUserDoc(uid);
@@ -259,13 +265,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             userDocResult = await ensureUserDoc(uid, email, displayName);
           }
         } catch (e) {
-          if (!cancelled) setUserDoc(null);
+          if (!cancelled) {
+            setUserDoc(null);
+            setUserDocLoading(false);
+          }
           return;
         }
       }
 
       if (!cancelled) {
         setUserDoc(userDocResult);
+        setUserDocLoading(false);
         if (userDocResult.status === 'active' && userDocResult.role === 'admin') setIsAdmin(true);
       }
     };
@@ -459,6 +469,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     adminLoading,
     userDoc,
+    userDocLoading,
     userRole: userDoc?.role ?? null,
     userStatus: userDoc?.status ?? null,
     isActive: (userDoc?.status ?? '') === 'active',
