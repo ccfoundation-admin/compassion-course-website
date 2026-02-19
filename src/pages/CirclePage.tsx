@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 
 const CirclePage: React.FC = () => {
+  const [iframeLoaded, setIframeLoaded] = useState(false);
+
   return (
     <Layout hideNavigation hideFooter>
       <div style={{
@@ -76,8 +78,23 @@ const CirclePage: React.FC = () => {
           boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
           overflow: 'hidden',
           flex: 1,
-          minHeight: 0
+          minHeight: 0,
+          position: 'relative'
         }}>
+          {/* Loading spinner while iframe loads */}
+          {!iframeLoaded && (
+            <div className="app-loading-overlay" style={{ position: 'absolute', borderRadius: '0 0 12px 12px' }}>
+              <div className="app-loading-center">
+                <div className="app-loading-swirl" />
+                <div className="app-loading-swirl-inner" />
+                <img
+                  src="/Logo-with-HSW-transparent.png"
+                  alt=""
+                  className="app-loading-logo"
+                />
+              </div>
+            </div>
+          )}
           <iframe
             src="https://login.circle.so/sign_in?request_host=www.theglobalcompassionnetwork.com#email"
             style={{
@@ -88,6 +105,7 @@ const CirclePage: React.FC = () => {
             }}
             title="Compassion Course Community"
             allow="clipboard-read; clipboard-write"
+            onLoad={() => setIframeLoaded(true)}
           />
         </div>
       </div>

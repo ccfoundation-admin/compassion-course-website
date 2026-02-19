@@ -3,50 +3,38 @@ service firebase.storage {
   match /b/{bucket}/o {
     // Helper function to check if user is admin
     function isAdmin() {
-      return request.auth != null && 
+      return request.auth != null &&
              firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
     }
-    
-    function isAdminByEmail() {
-      return request.auth != null && 
-             request.auth.token.email != null &&
-             firestore.exists(/databases/(default)/documents/admins/$(request.auth.token.email));
-    }
-    
-    // Direct check for trusted admin email (fallback if Firestore lookup fails)
-    function isTrustedAdminEmail() {
-      return request.auth != null && 
-             request.auth.token.email != null &&
-             request.auth.token.email == 'info@compassioncf.com';
-    }
-    
-    function isAdminUser() {
-      return isAdmin() || isAdminByEmail() || isTrustedAdminEmail();
-    }
-    
+
     // Team member photos - readable by all, writable by admins
+    // Max 5MB, images only
     match /team-photos/{memberId}/{fileName} {
-      allow read: if true; // Public read access
-      allow write: if request.auth != null && isAdminUser();
-    }
-    
-    // User avatar photos - readable by all, writable by the owning user only
-    match /user-avatars/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && isAdmin()
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
     }
 
-    // Whiteboard files - authenticated users with board access (enforced via Firestore for board doc)
-    match /whiteboards/{boardId}/files/{fileId} {
-      allow read, write: if request.auth != null;
-    }
-    
-    // User avatars - public read; users can upload/overwrite only their own
+    // User avatar photos - readable by all, writable by the owning user only
+    // Max 5MB, safe image types only (no SVG)
     match /user-avatars/{userId}/{fileName} {
       allow read: if true;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null && request.auth.uid == userId
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
     }
-    
+
+    // Whiteboard files - authenticated users, max 10MB
+    // Restrict to images and JSON (Excalidraw scene data)
+    match /whiteboards/{boardId}/files/{fileId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+        && request.resource.size < 10 * 1024 * 1024
+        && (request.resource.contentType.matches('image/(jpeg|png|webp|gif|svg\\+xml)')
+            || request.resource.contentType == 'application/json');
+    }
+
     // Default: deny all other access
     match /{allPaths=**} {
       allow read, write: if false;

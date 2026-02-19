@@ -6,8 +6,8 @@ import { db, functions } from '../../firebase/firebaseConfig';
 import { httpsCallable } from 'firebase/functions';
 import { useAuth } from '../../context/AuthContext';
 import { listUserProfiles, getUserProfile, createUserProfile, updateUserProfile, deleteUserProfile } from '../../services/userProfileService';
-import { listUsersByStatus, type UserDoc } from '../../services/usersService';
-import { listTeams, getTeam, createTeamWithBoard, updateTeam, deleteTeam } from '../../services/leadershipTeamsService';
+import { listUsersByStatus, updateUserRole, type UserDoc, type UserRole } from '../../services/usersService';
+import { listTeams, getTeam, createTeamWithBoard, updateTeam, deleteTeamWithData } from '../../services/leadershipTeamsService';
 import { UserProfile, PortalRole } from '../../types/platform';
 import type { LeadershipTeam } from '../../types/leadership';
 import AdminLayout from '../../components/AdminLayout';
@@ -240,7 +240,11 @@ const UserManagement: React.FC = () => {
     setSuccess('');
     setUpdatingId(userId);
     try {
-      await updateUserProfile(userId, { role });
+      // Sync role to both collections so Firestore rules and client UI agree
+      await Promise.all([
+        updateUserProfile(userId, { role }),
+        updateUserRole(userId, role as UserRole),
+      ]);
       setSuccess(`Role updated to ${role}.`);
       await loadData();
       loadPendingUsers();
@@ -608,7 +612,7 @@ const UserManagement: React.FC = () => {
         <div style={{ background: '#ffffff', borderRadius: '12px', padding: '24px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', marginBottom: '24px' }}>
           <h2 style={{ color: '#002B4D', marginBottom: '16px' }}>Pending approvals</h2>
           <p style={{ marginBottom: '20px', color: '#6b7280', fontSize: '0.9rem' }}>
-            Users who self-registered are pending until you approve them. Assign a role and approve to grant access to the leadership portal.
+            Users with pending status need approval before they can access portal features. Assign a role and approve to grant access.
           </p>
           {pendingLoading ? (
             <p style={{ color: '#6b7280' }}>Loading…</p>
@@ -745,7 +749,7 @@ const UserManagement: React.FC = () => {
                           <h3 style={{ color: '#002B4D', margin: 0, fontSize: '1.1rem', fontWeight: 600 }}>{t.name}</h3>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button type="button" className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '0.8rem' }} onClick={() => { setEditingTeam(t); setEditTeamName(t.name); setEditTeamMemberIds(new Set(t.memberIds)); }}>Edit</button>
-                            <button type="button" style={{ padding: '6px 12px', fontSize: '0.8rem', background: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }} onClick={async () => { if (!window.confirm(`Delete team "${t.name}"?`)) return; setTeamSaving(true); try { await deleteTeam(t.id); await loadTeams(); } catch (e) { console.error(e); } finally { setTeamSaving(false); }}} disabled={teamSaving}>Delete</button>
+                            <button type="button" style={{ padding: '6px 12px', fontSize: '0.8rem', background: '#fef2f2', color: '#dc2626', border: 'none', borderRadius: '6px', cursor: 'pointer' }} onClick={async () => { if (!window.confirm(`Delete team "${t.name}" and all its data (board, work items, settings)?`)) return; setTeamSaving(true); try { await deleteTeamWithData(t.id); await loadTeams(); } catch (e) { console.error(e); } finally { setTeamSaving(false); }}} disabled={teamSaving}>Delete</button>
                           </div>
                         </div>
                         <p style={{ color: '#6b7280', fontSize: '0.9rem', margin: '0 0 12px 0' }}>

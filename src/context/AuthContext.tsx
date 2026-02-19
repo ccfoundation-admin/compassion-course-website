@@ -30,8 +30,6 @@ import {
   getDomainBlockingErrorMessage,
 } from '../utils/authDiagnostics';
 
-// Temporary fallback admin emails (used when Firestore is offline)
-const ADMIN_EMAILS: string[] = ['info@compassioncf.com', 'jaybond@compassioncf.com'];
 
 /** True if the user has email/password as a sign-in method (so they can log in with password). */
 export function hasPasswordProvider(user: User | null): boolean {
@@ -257,13 +255,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!userDocResult) {
         try {
-          // If admins/{uid} exists, bootstrap as admin. Otherwise normal doc.
-          const adminSnap = await getDoc(doc(db, 'admins', uid));
-          if (adminSnap.exists() || (user.email && ADMIN_EMAILS.includes(user.email))) {
-            userDocResult = await ensureUserDoc(uid, email, displayName, { status: 'active', role: 'admin' });
-          } else {
-            userDocResult = await ensureUserDoc(uid, email, displayName);
-          }
+          // Client-side fallback: create a viewer-level doc.
+          // Admin role is managed via Cloud Functions and admins/{uid} collection only.
+          userDocResult = await ensureUserDoc(uid, email, displayName);
         } catch (e) {
           if (!cancelled) {
             setUserDoc(null);
@@ -276,7 +270,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!cancelled) {
         setUserDoc(userDocResult);
         setUserDocLoading(false);
-        if (userDocResult.status === 'active' && userDocResult.role === 'admin') setIsAdmin(true);
+        // Note: isAdmin is derived from admins/{uid} collection only (set in the auth listener above).
+        // Do NOT set isAdmin based on the users/{uid} doc — that's user-writable.
       }
     };
 

@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
 
 const COLLECTION = 'users';
@@ -64,6 +64,12 @@ export async function ensureUserDoc(
   );
   const snap = await getDoc(ref);
   return toUserDoc(snap.id, snap.data() ?? {});
+}
+
+/** Update a user's role in the users/{uid} doc (admin-only in rules). */
+export async function updateUserRole(uid: string, role: UserRole): Promise<void> {
+  const ref = doc(db, COLLECTION, uid);
+  await updateDoc(ref, { role, updatedAt: serverTimestamp() });
 }
 
 /** List users by status (admin-only in rules). */

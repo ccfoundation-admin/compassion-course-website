@@ -3,7 +3,7 @@ import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useAuth } from '../context/AuthContext';
 import { usePermissions } from '../context/PermissionsContext';
-import { listTeams, getTeam, patchTeamBoardId } from '../services/leadershipTeamsService';
+import { listTeams, listTeamsForUser, getTeam, patchTeamBoardId } from '../services/leadershipTeamsService';
 import { listWorkItems, getWorkItem, updateWorkItem, deleteWorkItem } from '../services/leadershipWorkItemsService';
 import { listNotificationsForUser, createMentionNotifications } from '../services/notificationService';
 import { getTeamBoardSettings } from '../services/teamBoardSettingsService';
@@ -108,8 +108,11 @@ const LeadershipDashboardPage: React.FC = () => {
     setTeamsLoading(true);
     setNotificationsLoading(true);
 
+    const teamsFetch = (isAdminUser || isAdmin)
+      ? listTeams().catch(() => [])
+      : listTeamsForUser(user.uid).catch(() => []);
     Promise.all([
-      listTeams().catch(() => []),
+      teamsFetch,
       listNotificationsForUser(user.uid, 30).catch(() => []),
     ]).then(([teamList, notifs]) => {
       if (cancelled) return;
@@ -303,11 +306,14 @@ const LeadershipDashboardPage: React.FC = () => {
     setActiveTab('board');
   }, []);
 
-  // Handle create team
+  // Handle create team (team creation is admin-only via CF)
   const handleTeamCreated = (teamId: string) => {
     setShowCreateTeamModal(false);
     // Reload teams, then select the new one
-    listTeams()
+    const reloadTeams = (isAdminUser || isAdmin)
+      ? listTeams()
+      : listTeamsForUser(user!.uid);
+    reloadTeams
       .then((newTeams) => {
         setTeams(newTeams);
         setSelectedTeamId(teamId);
@@ -452,6 +458,7 @@ const LeadershipDashboardPage: React.FC = () => {
               {activeTab === 'backlog' && (
                 <BacklogTabView
                   teams={teams}
+                  isAdmin={!!(isAdminUser || isAdmin)}
                   onSwitchToTeamBoard={handleSwitchToTeamBoard}
                 />
               )}
@@ -475,7 +482,10 @@ const LeadershipDashboardPage: React.FC = () => {
                   onSettingsSaved={refreshTeamData}
                   onTeamDeleted={() => {
                     // Reload teams and switch to first remaining team (or none)
-                    listTeams().then((newTeams) => {
+                    const reloadTeams = (isAdminUser || isAdmin)
+                      ? listTeams()
+                      : listTeamsForUser(user!.uid);
+                    reloadTeams.then((newTeams) => {
                       setTeams(newTeams);
                       if (newTeams.length > 0) {
                         setSelectedTeamId(newTeams[0].id);

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TaskForm, { type TaskFormPayload, type TaskFormSaveContext } from './TaskForm';
 import {
   listAllBacklogStatusItems,
+  listWorkItems,
   createWorkItem,
   updateWorkItem,
   deleteWorkItem,
@@ -26,10 +27,11 @@ function formatTimeAgo(date: Date): string {
 
 interface BacklogTabViewProps {
   teams: LeadershipTeam[];
+  isAdmin: boolean;
   onSwitchToTeamBoard: (teamId: string) => void;
 }
 
-const BacklogTabView: React.FC<BacklogTabViewProps> = ({ teams, onSwitchToTeamBoard }) => {
+const BacklogTabView: React.FC<BacklogTabViewProps> = ({ teams, isAdmin, onSwitchToTeamBoard }) => {
   const [items, setItems] = useState<LeadershipWorkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -42,10 +44,24 @@ const BacklogTabView: React.FC<BacklogTabViewProps> = ({ teams, onSwitchToTeamBo
 
   const load = () => {
     setLoading(true);
-    listAllBacklogStatusItems()
-      .then(setItems)
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+    if (isAdmin) {
+      // Admin can query entire collection
+      listAllBacklogStatusItems()
+        .then(setItems)
+        .catch(() => setItems([]))
+        .finally(() => setLoading(false));
+    } else {
+      // Non-admin: fetch per-team to satisfy Firestore rules (no full collection scan)
+      const teamIds = teams.map((t) => t.id);
+      Promise.all(teamIds.map((tid) => listWorkItems(tid).catch(() => [])))
+        .then((results) => {
+          const all = results.flat().filter((w) => w.status === 'backlog');
+          all.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+          setItems(all);
+        })
+        .catch(() => setItems([]))
+        .finally(() => setLoading(false));
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -153,11 +169,17 @@ const BacklogTabView: React.FC<BacklogTabViewProps> = ({ teams, onSwitchToTeamBo
   return (
     <div className="ld-backlog-sections">
       <div>
-        <h2 className="ld-backlog-section-title">Global Backlog</h2>
-        <p className="ld-backlog-desc">All tasks in Backlog status, from any team or unassigned.</p>
-        <button type="button" className="ld-backlog-add-btn" onClick={() => setShowCreateForm(true)}>
-          Add task
-        </button>
+        <h2 className="ld-backlog-section-title">{isAdmin ? 'Global Backlog' : 'Team Backlog'}</h2>
+        <p className="ld-backlog-desc">
+          {isAdmin
+            ? 'All tasks in Backlog status, from any team or unassigned.'
+            : 'Backlog tasks from your teams.'}
+        </p>
+        {isAdmin && (
+          <button type="button" className="ld-backlog-add-btn" onClick={() => setShowCreateForm(true)}>
+            Add task
+          </button>
+        )}
       </div>
 
       {showCreateForm && (

@@ -312,6 +312,24 @@ exports.approveUser = onCall(
         role,
         updatedAt: now,
       });
+      // Sync role to userProfiles (PermissionsContext reads role from there)
+      step = "firestore.sync.userProfile";
+      const profileRef = db.collection("userProfiles").doc(targetUid);
+      const profileSnap = await profileRef.get();
+      if (profileSnap.exists) {
+        await profileRef.update({ role, updatedAt: now });
+      } else {
+        // Create profile if missing (e.g. signup profile creation failed)
+        const userData = snap.data() || {};
+        await profileRef.set({
+          email: userData.email || "",
+          name: userData.displayName || "",
+          organizations: [],
+          role,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
       logStep(FN_APPROVE_USER, "done", { uid: targetUid });
       return { ok: true, uid: targetUid, status: STATUS_ACTIVE, role };
     } catch (e) {
@@ -361,6 +379,19 @@ exports.grantAdmin = onCall(
         grantedAt,
         updatedAt: now,
       });
+      // Sync role to users/{uid} and userProfiles/{uid} so all collections agree
+      step = "firestore.sync.user";
+      const userRef = db.collection(USERS_COLLECTION).doc(targetUid);
+      const userSnap = await userRef.get();
+      if (userSnap.exists) {
+        await userRef.update({ role: "admin", status: STATUS_ACTIVE, updatedAt: now });
+      }
+      step = "firestore.sync.userProfile";
+      const profileRef = db.collection("userProfiles").doc(targetUid);
+      const profileSnap = await profileRef.get();
+      if (profileSnap.exists) {
+        await profileRef.update({ role: "admin", updatedAt: now });
+      }
       logStep(FN_GRANT_ADMIN, "done", { targetUid });
       return { ok: true };
     } catch (e) {
@@ -396,11 +427,30 @@ exports.revokeAdmin = onCall(
       if (!targetUid) {
         throw new HttpsError("invalid-argument", "targetUid is required.");
       }
+      if (targetUid === request.auth.uid) {
+        throw new HttpsError("failed-precondition", "Cannot revoke your own admin access.");
+      }
       step = "firestore.delete.admin";
       const targetRef = db.collection("admins").doc(targetUid);
       const targetSnap = await targetRef.get();
       if (targetSnap.exists) {
         await targetRef.delete();
+      }
+      // Demote role in users/{uid} and userProfiles/{uid} so access is fully revoked
+      step = "firestore.demote.user";
+      const now = FieldValue.serverTimestamp();
+      const userRef = db.collection(USERS_COLLECTION).doc(targetUid);
+      const userSnap = await userRef.get();
+      const userRole = userSnap.exists ? userSnap.data()?.role : null;
+      if (userRole === "admin" || userRole === "superAdmin") {
+        await userRef.update({ role: "viewer", updatedAt: now });
+      }
+      step = "firestore.demote.userProfile";
+      const profileRef = db.collection("userProfiles").doc(targetUid);
+      const profileSnap = await profileRef.get();
+      const profileRole = profileSnap.exists ? profileSnap.data()?.role : null;
+      if (profileRole === "admin" || profileRole === "superAdmin") {
+        await profileRef.update({ role: "viewer", updatedAt: now });
       }
       logStep(FN_REVOKE_ADMIN, "done", { targetUid });
       return { ok: true };
