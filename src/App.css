@@ -3039,13 +3039,14 @@ section {
         overflow-y: auto;
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.25s ease, transform 0.25s ease;
+        /* No transition here — prevents flash when crossing the breakpoint */
     }
 
     .nav-menu.active {
         opacity: 1;
         transform: translateY(0);
         pointer-events: auto;
+        transition: opacity 0.25s ease, transform 0.25s ease;
     }
 
     .nav-item {
