@@ -2,24 +2,24 @@
    DESIGN TOKENS — Warm, Friendly, Modern
    ========================================== */
 :root {
-    /* Primary — warm teal */
-    --color-primary: #0d9488;
-    --color-primary-light: #14b8a6;
-    --color-primary-lighter: #5eead4;
-    --color-primary-dark: #0f766e;
-    --color-primary-darker: #115e59;
-    --color-primary-50: #f0fdfa;
-    --color-primary-100: #ccfbf1;
+    /* Primary — cool sky blue */
+    --color-primary: #5fa9e3;
+    --color-primary-light: #7dbdee;
+    --color-primary-lighter: #a8d4f5;
+    --color-primary-dark: #4088c4;
+    --color-primary-darker: #2d6a9e;
+    --color-primary-50: #f0f7fd;
+    --color-primary-100: #dbeefb;
 
-    /* Accent — warm coral / rose */
-    --color-accent: #f43f5e;
-    --color-accent-light: #fb7185;
-    --color-accent-dark: #e11d48;
-    --color-accent-50: #fff1f2;
+    /* Accent — vibrant coral */
+    --color-accent: #e37263;
+    --color-accent-light: #ed9a8f;
+    --color-accent-dark: #c9544a;
+    --color-accent-50: #fdf2f0;
 
-    /* Warm gold for highlights */
-    --color-gold: #f59e0b;
-    --color-gold-light: #fbbf24;
+    /* Warm vanilla custard for highlights */
+    --color-gold: #e8d84a;
+    --color-gold-light: #fff7a7;
 
     /* Neutral palette — warmer grays */
     --color-white: #ffffff;
@@ -41,14 +41,15 @@
     --color-warning: #d97706;
 
     /* Soft background tints */
-    --bg-warm: #fffbf5;
-    --bg-cool: #f0fdfa;
-    --bg-rose: #fff1f2;
+    --bg-warm: #fffdf0;
+    --bg-cool: #f0f7fd;
+    --bg-rose: #fdf2f0;
+    --bg-green: #f3fbf3;
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, #134e4a 0%, #0d9488 40%, #2dd4bf 100%);
+    --gradient-hero: linear-gradient(135deg, #3a2435 0%, #5e4352 40%, #5fa9e3 100%);
     --gradient-primary: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
-    --gradient-warm: linear-gradient(135deg, #fef3c7 0%, #fde68a 50%, #fbbf24 100%);
+    --gradient-warm: linear-gradient(135deg, #fffde6 0%, #fff7a7 50%, #e8d84a 100%);
     --gradient-accent: linear-gradient(135deg, var(--color-accent) 0%, var(--color-accent-light) 100%);
     --gradient-soft: linear-gradient(180deg, var(--bg-warm) 0%, var(--color-white) 100%);
     --gradient-glass: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0.7) 100%);
@@ -65,8 +66,8 @@
     --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.07), 0 4px 10px -4px rgba(0, 0, 0, 0.04);
     --shadow-xl: 0 20px 40px -5px rgba(0, 0, 0, 0.08), 0 8px 16px -6px rgba(0, 0, 0, 0.04);
     --shadow-2xl: 0 25px 60px -12px rgba(0, 0, 0, 0.12);
-    --shadow-glow: 0 0 30px rgba(13, 148, 136, 0.12);
-    --shadow-warm: 0 4px 20px rgba(244, 63, 94, 0.08);
+    --shadow-glow: 0 0 30px rgba(95, 169, 227, 0.15);
+    --shadow-warm: 0 4px 20px rgba(227, 114, 99, 0.08);
     --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.04);
     --shadow-card-hover: 0 8px 30px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04);
 
@@ -215,7 +216,7 @@ p {
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+    box-shadow: 0 2px 8px rgba(95, 169, 227, 0.3);
     border: none;
     cursor: pointer;
     position: relative;
@@ -225,7 +226,7 @@ p {
 
 .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(13, 148, 136, 0.4);
+    box-shadow: 0 6px 20px rgba(95, 169, 227, 0.4);
     filter: brightness(1.05);
 }
 
@@ -257,7 +258,7 @@ p {
     color: var(--color-white);
     border-color: var(--color-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+    box-shadow: 0 4px 14px rgba(95, 169, 227, 0.25);
 }
 
 .btn-secondary:active {
@@ -347,7 +348,7 @@ button:focus-visible {
    SELECTION
    ========================================== */
 ::selection {
-    background: rgba(13, 148, 136, 0.15);
+    background: rgba(95, 169, 227, 0.2);
     color: var(--color-gray-900);
 }
 
