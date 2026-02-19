@@ -86,45 +86,7 @@ const LearnMorePage: React.FC = () => {
         </div>
       </section>
 
-      {/* The Origin Story */}
-      <section className="learn-origin reveal">
-        <div className="container">
-          <div className="learn-origin-inner">
-            <div className="learn-origin-image">
-              <img
-                src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=640&q=80"
-                alt="Friends laughing together outdoors"
-                loading="lazy"
-              />
-            </div>
-            <div className="learn-origin-text">
-              <h2 className="section-title" style={{ textAlign: 'left' }}>How It All Started</h2>
-              <p>
-                In 2002, Thom Bond was a successful environmental engineer when
-                he picked up Marshall Rosenberg's book <em>Nonviolent Communication:
-                A Language of Life</em>. He recognized something powerful — a
-                human-oriented technology that could transform how people relate
-                to each other.
-              </p>
-              <p>
-                He closed his engineering firm, studied with Rosenberg directly,
-                and in 2003 co-founded the New York Center for Nonviolent
-                Communication. But Thom wanted these skills to reach anyone,
-                anywhere — not just those who could attend workshops in New York.
-              </p>
-              <p>
-                In 2011 he created The Compassion Course Online: a weekly email
-                that would deliver one concept, one story, and one practice at
-                a time — for a full year. What started as a simple idea has
-                since grown into a global community spanning 120+ countries and
-                19 languages.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Impact Stats */}
+      {/* Impact Stats — bold banner */}
       <section className="learn-stats reveal">
         <div className="container">
           <div className="learn-stats-grid">
@@ -143,6 +105,32 @@ const LearnMorePage: React.FC = () => {
             <div className="learn-stat-card">
               <div className="learn-stat-number">15</div>
               <div className="learn-stat-label">Years Running</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* The Origin Story — text-driven, no stock photo */}
+      <section className="learn-origin reveal">
+        <div className="container">
+          <div className="learn-origin-inner">
+            <div className="learn-origin-timeline">
+              <div className="learn-origin-year">
+                <span className="learn-origin-year-num">2002</span>
+                <p>Thom Bond discovers Marshall Rosenberg's <em>Nonviolent Communication</em> and sees a human-oriented technology that changes everything.</p>
+              </div>
+              <div className="learn-origin-year">
+                <span className="learn-origin-year-num">2003</span>
+                <p>He closes his engineering firm, studies with Rosenberg, and co-founds the New York Center for Nonviolent Communication.</p>
+              </div>
+              <div className="learn-origin-year">
+                <span className="learn-origin-year-num">2011</span>
+                <p>The Compassion Course Online is born — one concept, one story, one practice per week, delivered by email for a full year.</p>
+              </div>
+              <div className="learn-origin-year">
+                <span className="learn-origin-year-num">Today</span>
+                <p>A global community spanning 120+ countries, 19 languages, with 50,000+ alumni and growing every year.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -180,7 +168,7 @@ const LearnMorePage: React.FC = () => {
               <h3>Monthly Live Conferences</h3>
               <p>
                 On the second Monday of each month, Thom Bond hosts a live
-                90-minute Zoom session — interactive Q&A, group practice, and
+                90-minute Zoom session — interactive Q&amp;A, group practice, and
                 deeper exploration of the material. All 12 sessions are
                 recorded if you can't make it live.
               </p>
@@ -216,39 +204,48 @@ const LearnMorePage: React.FC = () => {
         </div>
       </section>
 
-      {/* What You'll Actually Learn */}
+      {/* A Peek Inside the Course */}
       <section className="learn-peek reveal">
         <div className="container">
-          <div className="learn-peek-inner">
-            <div className="learn-peek-text">
-              <h2 className="section-title" style={{ textAlign: 'left' }}>A Peek Inside the Course</h2>
-              <p className="learn-peek-intro">
-                The 52-week journey is built on one core idea: <strong>everything
-                we do, we do to meet a need.</strong> Each week builds on the
-                last, gradually shifting how you see yourself, others, and
-                conflict itself. Here are the first 10 weeks:
-              </p>
+          <h2 className="section-title">A Peek Inside the Course</h2>
+          <p className="section-description">
+            The 52-week journey is built on one core idea: <strong>everything
+            we do, we do to meet a need.</strong> Each week builds on the
+            last, gradually shifting how you see yourself, others, and
+            conflict itself.
+          </p>
+          <div className="learn-peek-columns">
+            <div className="learn-peek-col">
+              <h3 className="learn-peek-col-title">First 10 Weeks</h3>
               <div className="learn-peek-list">
                 {weeklyTopics.map((topic) => (
                   <div key={topic.week} className="learn-peek-item">
-                    <span className="learn-peek-week">Week {topic.week}</span>
+                    <span className="learn-peek-week">{topic.week}</span>
                     <span className="learn-peek-title">{topic.title}</span>
                   </div>
                 ))}
               </div>
-              <p className="learn-peek-more">
-                ...and 42 more weeks covering boundaries, requests, anger, shame,
-                beliefs, observation vs. evaluation, conflict resolution,
-                appreciation, and ultimately — living with compassion as a
-                daily practice.
-              </p>
             </div>
-            <div className="learn-peek-image">
-              <img
-                src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=640&q=80"
-                alt="People connecting in warm conversation"
-                loading="lazy"
-              />
+            <div className="learn-peek-col">
+              <h3 className="learn-peek-col-title">Then You'll Explore</h3>
+              <div className="learn-peek-topic-tags">
+                <span className="learn-peek-tag">Boundaries</span>
+                <span className="learn-peek-tag">Making Requests</span>
+                <span className="learn-peek-tag">Anger &amp; Triggers</span>
+                <span className="learn-peek-tag">Shame &amp; Guilt</span>
+                <span className="learn-peek-tag">Observation vs. Evaluation</span>
+                <span className="learn-peek-tag">Beliefs &amp; Thought Patterns</span>
+                <span className="learn-peek-tag">Conflict Resolution</span>
+                <span className="learn-peek-tag">Power Dynamics</span>
+                <span className="learn-peek-tag">Appreciation</span>
+                <span className="learn-peek-tag">Apologies</span>
+                <span className="learn-peek-tag">Vulnerability</span>
+                <span className="learn-peek-tag">Living with Compassion</span>
+              </div>
+              <p className="learn-peek-more">
+                50+ concepts and differentiations across 52 weeks — each one
+                practiced in real life, not just understood in theory.
+              </p>
             </div>
           </div>
         </div>
@@ -364,16 +361,6 @@ const LearnMorePage: React.FC = () => {
               </p>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Photo strip / social proof */}
-      <section className="learn-photo-strip reveal">
-        <div className="learn-photo-strip-inner">
-          <img src="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&q=80" alt="Friends sharing a joyful moment together" loading="lazy" />
-          <img src="https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=400&q=80" alt="People connecting in warm conversation" loading="lazy" />
-          <img src="https://images.unsplash.com/photo-1491438590914-bc09fcaaf77a?w=400&q=80" alt="Community gathering with smiling faces" loading="lazy" />
-          <img src="https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=400&q=80" alt="Diverse group of friends laughing together" loading="lazy" />
         </div>
       </section>
 
