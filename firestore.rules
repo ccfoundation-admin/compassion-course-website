@@ -27,13 +27,9 @@ service cloud.firestore {
             || roleOf(request.auth.uid) == 'manager'
             || roleOf(request.auth.uid) == 'admin');
     }
+    // Admin check: requires admins/{uid} doc with valid role AND active status.
+    // This is the ONLY admin gate used throughout these rules.
     function isAdmin() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    // UID-keyed admin doc only: admins/{uid}; role in [admin, superAdmin], status in [active, approved]
-    function isActiveAdmin() {
       return signedIn()
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
         && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.role in ['admin', 'superAdmin']
@@ -333,11 +329,11 @@ service cloud.firestore {
       allow write: if isAdmin()
         || (canWrite() && request.auth.uid in get(/databases/$(database)/documents/teams/$(teamId)).data.get('memberIds', []));
     }
-    // User notifications: active user reads own; any contributor+ can create
+    // User notifications: active user reads/updates own; any contributor+ can create
     match /userNotifications/{notifId} {
       allow read: if isAdmin() || (isActiveUser() && resource.data.userId == request.auth.uid);
       allow create: if isAdmin() || canWrite();
-      allow update: if isAdmin() || (canWrite() && resource.data.userId == request.auth.uid);
+      allow update: if isAdmin() || (isActiveUser() && resource.data.userId == request.auth.uid);
       allow delete: if false;
     }
   }
