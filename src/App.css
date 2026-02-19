@@ -3519,6 +3519,20 @@ section {
 }
 
 /* Board tab */
+.ld-board-tab-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    margin-bottom: 8px;
+}
+.ld-board-tab-team-name {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
 .ld-board-swimlanes {
     display: flex;
     flex-direction: column;

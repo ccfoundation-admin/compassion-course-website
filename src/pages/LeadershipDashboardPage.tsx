@@ -440,7 +440,7 @@ const LeadershipDashboardPage: React.FC = () => {
         <h1 className="ld-heading">Leadership Dashboard</h1>
         <p className="ld-subtitle">Manage teams, boards, backlogs, and settings — all in one place.</p>
 
-        {/* ── Top bar: team selector + board settings (admin) ── */}
+        {/* ── Top bar: team selector ── */}
         <div className="ld-top-bar">
           <div className="ld-team-selector-wrap">
             {teams.length === 0 ? (
@@ -463,16 +463,6 @@ const LeadershipDashboardPage: React.FC = () => {
               </select>
             )}
           </div>
-          {(isAdminUser || isAdmin) && selectedTeamId && (
-            <button
-              type="button"
-              className="ld-create-team-btn"
-              onClick={() => setActiveTab('settings')}
-            >
-              <i className="fas fa-cog" aria-hidden />
-              Board settings
-            </button>
-          )}
           {teamsLoading && <span className="ld-empty" style={{ fontSize: '0.85rem' }}>Loading teams…</span>}
         </div>
 
@@ -519,19 +509,34 @@ const LeadershipDashboardPage: React.FC = () => {
               )}
 
               {activeTab === 'board' && selectedTeamId && (
-                <BoardTabView
-                  teamId={selectedTeamId}
-                  workItems={workItems}
-                  memberIds={memberIds}
-                  memberLabels={memberLabels}
-                  memberAvatars={memberAvatars}
-                  boardSettings={boardSettings}
-                  boardMissingError={boardMissingError}
-                  onRefresh={refreshTeamData}
-                  onQuietRefresh={refreshWorkItemsQuietly}
-                  initialEditItemId={pendingEditItemId}
-                  onInitialEditConsumed={() => setPendingEditItemId(null)}
-                />
+                <>
+                  <div className="ld-board-tab-header">
+                    <h2 className="ld-board-tab-team-name">{teamName || 'Board'}</h2>
+                    {(isAdminUser || isAdmin) && (
+                      <button
+                        type="button"
+                        className="ld-create-team-btn"
+                        onClick={() => setActiveTab('settings')}
+                      >
+                        <i className="fas fa-cog" aria-hidden />
+                        Board settings
+                      </button>
+                    )}
+                  </div>
+                  <BoardTabView
+                    teamId={selectedTeamId}
+                    workItems={workItems}
+                    memberIds={memberIds}
+                    memberLabels={memberLabels}
+                    memberAvatars={memberAvatars}
+                    boardSettings={boardSettings}
+                    boardMissingError={boardMissingError}
+                    onRefresh={refreshTeamData}
+                    onQuietRefresh={refreshWorkItemsQuietly}
+                    initialEditItemId={pendingEditItemId}
+                    onInitialEditConsumed={() => setPendingEditItemId(null)}
+                  />
+                </>
               )}
 
               {activeTab === 'backlog' && (
