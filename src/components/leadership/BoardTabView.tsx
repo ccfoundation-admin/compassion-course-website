@@ -36,7 +36,7 @@ const LANE_META: Record<WorkItemLane, { label: string; color: string; icon: stri
   expedited: { label: 'Urgent', color: '#ef4444', icon: 'fas fa-bolt' },
   fixed_date: { label: 'Deadline', color: '#f59e0b', icon: 'fas fa-calendar-day' },
   standard: { label: 'Standard', color: '#3b82f6', icon: 'fas fa-stream' },
-  intangible: { label: 'Background', color: '#8b5cf6', icon: 'fas fa-wrench' },
+  intangible: { label: 'Unknown', color: '#8b5cf6', icon: 'fas fa-wrench' },
 };
 
 const DEFAULT_LANES: WorkItemLane[] = ['expedited', 'fixed_date', 'standard', 'intangible'];

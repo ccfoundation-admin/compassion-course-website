@@ -15,7 +15,7 @@ const LANE_OPTIONS: { value: WorkItemLane; label: string; icon: string; desc: st
   { value: 'expedited', label: 'Urgent', icon: 'fas fa-bolt', desc: 'Drop everything — fix now', color: '#ef4444' },
   { value: 'fixed_date', label: 'Deadline', icon: 'fas fa-calendar-day', desc: 'Must ship by a specific date', color: '#f59e0b' },
   { value: 'standard', label: 'Standard', icon: 'fas fa-stream', desc: 'Normal priority work', color: '#3b82f6' },
-  { value: 'intangible', label: 'Background', icon: 'fas fa-wrench', desc: 'Tech debt, maintenance, improvements', color: '#8b5cf6' },
+  { value: 'intangible', label: 'Unknown', icon: 'fas fa-wrench', desc: 'Unknown or uncategorized', color: '#8b5cf6' },
 ];
 
 const ESTIMATE_OPTIONS = [0.5, 1, 1.5, 2, 3, 5];

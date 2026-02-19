@@ -10,7 +10,7 @@ const SWIMLANE_LABELS: Record<WorkItemLane, string> = {
   expedited: 'Urgent',
   fixed_date: 'Deadline',
   standard: 'Standard',
-  intangible: 'Background',
+  intangible: 'Unknown',
 };
 
 const DEFAULT_COLUMN_LABELS: Record<WorkItemStatus, string> = {

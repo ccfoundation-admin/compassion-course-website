@@ -45,7 +45,7 @@ const LeadershipDashboardPage: React.FC = () => {
   const [teamsLoading, setTeamsLoading] = useState(true);
 
   // Active tab
-  const [activeTab, setActiveTab] = useState<TabId>('board');
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard');
 
   // Team-specific data
   const [workItems, setWorkItems] = useState<LeadershipWorkItem[]>([]);
@@ -94,7 +94,7 @@ const LeadershipDashboardPage: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams();
     if (selectedTeamId) params.set('team', selectedTeamId);
-    if (activeTab !== 'board') params.set('tab', activeTab);
+    if (activeTab !== 'dashboard') params.set('tab', activeTab);
     const newSearch = params.toString();
     const currentSearch = searchParams.toString();
     if (newSearch !== currentSearch) {
