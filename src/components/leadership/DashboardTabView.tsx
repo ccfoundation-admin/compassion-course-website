@@ -39,6 +39,7 @@ const DashboardTabView: React.FC<DashboardTabViewProps> = ({
     const assigned = allDashboardWorkItems.filter((w) => {
       const ids = w.assigneeIds ?? (w.assigneeId ? [w.assigneeId] : []);
       if (!ids.includes(userId)) return false;
+      if (w.status === 'done') return false;
       if (prefs.myTasksFilter === 'in_progress') return w.status === 'in_progress';
       return true;
     });
@@ -58,7 +59,12 @@ const DashboardTabView: React.FC<DashboardTabViewProps> = ({
     switch (id) {
       case 'myTeams':
         return (
-          <MyTeamsWidget key={id} teams={teams} onAllTeamsClick={onAllTeamsClick} />
+          <MyTeamsWidget
+            key={id}
+            teams={teams}
+            onAllTeamsClick={onAllTeamsClick}
+            onTeamClick={onSwitchToTeamBoard}
+          />
         );
       case 'myTasks':
         return (

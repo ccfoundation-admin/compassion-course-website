@@ -4,9 +4,10 @@ import type { LeadershipTeam } from '../../../types/leadership';
 interface MyTeamsWidgetProps {
   teams: LeadershipTeam[];
   onAllTeamsClick: () => void;
+  onTeamClick?: (teamId: string) => void;
 }
 
-const MyTeamsWidget: React.FC<MyTeamsWidgetProps> = ({ teams, onAllTeamsClick }) => {
+const MyTeamsWidget: React.FC<MyTeamsWidgetProps> = ({ teams, onAllTeamsClick, onTeamClick }) => {
   return (
     <div className="ld-dashboard-widget">
       <h3 className="ld-dashboard-widget-title">My Teams</h3>
@@ -18,7 +19,17 @@ const MyTeamsWidget: React.FC<MyTeamsWidgetProps> = ({ teams, onAllTeamsClick })
             <ul className="ld-dashboard-widget-list">
               {teams.map((t) => (
                 <li key={t.id} className="ld-dashboard-widget-list-item">
-                  <span>{t.name}</span>
+                  {onTeamClick ? (
+                    <button
+                      type="button"
+                      className="ld-dashboard-widget-link-button"
+                      onClick={() => onTeamClick(t.id)}
+                    >
+                      {t.name}
+                    </button>
+                  ) : (
+                    <span>{t.name}</span>
+                  )}
                   <span className="ld-dashboard-widget-meta">
                     {t.memberIds?.length ?? 0} member{(t.memberIds?.length ?? 0) !== 1 ? 's' : ''}
                   </span>
