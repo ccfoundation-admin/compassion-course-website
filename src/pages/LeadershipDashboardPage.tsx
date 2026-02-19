@@ -21,7 +21,7 @@ import MessagesTabView from '../components/leadership/MessagesTabView';
 import CreateTeamModal from '../components/leadership/CreateTeamModal';
 import TaskForm, { type TaskFormPayload, type TaskFormSaveContext } from '../components/leadership/TaskForm';
 
-type TabId = 'dashboard' | 'board' | 'backlog' | 'team' | 'settings' | 'messages';
+type TabId = 'dashboard' | 'board' | 'backlog' | 'team' | 'settings' | 'messages' | 'adminPortal';
 
 const TABS: { id: TabId; label: string; requiresTeam: boolean }[] = [
   { id: 'dashboard', label: 'Dashboard', requiresTeam: false },
@@ -30,6 +30,7 @@ const TABS: { id: TabId; label: string; requiresTeam: boolean }[] = [
   { id: 'team', label: 'Team', requiresTeam: true },
   { id: 'settings', label: 'Settings', requiresTeam: true },
   { id: 'messages', label: 'Messages', requiresTeam: false },
+  { id: 'adminPortal', label: 'Admin Portal', requiresTeam: false },
 ];
 
 const LeadershipDashboardPage: React.FC = () => {
@@ -296,6 +297,10 @@ const LeadershipDashboardPage: React.FC = () => {
 
   // Handle tab change
   const handleTabChange = (tabId: TabId) => {
+    if (tabId === 'adminPortal') {
+      navigate('/admin');
+      return;
+    }
     const tab = TABS.find((t) => t.id === tabId);
     if (tab?.requiresTeam && !selectedTeamId) return;
     setActiveTab(tabId);
@@ -379,13 +384,15 @@ const LeadershipDashboardPage: React.FC = () => {
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
-  // Hide Backlog tab when it's shown as a column on the board
+  // Hide Backlog tab when it's shown as a column on the board; Admin Portal only for admins
   const visibleTabs = useMemo(() => {
-    if (boardSettings?.showBacklogOnBoard) {
-      return TABS.filter((t) => t.id !== 'backlog');
-    }
-    return TABS;
-  }, [boardSettings?.showBacklogOnBoard]);
+    const base = boardSettings?.showBacklogOnBoard
+      ? TABS.filter((t) => t.id !== 'backlog')
+      : TABS;
+    const isAdmin_ = !!(isAdminUser || isAdmin);
+    if (!isAdmin_) return base.filter((t) => t.id !== 'adminPortal');
+    return base;
+  }, [boardSettings?.showBacklogOnBoard, isAdminUser, isAdmin]);
 
   // Auto-switch away from backlog tab if it gets hidden
   useEffect(() => {
@@ -433,7 +440,7 @@ const LeadershipDashboardPage: React.FC = () => {
         <h1 className="ld-heading">Leadership Dashboard</h1>
         <p className="ld-subtitle">Manage teams, boards, backlogs, and settings — all in one place.</p>
 
-        {/* ── Top bar: team selector + create team ── */}
+        {/* ── Top bar: team selector + board settings (admin) ── */}
         <div className="ld-top-bar">
           <div className="ld-team-selector-wrap">
             {teams.length === 0 ? (
@@ -456,13 +463,16 @@ const LeadershipDashboardPage: React.FC = () => {
               </select>
             )}
           </div>
-          <button
-            type="button"
-            className="ld-create-team-btn"
-            onClick={() => setShowCreateTeamModal(true)}
-          >
-            <i className="fas fa-plus"></i> New Team
-          </button>
+          {(isAdminUser || isAdmin) && selectedTeamId && (
+            <button
+              type="button"
+              className="ld-create-team-btn"
+              onClick={() => setActiveTab('settings')}
+            >
+              <i className="fas fa-cog" aria-hidden />
+              Board settings
+            </button>
+          )}
           {teamsLoading && <span className="ld-empty" style={{ fontSize: '0.85rem' }}>Loading teams…</span>}
         </div>
 
