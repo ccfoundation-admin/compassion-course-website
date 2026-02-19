@@ -60,35 +60,37 @@ const LearnMorePage: React.FC = () => {
 
   return (
     <Layout>
-      {/* Hero Section */}
+      {/* Hero Section — with image background */}
       <section className="learn-hero">
-        <div className="learn-hero-inner">
-          <p className="learn-hero-eyebrow">A Year-Long Journey in Compassion</p>
-          <h1 className="learn-hero-heading">
-            52 Weeks That Change How You<br />
-            Relate to Yourself and Others
-          </h1>
-          <p className="learn-hero-description">
-            Since 2011, The Compassion Course has guided over 50,000 people across
-            120+ countries through a practical, week-by-week path to deeper empathy,
-            honest communication, and real connection — built on the work of
-            Marshall Rosenberg and Nonviolent Communication.
-          </p>
-          <div className="learn-hero-buttons">
-            <JotformPopup
-              formId={JOTFORM_FORM_ID}
-              buttonText="Register Now"
-            />
-            <a href="#how-it-works" className="btn-secondary">
-              See How It Works
-            </a>
+        <img
+          src="/images/different-friends-sunset.jpg"
+          alt="Group of friends sitting together with arms around each other looking out at the view"
+          className="learn-hero-bg"
+        />
+        <div className="learn-hero-overlay" />
+        <div className="learn-hero-content">
+          <div className="learn-hero-inner">
+            <p className="learn-hero-eyebrow">A Year-Long Journey in Compassion</p>
+            <h1 className="learn-hero-heading">
+              52 Weeks That Change How You<br />
+              Relate to Yourself and Others
+            </h1>
+            <p className="learn-hero-description">
+              Since 2011, The Compassion Course has guided over 50,000 people across
+              120+ countries through a practical, week-by-week path to deeper empathy,
+              honest communication, and real connection — built on the work of
+              Marshall Rosenberg and Nonviolent Communication.
+            </p>
+            <div className="learn-hero-buttons">
+              <JotformPopup
+                formId={JOTFORM_FORM_ID}
+                buttonText="Register Now"
+              />
+              <a href="#how-it-works" className="btn-secondary">
+                See How It Works
+              </a>
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* Impact Stats — bold banner */}
-      <section className="learn-stats reveal">
-        <div className="container">
           <div className="learn-stats-grid">
             <div className="learn-stat-card">
               <div className="learn-stat-number">50,000+</div>
@@ -320,8 +322,8 @@ const LearnMorePage: React.FC = () => {
         <div className="container">
           <div className="learn-different-hero">
             <img
-              src="/images/different-friends-sunset.jpg"
-              alt="Diverse group of friends sitting together watching a sunset"
+              src="/images/hero-community.jpg"
+              alt="Golden sunrise over misty green hills"
               loading="lazy"
             />
             <div className="learn-different-hero-overlay">
