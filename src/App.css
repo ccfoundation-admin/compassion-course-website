@@ -452,6 +452,24 @@
     color: var(--color-primary);
 }
 
+/* Heart logo in nav — smooth transition on scroll */
+.nav-logo-heart {
+    height: 44px;
+    width: auto;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.nav-logo-hidden {
+    opacity: 0;
+    transform: scale(0.8) translateY(-4px);
+    pointer-events: none;
+}
+
+.nav-logo-visible {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+}
+
 .main-content {
     padding-top: var(--nav-height);
 }
@@ -966,14 +984,27 @@
     margin-bottom: var(--space-4);
 }
 
+.hero-brand {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-5);
+    margin-bottom: var(--space-6);
+}
+
+.hero-brand-text {
+    display: flex;
+    flex-direction: column;
+}
+
 .hero-heading {
     font-family: var(--font-display);
-    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-size: clamp(2.2rem, 4.5vw, 3.5rem);
     font-weight: 700;
-    line-height: 1.1;
+    line-height: 1.08;
     letter-spacing: -0.02em;
     color: var(--color-white);
-    margin-bottom: var(--space-6);
+    margin-bottom: 0;
 }
 
 .hero-heart-inline {
@@ -995,11 +1026,10 @@
 }
 
 .hero-logo {
-    max-width: 340px;
-    width: 100%;
+    width: clamp(90px, 12vw, 140px);
     height: auto;
-    margin-bottom: var(--space-8);
-    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.15));
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.25));
 }
 
 .hero-description {
@@ -1121,6 +1151,11 @@
 
 .globe-canvas {
     display: block;
+}
+
+/* Cloud layer sits above the hand overlay (z-index 1) but below the girl (z-index 4) */
+.globe-cloud-layer {
+    z-index: 3;
 }
 
 /* ==========================================
@@ -3435,14 +3470,18 @@ section {
         font-size: var(--font-size-4xl);
     }
 
+    .hero-brand {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
     .hero-heading {
         text-align: center;
     }
 
     .hero-logo {
-        max-width: 260px;
-        margin-left: auto;
-        margin-right: auto;
+        width: 80px;
     }
 
     .hero-description {
@@ -3574,7 +3613,7 @@ section {
     }
 
     .hero-logo {
-        max-width: 220px;
+        width: 64px;
     }
 
     .globe-container {
@@ -3633,6 +3672,10 @@ section {
 @media (min-width: 2200px) {
     .hero-heading {
         font-size: clamp(4rem, 4.5vw, 6rem);
+    }
+
+    .hero-logo {
+        width: 180px;
     }
 
     .hero-eyebrow {

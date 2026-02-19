@@ -32,9 +32,29 @@ const testimonials = [
 const HomePage: React.FC = () => {
   const { getContent } = useContent();
   const chatbotContainerRef = useRef<HTMLDivElement>(null);
+  const heroLogoRef = useRef<HTMLImageElement>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
 
   useScrollReveal();
+
+  // Observe hero logo visibility and dispatch event for Navigation
+  useEffect(() => {
+    const el = heroLogoRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        window.dispatchEvent(
+          new CustomEvent('hero-logo-visibility', {
+            detail: { visible: entry.isIntersecting },
+          })
+        );
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Rotate testimonials
   useEffect(() => {
@@ -83,9 +103,17 @@ const HomePage: React.FC = () => {
             <p className="hero-eyebrow">
               {getContent('hero', 'subtitle', 'Changing lives in over 120 Countries')}
             </p>
-            <h1 className="hero-heading">
-              The <span style={{ whiteSpace: 'nowrap' }}>C<img src="/logo_heart.png" alt="o" className="hero-heart-inline" />mpassion</span><br />Course
-            </h1>
+            <div className="hero-brand">
+              <img
+                ref={heroLogoRef}
+                src="/logo_heart.png"
+                alt="The Compassion Course"
+                className="hero-logo"
+              />
+              <div className="hero-brand-text">
+                <h1 className="hero-heading">The<br />Compassion<br />Course</h1>
+              </div>
+            </div>
             <p className="hero-description">
               {getContent('hero-stats', 'stat1-description',
                 'An internationally recognized personal growth and development community with more than 30,000 participants worldwide.'

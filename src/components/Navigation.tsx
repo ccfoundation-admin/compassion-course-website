@@ -14,6 +14,7 @@ const Navigation: React.FC = () => {
   const [isDesktop, setIsDesktop] = useState(true);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [heroLogoVisible, setHeroLogoVisible] = useState(true);
   const accountRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -56,6 +57,20 @@ const Navigation: React.FC = () => {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [accountOpen]);
 
+  const isHomePage = location.pathname === '/';
+
+  // Listen for hero logo visibility events from HomePage
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      setHeroLogoVisible(detail.visible);
+    };
+    window.addEventListener('hero-logo-visibility', handler);
+    // Reset to visible when navigating away from homepage
+    if (!isHomePage) setHeroLogoVisible(true);
+    return () => window.removeEventListener('hero-logo-visibility', handler);
+  }, [isHomePage]);
+
   const isActive = (path: string) => location.pathname === path;
   const isActivePrefix = (prefix: string) => location.pathname === prefix || location.pathname.startsWith(prefix + '/');
 
@@ -95,7 +110,19 @@ const Navigation: React.FC = () => {
       <div className="nav-container">
         <div className="nav-logo">
           <Link to="/" className="nav-logo-link">
-            <img src="/Logo-with-HSW-transparent.png" alt="The Compassion Course" className="nav-logo-img" />
+            {isHomePage ? (
+              <img
+                src="/logo_heart.png"
+                alt="The Compassion Course"
+                className={`nav-logo-img nav-logo-heart ${heroLogoVisible ? 'nav-logo-hidden' : 'nav-logo-visible'}`}
+              />
+            ) : (
+              <img
+                src="/Logo-with-HSW-transparent.png"
+                alt="The Compassion Course"
+                className="nav-logo-img"
+              />
+            )}
           </Link>
         </div>
 
