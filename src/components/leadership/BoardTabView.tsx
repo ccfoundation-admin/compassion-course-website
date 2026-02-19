@@ -739,7 +739,8 @@ const BoardTabView: React.FC<BoardTabViewProps> = ({
 
   const effectiveLanes = useMemo((): WorkItemLane[] => {
     const v = boardSettings?.visibleLanes;
-    return v && v.length > 0 ? v : DEFAULT_LANES;
+    const lanes = v && v.length > 0 ? v : DEFAULT_LANES;
+    return [...lanes].sort((a, b) => DEFAULT_LANES.indexOf(a) - DEFAULT_LANES.indexOf(b));
   }, [boardSettings?.visibleLanes]);
 
   const effectiveColumns = useMemo(() => {
