@@ -7,7 +7,7 @@ import { getUserProfile } from '../services/userProfileService';
 import type { UserProfile } from '../types/platform';
 import GoogleTranslate from './GoogleTranslate';
 
-const DESKTOP_BREAKPOINT = 1080;
+const DESKTOP_BREAKPOINT = 1280;
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -113,6 +113,9 @@ const Navigation: React.FC = () => {
           </li>
           <li className="nav-item">
             <Link to="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>About Us</Link>
+          </li>
+          <li className="nav-item">
+            <Link to="/volunteer" className={`nav-link ${isActive('/volunteer') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Volunteer</Link>
           </li>
           {user && (
             <>
