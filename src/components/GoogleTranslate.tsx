@@ -27,6 +27,7 @@ declare global {
  */
 const GoogleTranslate: React.FC = () => {
   const scriptLoaded = useRef(false);
+  const barObserverRef = useRef<MutationObserver | null>(null);
 
   /** Measure .nav-logo's right edge and position the portal there */
   const positionPortal = useCallback(() => {
@@ -38,6 +39,25 @@ const GoogleTranslate: React.FC = () => {
     portal.style.left = `${rect.right + 8}px`; // 8px gap after logo
   }, []);
 
+  /**
+   * Detect the Google Translate top bar and set --gt-bar-height on :root
+   * so the navbar + content shift down to avoid being covered.
+   * Also toggle .gt-translated on <html> so we can force hamburger nav.
+   */
+  const updateBarOffset = useCallback(() => {
+    // Google's newer translate bar uses this class
+    const bar = document.querySelector<HTMLElement>(
+      '.VIpgJd-ZVi9od-ORHb-OEVmcd'
+    );
+    const height = bar && bar.offsetHeight > 0 ? bar.offsetHeight : 0;
+    document.documentElement.style.setProperty(
+      '--gt-bar-height',
+      `${height}px`
+    );
+    // When the translate bar is visible, add a class so CSS can force mobile nav
+    document.documentElement.classList.toggle('gt-translated', height > 0);
+  }, []);
+
   // Position on every render (route change) + listen for resize
   useEffect(() => {
     positionPortal();
@@ -45,6 +65,26 @@ const GoogleTranslate: React.FC = () => {
     window.addEventListener('resize', positionPortal);
     return () => window.removeEventListener('resize', positionPortal);
   });
+
+  // Watch for the Google Translate bar appearing / disappearing
+  useEffect(() => {
+    // Initial check
+    updateBarOffset();
+
+    // Observe body for Google adding/removing the translate bar
+    const observer = new MutationObserver(() => {
+      updateBarOffset();
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    barObserverRef.current = observer;
+
+    return () => {
+      observer.disconnect();
+      barObserverRef.current = null;
+      // Reset offset when unmounting
+      document.documentElement.style.setProperty('--gt-bar-height', '0px');
+    };
+  }, [updateBarOffset]);
 
   // One-time: create the widget and load the script
   useEffect(() => {

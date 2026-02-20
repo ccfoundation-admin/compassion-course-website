@@ -393,7 +393,7 @@
 .navbar {
     background: var(--color-white);
     position: fixed;
-    top: 0;
+    top: var(--gt-bar-height, 0px);
     width: 100%;
     z-index: 1000;
     padding: 0;
@@ -402,6 +402,7 @@
     display: flex;
     align-items: center;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    transition: top 0.2s ease;
 }
 
 .nav-container {
@@ -471,7 +472,7 @@
 }
 
 .main-content {
-    padding-top: var(--nav-height);
+    padding-top: calc(var(--nav-height) + var(--gt-bar-height, 0px));
 }
 
 .main-content--no-nav {
@@ -511,7 +512,7 @@
     align-items: center;
     gap: 0.4rem;
     font-size: var(--font-size-sm);
-    padding: 0.5rem 0.7rem;
+    padding: 0.5rem 0.55rem;
     border-radius: var(--radius-full);
     white-space: nowrap;
 }
@@ -597,7 +598,7 @@
 }
 
 .nav-item--community {
-    margin-left: var(--space-1);
+    margin-left: var(--space-2);
 }
 
 .nav-portal-btn {
@@ -739,7 +740,7 @@
     align-items: center;
     gap: var(--space-3);
     margin-left: auto;
-    padding-left: var(--space-6);
+    padding-left: var(--space-8);
     z-index: 3;
     flex-shrink: 0;
     position: relative;
@@ -750,7 +751,7 @@
    It never enters the React DOM tree, so route changes can't destroy it. */
 #google-translate-portal {
     position: fixed;
-    top: 0;
+    top: var(--gt-bar-height, 0px);
     left: 0;
     height: var(--nav-height, 80px);
     z-index: 1001;
@@ -804,8 +805,12 @@
     margin-left: 1px !important;
 }
 
-/* Hide the Google Translate top banner/frame that pushes body down */
-.goog-te-banner-frame,
+/* Google Translate top bar offset — set dynamically by GoogleTranslate.tsx */
+:root {
+    --gt-bar-height: 0px;
+}
+
+/* Hide old-style banner frame and tooltip, keep the newer bar visible */
 #goog-gt-tt,
 .goog-te-balloon-frame {
     display: none !important;
@@ -1577,8 +1582,7 @@ section {
     border-radius: var(--radius-2xl);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
-    position: sticky;
-    top: calc(var(--nav-height) + var(--space-8));
+    align-self: center;
 }
 
 .home-outcomes-image img {
@@ -4761,6 +4765,218 @@ a.about-cta-contact-link:hover {
 }
 
 /* ==========================================
+   DONATE PAGE
+   ========================================== */
+
+/* Compact donate splash page */
+.donate-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 40%, #0f2027 100%);
+    color: var(--color-white);
+    text-align: center;
+    padding: calc(var(--nav-height) + var(--space-4)) var(--space-6) 14rem;
+}
+
+/* Animated flowing gradient canvas */
+.donate-gradient-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Glassmorphism card */
+.donate-page-inner {
+    max-width: 580px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-12) var(--space-10);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.donate-hero-eyebrow {
+    display: inline-block;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+    background: rgba(13, 148, 136, 0.15);
+    padding: 6px 16px;
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(13, 148, 136, 0.25);
+}
+
+.donate-hero-heading {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    line-height: 1.15;
+    margin-bottom: var(--space-5);
+    background: linear-gradient(135deg, #ffffff 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.donate-hero-description {
+    font-size: var(--font-size-base);
+    line-height: 1.75;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: var(--space-8);
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* PayPal donate button */
+.donate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: 16px 48px;
+    background: linear-gradient(135deg, var(--color-accent) 0%, #e11d48 100%);
+    color: var(--color-white);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    border-radius: var(--radius-xl);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 24px rgba(244, 63, 94, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+    position: relative;
+}
+
+.donate-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 32px rgba(244, 63, 94, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.donate-btn:active {
+    transform: translateY(-1px);
+}
+
+.donate-btn i {
+    font-size: 1.2em;
+}
+
+/* Footer links below button */
+.donate-page-footer {
+    margin-top: var(--space-8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
+}
+
+.donate-page-footer a {
+    color: rgba(255, 255, 255, 0.45);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.donate-page-footer a:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.donate-page-sep {
+    color: rgba(255, 255, 255, 0.2);
+}
+
+/* Responsive donate */
+@media (max-width: 600px) {
+    .donate-page-inner {
+        padding: var(--space-8) var(--space-6);
+    }
+}
+
+/* ==========================================
+   DONATE NAV LINK
+   ========================================== */
+
+.nav-link--donate {
+    color: var(--color-accent) !important;
+    font-weight: 600 !important;
+}
+
+.nav-link--donate:hover {
+    color: #e03555 !important;
+}
+
+.nav-donate-icon {
+    font-size: 0.75em;
+    margin-right: 2px;
+}
+
+/* ==========================================
+   HOME DONATE BANNER
+   ========================================== */
+
+.home-donate-banner {
+    padding: var(--space-12) 0;
+    background: linear-gradient(135deg, var(--color-primary-50) 0%, #fdf2f8 100%);
+}
+
+.home-donate-banner-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.home-donate-banner-text h3 {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-2);
+}
+
+.home-donate-banner-text p {
+    font-size: var(--font-size-base);
+    color: var(--color-gray-500);
+    margin: 0;
+}
+
+.home-donate-banner-btn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.home-donate-banner-btn i {
+    font-size: 0.85em;
+}
+
+/* ==========================================
+   ABOUT DONATE CARD (accent)
+   ========================================== */
+
+.about-help-card--donate .about-help-icon {
+    background: #fdf2f8;
+}
+
+.about-help-card--donate .about-help-icon i {
+    color: var(--color-accent);
+}
+
+/* ==========================================
    RESPONSIVE DESIGN
    ========================================== */
 
@@ -4794,28 +5010,28 @@ a.about-cta-contact-link:hover {
         position: fixed;
         left: 0;
         right: 0;
-        top: var(--nav-height);
-        transform: translateY(-10px);
+        top: calc(var(--nav-height) + var(--gt-bar-height, 0px));
+        transform: translateY(-6px);
         flex-direction: column;
+        align-items: stretch;
         background-color: var(--color-white);
         width: 100%;
         text-align: left;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
-        padding: var(--space-3) 0;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.04);
+        padding: var(--space-4) 0;
         gap: 0;
-        max-height: calc(100vh - var(--nav-height));
+        max-height: calc(100vh - var(--nav-height) - var(--gt-bar-height, 0px));
         overflow-y: auto;
         opacity: 0;
         pointer-events: none;
         border-top: 1px solid var(--color-gray-100);
-        /* No transition here — prevents flash when crossing the breakpoint */
     }
 
     .nav-menu.active {
         opacity: 1;
         transform: translateY(0);
         pointer-events: auto;
-        transition: opacity 0.25s ease, transform 0.25s ease;
+        transition: opacity 0.2s ease, transform 0.2s ease;
     }
 
     .nav-item {
@@ -4823,40 +5039,78 @@ a.about-cta-contact-link:hover {
     }
 
     .nav-link {
-        padding: 0.85rem var(--space-8);
+        padding: 0.75rem var(--space-8);
         font-size: var(--font-size-base);
         border-radius: 0;
         justify-content: flex-start;
         color: var(--color-gray-700);
         font-weight: 500;
         transition: background 0.15s ease, color 0.15s ease;
+        border-left: 3px solid transparent;
     }
 
-    .nav-link:hover,
-    .nav-link.active {
+    .nav-link:hover {
         background: var(--color-gray-50);
         color: var(--color-primary);
     }
 
     .nav-link.active {
-        border-left: 3px solid var(--color-primary);
-        padding-left: calc(var(--space-8) - 3px);
+        border-left-color: var(--color-primary);
+        color: var(--color-primary);
         font-weight: 600;
+        background: var(--color-primary-50);
     }
 
+    /* Donate link — keep accent but left-aligned */
+    .nav-link--donate {
+        color: var(--color-accent) !important;
+    }
+
+    .nav-link--donate.active {
+        border-left-color: var(--color-accent);
+        background: #fdf2f8;
+    }
+
+    /* Community — reset the bordered pill style to match other items */
     .nav-item--community {
         margin-left: 0;
-        padding: 0.25rem var(--space-8);
+        padding: 0;
     }
 
     .nav-link--community {
-        border-radius: var(--radius-full);
-        display: inline-flex;
-        padding: 0.5rem 1.25rem;
-        justify-content: center;
+        border: none !important;
+        border-radius: 0;
+        display: flex;
+        padding: 0.75rem var(--space-8);
+        justify-content: flex-start;
+        color: var(--color-primary);
+        font-weight: 500;
+        border-left: 3px solid transparent !important;
     }
 
-    /* Hide companion link on mobile — it's in the hamburger menu area */
+    .nav-link--community:hover {
+        background: var(--color-gray-50) !important;
+        color: var(--color-primary) !important;
+    }
+
+    .nav-link--community.active {
+        border-left-color: var(--color-primary) !important;
+        background: var(--color-primary-50) !important;
+        color: var(--color-primary) !important;
+    }
+
+    /* External link (Compass Companions) in menu */
+    .nav-link--external {
+        color: var(--color-gray-500);
+        font-weight: 400;
+        font-size: var(--font-size-sm);
+    }
+
+    .nav-external-icon {
+        opacity: 0.35;
+    }
+
+    /* Hide companion link on desktop right — it's in the hamburger menu */
     .nav-companion-link {
         display: none;
     }
@@ -4865,18 +5119,22 @@ a.about-cta-contact-link:hover {
         display: list-item;
     }
 
+    /* Divider between nav items and account section */
     .nav-account-divider {
-        margin: var(--space-2) 0;
+        margin: var(--space-1) 0;
     }
 
     .nav-account-divider-line {
-        margin: 0 var(--space-6);
+        margin: 0 var(--space-8);
     }
 
     .nav-account-btn {
         margin: var(--space-2) var(--space-8);
+        padding: 0.65rem var(--space-6);
         display: block;
-        text-align: center;
+        text-align: left;
+        font-size: var(--font-size-sm);
+        border-radius: var(--radius-md);
     }
 
     .hamburger {
@@ -4896,6 +5154,88 @@ a.about-cta-contact-link:hover {
     }
 
 }
+
+/* When Google Translate is active, force hamburger nav on all screen sizes.
+   Mirrors the @media (max-width: 1280px) styles above. */
+.gt-translated .nav-menu {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: calc(var(--nav-height) + var(--gt-bar-height, 0px));
+    transform: translateY(-6px);
+    flex-direction: column;
+    align-items: stretch;
+    background-color: var(--color-white);
+    width: 100%;
+    text-align: left;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.04);
+    padding: var(--space-4) 0;
+    gap: 0;
+    max-height: calc(100vh - var(--nav-height) - var(--gt-bar-height, 0px));
+    overflow-y: auto;
+    opacity: 0;
+    pointer-events: none;
+    border-top: 1px solid var(--color-gray-100);
+}
+.gt-translated .nav-menu.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.gt-translated .nav-item { margin: 0; }
+.gt-translated .nav-link {
+    padding: 0.75rem var(--space-8);
+    font-size: var(--font-size-base);
+    border-radius: 0;
+    justify-content: flex-start;
+    color: var(--color-gray-700);
+    font-weight: 500;
+    border-left: 3px solid transparent;
+}
+.gt-translated .nav-link:hover {
+    background: var(--color-gray-50);
+    color: var(--color-primary);
+}
+.gt-translated .nav-link.active {
+    border-left-color: var(--color-primary);
+    color: var(--color-primary);
+    font-weight: 600;
+    background: var(--color-primary-50);
+}
+.gt-translated .nav-link--donate { color: var(--color-accent) !important; }
+.gt-translated .nav-link--donate.active { border-left-color: var(--color-accent); background: #fdf2f8; }
+.gt-translated .nav-item--community { margin-left: 0; padding: 0; }
+.gt-translated .nav-link--community {
+    border: none !important;
+    border-radius: 0;
+    display: flex;
+    padding: 0.75rem var(--space-8);
+    justify-content: flex-start;
+    color: var(--color-primary);
+    border-left: 3px solid transparent !important;
+}
+.gt-translated .nav-link--community:hover { background: var(--color-gray-50) !important; }
+.gt-translated .nav-link--community.active {
+    border-left-color: var(--color-primary) !important;
+    background: var(--color-primary-50) !important;
+}
+.gt-translated .nav-companion-link { display: none; }
+.gt-translated .nav-menu-account-item { display: list-item; }
+.gt-translated .nav-account-divider { margin: var(--space-1) 0; }
+.gt-translated .nav-account-divider-line { margin: 0 var(--space-8); }
+.gt-translated .nav-account-btn {
+    margin: var(--space-2) var(--space-8);
+    padding: 0.65rem var(--space-6);
+    display: block;
+    text-align: left;
+    font-size: var(--font-size-sm);
+    border-radius: var(--radius-md);
+}
+.gt-translated .hamburger { display: flex; }
+.gt-translated .hamburger.active .bar:nth-child(2) { opacity: 0; }
+.gt-translated .hamburger.active .bar:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.gt-translated .hamburger.active .bar:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 /* Tablet (768px) — page layout responsive styles */
 @media (max-width: 768px) {
@@ -5003,7 +5343,6 @@ a.about-cta-contact-link:hover {
     }
 
     .home-outcomes-image {
-        position: static;
         max-width: 400px;
         margin: 0 auto;
     }
@@ -5076,6 +5415,12 @@ a.about-cta-contact-link:hover {
     .about-cta-content {
         grid-template-columns: 1fr;
         gap: var(--space-8);
+    }
+
+    /* Donate */
+    .home-donate-banner-inner {
+        flex-direction: column;
+        text-align: center;
     }
 
     /* Volunteer */

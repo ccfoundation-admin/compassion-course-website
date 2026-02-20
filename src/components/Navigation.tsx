@@ -12,7 +12,8 @@ const DESKTOP_BREAKPOINT = 1280;
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(true);
+  const [isScreenDesktop, setIsScreenDesktop] = useState(true);
+  const [isTranslated, setIsTranslated] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const accountRef = useRef<HTMLDivElement>(null);
@@ -23,12 +24,26 @@ const Navigation: React.FC = () => {
   const { role, isAdmin } = usePermissions();
   const showLeadership = role === 'manager' || role === 'admin' || isAdmin;
 
+  // When translated, force hamburger regardless of screen size
+  const isDesktop = isScreenDesktop && !isTranslated;
+
   useEffect(() => {
     const mq = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT + 1}px)`);
-    const handler = () => setIsDesktop(mq.matches);
+    const handler = () => setIsScreenDesktop(mq.matches);
     handler();
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  // Watch for .gt-translated class on <html> (set by GoogleTranslate.tsx)
+  useEffect(() => {
+    const checkTranslated = () => {
+      setIsTranslated(document.documentElement.classList.contains('gt-translated'));
+    };
+    checkTranslated();
+    const observer = new MutationObserver(checkTranslated);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
@@ -117,15 +132,20 @@ const Navigation: React.FC = () => {
           <li className="nav-item">
             <Link to="/volunteer" className={`nav-link ${isActive('/volunteer') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Volunteer</Link>
           </li>
+          {user && showLeadership && (
+            <li className="nav-item">
+              <Link to="/portal/leadership" className={`nav-link ${isActivePrefix('/portal/leadership') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+                Portal
+              </Link>
+            </li>
+          )}
+          <li className="nav-item">
+            <Link to="/donate" className={`nav-link nav-link--donate ${isActive('/donate') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+              <i className="fas fa-heart nav-donate-icon"></i> Donate
+            </Link>
+          </li>
           {user && (
             <>
-              {showLeadership && (
-                <li className="nav-item">
-                  <Link to="/portal/leadership" className={`nav-link ${isActivePrefix('/portal/leadership') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
-                    Leadership Portal
-                  </Link>
-                </li>
-              )}
               <li className="nav-item nav-item--community">
                 <Link to="/portal/circle" className={`nav-link nav-link--community ${isActive('/portal/circle') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
                   <i className="fas fa-users nav-community-icon"></i>

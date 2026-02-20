@@ -3,8 +3,11 @@ import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import JotformPopup from '../components/JotformPopup';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { siteContent } from '../data/siteContent';
 
 const JOTFORM_FORM_ID = import.meta.env.VITE_JOTFORM_FORM_ID || '260333329475357';
+
+const { volunteer } = siteContent;
 
 const VolunteerPage: React.FC = () => {
   useScrollReveal();
@@ -15,105 +18,76 @@ const VolunteerPage: React.FC = () => {
       <section className="volunteer-hero">
         <div className="volunteer-hero-overlay"></div>
         <div className="container volunteer-hero-content">
-          <span className="volunteer-hero-eyebrow">Get Involved</span>
-          <h1 className="volunteer-hero-heading">Help Spread Compassion</h1>
-          <p className="volunteer-hero-description">
-            Our ability to offer this course to anyone in the world is sustained by
-            participants telling others about it and community members helping each
-            other integrate this work.
-          </p>
+          <span className="volunteer-hero-eyebrow">{volunteer.hero.eyebrow}</span>
+          <h1 className="volunteer-hero-heading">{volunteer.hero.heading}</h1>
+          <p className="volunteer-hero-description">{volunteer.hero.description}</p>
         </div>
       </section>
 
       {/* Ways to Help */}
       <section className="volunteer-ways reveal">
         <div className="container">
-          <h2 className="section-title">Things You Can Do</h2>
-          <p className="volunteer-ways-subtitle">
-            Every small action helps grow a more compassionate world.
-          </p>
+          <h2 className="section-title">{volunteer.waysToHelp.title}</h2>
+          <p className="volunteer-ways-subtitle">{volunteer.waysToHelp.subtitle}</p>
           <div className="volunteer-ways-grid">
 
+            {/* Card 1 — Share with Friends */}
             <div className="volunteer-card reveal">
               <div className="volunteer-card-accent"></div>
-              <span className="volunteer-card-eyebrow">Step 1</span>
-              <h3>Share with Friends &amp; Family</h3>
-              <p>
-                It makes a big difference when someone who doesn&rsquo;t know about
-                the course hears about it from someone they know. Share our invitation
-                link with friends, a list-serv, or an online group you belong to.
-              </p>
+              <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[0].eyebrow}</span>
+              <h3>{volunteer.waysToHelp.cards[0].heading}</h3>
+              <p>{volunteer.waysToHelp.cards[0].text}</p>
               <div className="volunteer-card-action">
                 <span className="volunteer-link-box">
                   <i className="fas fa-link"></i>
-                  compassioncourse.org/invitation
+                  {volunteer.waysToHelp.cards[0].linkUrl}
                 </span>
-                <p className="volunteer-card-note">
-                  We created this page specifically for people you want to invite, so
-                  you don&rsquo;t have to do much of the talking.
-                </p>
+                <p className="volunteer-card-note">{volunteer.waysToHelp.cards[0].note}</p>
               </div>
             </div>
 
+            {/* Card 2 — Share on Social Media */}
             <div className="volunteer-card reveal">
               <div className="volunteer-card-accent"></div>
-              <span className="volunteer-card-eyebrow">Step 2</span>
-              <h3>Share on Social Media</h3>
-              <p>
-                Many people who wouldn&rsquo;t usually hear about the course find out
-                through social media. Share pictures with quotes that we&rsquo;ve already
-                prepared &mdash; information about the course travels far and wide.
-              </p>
-              <div className="volunteer-social-links">
-                <a
-                  href="https://www.facebook.com/TheCompassionCourse"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="volunteer-social-btn"
-                  aria-label="Share on Facebook"
-                >
-                  <i className="fab fa-facebook-f"></i>
-                </a>
-                <a
-                  href="https://www.instagram.com/thecompassioncourse"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="volunteer-social-btn"
-                  aria-label="Share on Instagram"
-                >
-                  <i className="fab fa-instagram"></i>
-                </a>
-                <a
-                  href="https://twitter.com/CompassCourse"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="volunteer-social-btn"
-                  aria-label="Share on Twitter"
-                >
-                  <i className="fab fa-twitter"></i>
-                </a>
-              </div>
+              <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[1].eyebrow}</span>
+              <h3>{volunteer.waysToHelp.cards[1].heading}</h3>
+              <p>{volunteer.waysToHelp.cards[1].text}</p>
+              {'socialLinks' in volunteer.waysToHelp.cards[1] && (
+                <div className="volunteer-social-links">
+                  {(volunteer.waysToHelp.cards[1] as any).socialLinks.map((link: any) => (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="volunteer-social-btn"
+                      aria-label={link.label}
+                    >
+                      <i className={link.icon}></i>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
 
+            {/* Card 3 — Post a Flyer */}
             <div className="volunteer-card reveal">
               <div className="volunteer-card-accent"></div>
-              <span className="volunteer-card-eyebrow">Step 3</span>
-              <h3>Post a Flyer in Your Community</h3>
-              <p>
-                Have a local bulletin board where people might be interested? Print
-                and post our flyer in coffee shops, libraries, community centers, yoga
-                studios, and other gathering places.
-              </p>
-              <div className="volunteer-card-action">
-                <a
-                  href="https://www.dropbox.com/scl/fo/r5w86cmm9e2vhi360dqzn/AL5G65VmhBVhMZU6uHSAnb4?dl=0&e=1&preview=CCO-2025.png&rlkey=j7jhp6n0fkokku7r799j1s03q"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="volunteer-flyer-btn"
-                >
-                  <i className="fas fa-image"></i> View &amp; Download the Flyer
-                </a>
-              </div>
+              <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[2].eyebrow}</span>
+              <h3>{volunteer.waysToHelp.cards[2].heading}</h3>
+              <p>{volunteer.waysToHelp.cards[2].text}</p>
+              {'flyerUrl' in volunteer.waysToHelp.cards[2] && (
+                <div className="volunteer-card-action">
+                  <a
+                    href={(volunteer.waysToHelp.cards[2] as any).flyerUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="volunteer-flyer-btn"
+                  >
+                    <i className="fas fa-image"></i> {(volunteer.waysToHelp.cards[2] as any).flyerButtonText}
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -124,36 +98,20 @@ const VolunteerPage: React.FC = () => {
         <div className="container">
           <div className="volunteer-growth-inner">
             <div className="volunteer-growth-icon">
-              <i className="fas fa-seedling"></i>
+              <i className={volunteer.growthMessage.icon}></i>
             </div>
-            <h2>How the Course Grows</h2>
-            <p className="volunteer-growth-lead">
-              As we watched the course grow over the past years, it has become very
-              clear that our ability to offer this course to anyone in the world is
-              sustained by two things:
-            </p>
+            <h2>{volunteer.growthMessage.heading}</h2>
+            <p className="volunteer-growth-lead">{volunteer.growthMessage.leadText}</p>
             <div className="volunteer-growth-cards">
-              <div className="volunteer-growth-card">
-                <i className="fas fa-users"></i>
-                <div>
-                  <strong>Participants telling others about it.</strong>
-                  <p>
-                    Whether via Facebook, email, on the phone or at the dinner table,
-                    our participants are the greatest single source of new registrations
-                    and a continuously growing community.
-                  </p>
+              {volunteer.growthMessage.cards.map((card) => (
+                <div key={card.bold} className="volunteer-growth-card">
+                  <i className={card.icon}></i>
+                  <div>
+                    <strong>{card.bold}</strong>
+                    <p>{card.text}</p>
+                  </div>
                 </div>
-              </div>
-              <div className="volunteer-growth-card">
-                <i className="fas fa-hands-helping"></i>
-                <div>
-                  <strong>Community members helping each other.</strong>
-                  <p>
-                    Globally through our course message boards and conferences, and
-                    locally through self-organized practice and study groups.
-                  </p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -164,35 +122,32 @@ const VolunteerPage: React.FC = () => {
         <div className="container">
           <div className="volunteer-cta-inner">
             <div className="volunteer-cta-text">
-              <h2>Questions? Want to Get Involved?</h2>
-              <p>
-                If you have any questions or would like to contact us for any reason,
-                we welcome your communication.
-              </p>
+              <h2>{volunteer.cta.heading}</h2>
+              <p>{volunteer.cta.para}</p>
               <p className="volunteer-cta-gratitude">
-                With warmth and gratitude,<br />
-                <strong>The Compassion Course Team</strong>
+                {volunteer.cta.gratitude}<br />
+                <strong>{volunteer.cta.gratitudeTeam}</strong>
               </p>
               <div className="volunteer-contact-info">
-                <a href="mailto:coursecoordinator@nycnvc.org" className="volunteer-contact-item">
+                <a href={`mailto:${volunteer.cta.email}`} className="volunteer-contact-item">
                   <i className="fas fa-envelope"></i>
-                  coursecoordinator@nycnvc.org
+                  {volunteer.cta.email}
                 </a>
-                <a href="tel:+16462019226" className="volunteer-contact-item">
+                <a href={volunteer.cta.phoneHref} className="volunteer-contact-item">
                   <i className="fas fa-phone"></i>
-                  (646) 201-9226
+                  {volunteer.cta.phone}
                 </a>
               </div>
             </div>
             <div className="volunteer-cta-register">
-              <h3>Not Yet Registered?</h3>
-              <p>Join 50,000+ people who have taken this journey toward more compassionate living.</p>
+              <h3>{volunteer.cta.registerBox.heading}</h3>
+              <p>{volunteer.cta.registerBox.text}</p>
               <JotformPopup
                 formId={JOTFORM_FORM_ID}
-                buttonText="Register for the Course"
+                buttonText={volunteer.cta.registerBox.buttonText}
               />
-              <Link to="/learn-more" className="volunteer-learn-link">
-                Learn more about the course <i className="fas fa-arrow-right"></i>
+              <Link to={volunteer.cta.registerBox.linkHref} className="volunteer-learn-link">
+                {volunteer.cta.registerBox.linkText} <i className="fas fa-arrow-right"></i>
               </Link>
             </div>
           </div>
