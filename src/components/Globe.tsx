@@ -103,7 +103,7 @@ const Globe: React.FC = () => {
     const updateSize = () => {
       if (containerRef.current) {
         const width = containerRef.current.offsetWidth;
-        setCanvasSize(Math.min(width, 600));
+        setCanvasSize(Math.min(width, 720));
       }
       setIsMobile(window.innerWidth <= MOBILE_BREAKPOINT);
     };

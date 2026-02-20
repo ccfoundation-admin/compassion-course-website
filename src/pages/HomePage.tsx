@@ -79,8 +79,8 @@ const HomePage: React.FC = () => {
         chatbotContainerRef.current.innerHTML = '';
         const chatbotElement = document.createElement('elevenlabs-convai');
         chatbotElement.setAttribute('agent-id', 'agent_0301kaf26r60eqkr3x8qe2v8wdq0');
-        chatbotElement.setAttribute('variant', 'tiny');
-        chatbotElement.setAttribute('override-text-only', 'true');
+        // chatbotElement.setAttribute('variant', 'tiny');
+        // chatbotElement.setAttribute('override-text-only', 'true');
         chatbotContainerRef.current.appendChild(chatbotElement);
       }
     };
@@ -131,16 +131,6 @@ const HomePage: React.FC = () => {
           </div>
           <div className="hero-globe">
             <Globe />
-            <img
-              src="/mother-embrace-no-sphere.png"
-              alt="Woman compassionately embracing the globe"
-              className="hero-embrace-overlay"
-            />
-            <img
-              src="/top_hand.png"
-              alt="Hand reaching over the globe"
-              className="hero-hand-overlay"
-            />
           </div>
         </div>
       </section>
