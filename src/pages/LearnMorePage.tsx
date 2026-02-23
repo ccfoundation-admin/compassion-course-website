@@ -59,11 +59,9 @@ const LearnMorePage: React.FC = () => {
           <h2 className="section-title">{learnMore.origin.title}</h2>
           <div className="learn-origin-inner">
             <div className="learn-origin-image">
-              <img
-                src="/images/origin-conversation.jpg"
-                alt={learnMore.origin.imageAlt}
-                loading="lazy"
-              />
+              <video controls preload="metadata" poster="/images/origin-conversation.jpg">
+                <source src={learnMore.origin.videoSrc} type="video/mp4" />
+              </video>
             </div>
             <div className="learn-origin-timeline">
               {learnMore.origin.timeline.map((item) => (
@@ -98,13 +96,26 @@ const LearnMorePage: React.FC = () => {
 
           <div className="learn-how-steps">
             {learnMore.howItWorks.steps.map((step) => (
-              <div key={step.number} className="learn-how-step-card reveal">
+              <div
+                key={step.number}
+                className="learn-how-step-card reveal"
+              >
                 <div className="learn-how-step-number">{step.number}</div>
                 <div className="learn-how-step-icon">
                   <i className={step.icon}></i>
                 </div>
                 <h3>{step.heading}</h3>
                 <p>{step.text}</p>
+                {'concepts' in step && (
+                  <div className="learn-concepts-grid">
+                    {(step as any).concepts.map((concept: { icon: string; label: string }) => (
+                      <div key={concept.label} className="learn-concept-tag">
+                        <i className={concept.icon}></i>
+                        <span>{concept.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -245,16 +256,12 @@ const LearnMorePage: React.FC = () => {
       {/* What Makes This Different */}
       <section id="what-makes-different" className="learn-different reveal">
         <div className="container">
-          <div className="learn-different-hero">
-            <img
-              src="/images/hero-community.jpg"
-              alt={learnMore.whatMakesDifferent.imageAlt}
-              loading="lazy"
-            />
-            <div className="learn-different-hero-overlay">
-              <h2>{learnMore.whatMakesDifferent.heading}</h2>
-              <p>{learnMore.whatMakesDifferent.subtitle}</p>
-            </div>
+          <h2 className="section-title">{learnMore.whatMakesDifferent.heading}</h2>
+          <p className="section-description">{learnMore.whatMakesDifferent.subtitle}</p>
+          <div className="learn-different-video">
+            <video controls preload="metadata" poster="/images/hero-community.jpg">
+              <source src={learnMore.whatMakesDifferent.videoSrc} type="video/mp4" />
+            </video>
           </div>
           <div className="learn-different-grid">
             {learnMore.whatMakesDifferent.cards.map((card) => (

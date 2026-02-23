@@ -140,9 +140,9 @@ const Navigation: React.FC = () => {
             </li>
           )}
           <li className="nav-item">
-            <Link to="/donate" className={`nav-link nav-link--donate ${isActive('/donate') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>
+            <a href="https://compassioncf.com/donate" target="_blank" rel="noopener noreferrer" className="nav-link nav-link--donate" onClick={() => setIsMenuOpen(false)}>
               <i className="fas fa-heart nav-donate-icon"></i> Donate
-            </Link>
+            </a>
           </li>
           {user && (
             <>

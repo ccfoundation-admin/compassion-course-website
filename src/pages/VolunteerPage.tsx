@@ -102,6 +102,11 @@ const VolunteerPage: React.FC = () => {
             </div>
             <h2>{volunteer.growthMessage.heading}</h2>
             <p className="volunteer-growth-lead">{volunteer.growthMessage.leadText}</p>
+            <div className="volunteer-growth-video">
+              <video controls preload="metadata">
+                <source src={volunteer.growthMessage.videoSrc} type="video/mp4" />
+              </video>
+            </div>
             <div className="volunteer-growth-cards">
               {volunteer.growthMessage.cards.map((card) => (
                 <div key={card.bold} className="volunteer-growth-card">

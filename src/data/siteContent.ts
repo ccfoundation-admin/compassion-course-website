@@ -30,6 +30,7 @@ export const siteContent = {
       subhead2: 'Be Part of a Growing, Global Community',
       para2:
         'What began as a weekly email to share the tools of compassionate communication has grown into a vibrant community of tens of thousands around the world. Today, The Compassion Course is available in almost every major populated area on earth, on every side of every conflict, in native languages \u2014 a single, universal learning and teaching community.',
+      videoSrc: '/videos/The Compassion Course Community Speaks.mp4',
       imageAlt: 'The Compassion Course \u2014 how it works',
       stats: [
         { number: '14', label: 'Years Running' },
@@ -53,7 +54,7 @@ export const siteContent = {
         'Create constructive dialogues with conflict resolution tools',
         'Increase alignment between your values and actions',
         'Be part of our Global Compassion Network community',
-        'Access \u201CMentor,\u201D the AI Compassion Course Mentor',
+        'Explore 12 core concepts from needs awareness to living compassion',
       ],
     },
 
@@ -92,6 +93,7 @@ export const siteContent = {
     },
 
     socialProof: {
+      videoSrc: '/videos/Gabi Vana discusses how the Compassion Course helped her get through her dog\'s passing.mp4',
       testimonials: [
         {
           quote:
@@ -244,6 +246,7 @@ export const siteContent = {
 
     origin: {
       title: 'How It All Began',
+      videoSrc: '/videos/The faces and voices of the Compassion Course.mp4',
       imageAlt: 'Two people sharing a warm conversation over tea',
       timeline: [
         {
@@ -291,9 +294,23 @@ export const siteContent = {
         },
         {
           number: 4,
-          icon: 'fas fa-robot',
-          heading: 'AI Compassion Mentor',
-          text: 'Between lessons and calls, the digital AI Mentor is available anytime \u2014 trained on the full course material to help you work through real situations, practice skills, and stay on track.',
+          icon: 'fas fa-compass',
+          heading: '12 Core Concepts',
+          text: 'The course is built on 12 foundational principles that gradually transform how you relate to yourself and others. Each concept builds on the last, weaving together into a complete compassion practice.',
+          concepts: [
+            { icon: 'fas fa-heart', label: 'Needs Awareness' },
+            { icon: 'fas fa-hands-holding-heart', label: 'Empathy' },
+            { icon: 'fas fa-face-smile', label: 'Feelings' },
+            { icon: 'fas fa-scale-balanced', label: 'Judgments' },
+            { icon: 'fas fa-comments', label: 'Requests' },
+            { icon: 'fas fa-shield-heart', label: 'Boundaries' },
+            { icon: 'fas fa-eye', label: 'Observation' },
+            { icon: 'fas fa-hand-holding-heart', label: 'Self-Empathy' },
+            { icon: 'fas fa-star', label: 'Appreciation' },
+            { icon: 'fas fa-fire', label: 'Anger & Intensity' },
+            { icon: 'fas fa-handshake', label: 'Dialogue' },
+            { icon: 'fas fa-seedling', label: 'Living Compassion' },
+          ],
         },
       ],
     },
@@ -412,10 +429,11 @@ export const siteContent = {
     },
 
     whatMakesDifferent: {
+      videoSrc: '/videos/The Compassion Course Community Speaks_ Deeper Conversations.mp4',
       imageAlt: 'Golden sunrise over misty green hills',
       heading: 'What Makes This Different',
       subtitle:
-        "The Compassion Course is rigerous. It is challenging and approaches s a year of gradual, real change.",
+        "The Compassion Course is rigorous. It is challenging and approaches s a year of gradual, real change.",
       cards: [
         {
           icon: 'fas fa-calendar-week',
@@ -566,71 +584,6 @@ export const siteContent = {
   // ABOUT PAGE
   // ═══════════════════════════════════════════════════════════════════════════
   about: {
-    hero: {
-      heading: 'About the Compassion Course',
-      subtitle: 'Peace Education for Everyone, Everywhere, All at Once.',
-    },
-
-    story: {
-      tagline: 'Be Part of Something Beautiful',
-      paragraphs: [
-        'The Compassion Course Online is a year-long journey in peace education, created by Thom Bond and supported by the New York Center for Nonviolent Communication (NYCNVC). Our mission is to make the skills of compassionate living available to anyone, regardless of time and money constraints.',
-        'What began in 2011 as a weekly email sharing the tools of compassionate communication has grown into a vibrant global community. Today, The Compassion Course is available in almost every major populated area on earth, on every side of every conflict, in native languages \u2014 a single, universal learning and teaching community.',
-        "The course draws on three traditions: Marshall Rosenberg's Nonviolent Communication, Werner Erhard's transformational approach, and Albert Ellis's Rational Emotive Behavioral perspective, both of whom influenced Marshall's path.",
-      ],
-      timeline: [
-        { year: '2002', text: 'Thom Bond discovers Nonviolent Communication' },
-        { year: '2003', text: 'NYCNVC co-founded with Nellie Bright' },
-        { year: '2011', text: 'The Compassion Course Online is born' },
-        { year: 'Today', text: '50,000+ registrations across 120+ countries in 20 languages' },
-      ],
-      imageAlts: [
-        'Compassion Course monthly video conference with participants',
-        'Group discussion at a Compassion Course workshop',
-      ],
-    },
-
-    howYouCanHelp: {
-      title: 'How You Can Help',
-      description:
-        'The Compassion Course has grown primarily because participants tell others about it. Here are some ways you can support the mission.',
-      cards: [
-        {
-          icon: 'fas fa-share-alt',
-          heading: 'Share the Course',
-          text: 'Personal recommendations are the number one way new participants discover the course. Share the invitation link with friends, family, and colleagues:',
-          linkText: 'compassioncourse.org/invitation',
-          linkHref: 'https://compassioncourse.org/invitation',
-        },
-        {
-          icon: 'fas fa-hashtag',
-          heading: 'Spread the Word Online',
-          text: 'Follow and share posts from our social media channels. Pre-sized images with course quotes are available for Facebook, Instagram, and Twitter.',
-          socialLinks: [
-            { href: 'https://www.facebook.com/compassioncourseonline/', label: 'Facebook', icon: 'fab fa-facebook-f' },
-            { href: 'https://www.instagram.com/compassioncourse/', label: 'Instagram', icon: 'fab fa-instagram' },
-            { href: 'https://twitter.com/compassioncours/', label: 'Twitter', icon: 'fab fa-twitter' },
-          ],
-        },
-        {
-          icon: 'fas fa-clipboard-list',
-          heading: 'Community Outreach',
-          text: 'Post a flyer on community bulletin boards at libraries, yoga studios, meditation centers, universities, and workplaces. Printable flyers are available from our team.',
-          linkText: 'coursecoordinator@nycnvc.org',
-          linkHref: 'mailto:coursecoordinator@nycnvc.org?subject=Flyer%20Request',
-          linkIcon: 'fas fa-envelope',
-        },
-        {
-          icon: 'fas fa-hand-holding-heart',
-          heading: 'Volunteer Your Skills',
-          text: 'Help with translation, facilitation, tech support, or community organizing. The course runs entirely on the generosity of volunteers around the world.',
-          linkText: 'coursecoordinator@nycnvc.org',
-          linkHref: 'mailto:coursecoordinator@nycnvc.org?subject=Volunteer%20Inquiry',
-          linkIcon: 'fas fa-envelope',
-        },
-      ],
-    },
-
     team: {
       title: 'Meet the Team',
       description:
@@ -880,24 +833,6 @@ export const siteContent = {
         },
       ],
     },
-
-    cta: {
-      heading: 'Get Involved',
-      text: 'Registration opens March 1st, 2026. The next Compassion Course begins June 24th, 2026. Join 50,000+ people who have taken this journey toward more compassionate living.',
-      buttonPrimary: 'Register for the Course',
-      linkText: 'Learn More',
-      linkHref: '/learn-more',
-      contact: {
-        heading: 'Questions?',
-        email: 'coursecoordinator@nycnvc.org',
-        phone: '(646) 201-9226',
-        socialLinks: [
-          { href: 'https://www.facebook.com/compassioncourseonline/', label: 'Facebook', icon: 'fab fa-facebook-f' },
-          { href: 'https://www.instagram.com/compassioncourse/', label: 'Instagram', icon: 'fab fa-instagram' },
-          { href: 'https://twitter.com/compassioncours/', label: 'Twitter', icon: 'fab fa-twitter' },
-        ],
-      },
-    },
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -944,6 +879,7 @@ export const siteContent = {
     },
 
     growthMessage: {
+      videoSrc: '/videos/Compassion Course participants shares how her marraige has grown closer.mp4',
       icon: 'fas fa-seedling',
       heading: 'How the Course Grows',
       leadText:
@@ -981,59 +917,6 @@ export const siteContent = {
   },
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // DONATE PAGE
-  // ═══════════════════════════════════════════════════════════════════════════
-  donate: {
-    hero: {
-      eyebrow: 'Support the Mission',
-      heading: 'Help Keep Compassion Accessible',
-      description:
-        'The Compassion Course has always been committed to accessibility \u2014 ensuring that cost is never a barrier to learning the skills of compassionate living. Your donation helps sustain this mission for 50,000+ participants across 120+ countries.',
-      buttonText: 'Donate via PayPal',
-      buttonUrl:
-        'https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HJLF9W2DWJE7L',
-      footerLinks: [
-        { text: 'Volunteer instead', href: '/volunteer' },
-        { text: 'Learn about the course', href: '/learn-more' },
-      ],
-    },
-
-    whyItMatters: {
-      title: 'Where Your Support Goes',
-      cards: [
-        {
-          icon: 'fas fa-unlock-alt',
-          heading: 'Keeping the Course Accessible',
-          text: 'Accessibility is a founding value. Your donation ensures that anyone who wants to learn the skills of compassionate living can do so, regardless of their financial situation.',
-        },
-        {
-          icon: 'fas fa-language',
-          heading: 'Translation into 20 Languages',
-          text: 'Dedicated volunteer teams translate and facilitate the course worldwide. Donations support the infrastructure, tools, and coordination that make this possible.',
-        },
-        {
-          icon: 'fas fa-globe-americas',
-          heading: 'Community Infrastructure',
-          text: 'Monthly conferences, the Global Compassion Network, practice groups, mentoring programs, and digital tools like the AI Compassion Mentor all need ongoing support.',
-        },
-      ],
-    },
-
-    stats: [
-      { number: '50,000+', label: 'Participants Worldwide' },
-      { number: '120+', label: 'Countries Reached' },
-      { number: '20', label: 'Languages Available' },
-      { number: '14', label: 'Years of Impact' },
-    ],
-
-    cta: {
-      heading: 'Every Contribution Makes a Difference',
-      text: 'Whether large or small, your donation directly supports the spread of compassion education around the world.',
-      buttonText: 'Donate Now',
-    },
-  },
-
-  // ═══════════════════════════════════════════════════════════════════════════
   // SHARED / CROSS-PAGE CONTENT
   // ═══════════════════════════════════════════════════════════════════════════
   shared: {
@@ -1041,14 +924,14 @@ export const siteContent = {
       heading: 'Support Compassion Education',
       text: 'Your donation helps keep the course accessible to anyone in the world.',
       buttonText: 'Make a Donation',
-      buttonLink: '/donate',
+      buttonLink: 'https://compassioncf.com/donate',
     },
     donateCard: {
       icon: 'fas fa-heart',
       heading: 'Make a Donation',
       text: 'Your financial support helps keep the course accessible',
       linkText: 'Donate now',
-      linkHref: '/donate',
+      linkHref: 'https://compassioncf.com/donate',
     },
   },
 } as const;

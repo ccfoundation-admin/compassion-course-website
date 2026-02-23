@@ -17,7 +17,7 @@ const Footer: React.FC = () => {
               <li><Link to="/programs">Programs</Link></li>
               <li><Link to="/about">About Us</Link></li>
               <li><Link to="/compass-companion">Compass Companions</Link></li>
-              <li><Link to="/donate">Donate</Link></li>
+              <li><a href="https://compassioncf.com/donate" target="_blank" rel="noopener noreferrer">Donate</a></li>
             </ul>
           </div>
           <div className="footer-section">

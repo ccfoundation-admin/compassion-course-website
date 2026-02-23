@@ -127,12 +127,14 @@ const HomePage: React.FC = () => {
               <h3 className="home-impact-subhead">{home.peaceEducation.subhead2}</h3>
               <p>{home.peaceEducation.para2}</p>
             </div>
-            <div className="home-impact-image">
-              <img
-                src="/images/how-it-works-video.jpg"
-                alt={home.peaceEducation.imageAlt}
-                loading="lazy"
-              />
+            <div className="home-impact-video">
+              <video
+                controls
+                preload="metadata"
+                poster="/images/how-it-works-video.jpg"
+              >
+                <source src={home.peaceEducation.videoSrc} type="video/mp4" />
+              </video>
             </div>
           </div>
           <div className="home-impact-stats">
@@ -146,27 +148,18 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* What You'll Learn */}
-      <section className="home-outcomes reveal">
+      {/* Featured Video — Community Speaks */}
+      <section className="home-featured-video reveal">
         <div className="container">
-          <div className="home-outcomes-inner">
-            <div className="home-outcomes-text">
-              <h2 className="section-title" style={{ textAlign: 'left' }}>{home.whatYoullLearn.title}</h2>
-              <div className="home-outcomes-grid">
-                {home.whatYoullLearn.outcomes.map((outcome) => (
-                  <div key={outcome} className="home-outcomes-item reveal">
-                    <i className="fas fa-check-circle home-outcomes-icon"></i>
-                    <span>{outcome}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="home-outcomes-image">
-              <img
-                src="/images/thom-conference.jpg"
-                alt={home.whatYoullLearn.imageAlt}
-                loading="lazy"
-              />
+          <h2 className="section-title">{home.whatYoullLearn.title}</h2>
+          <div className="home-featured-video-inner">
+            <div className="home-featured-video-outcomes">
+              {home.whatYoullLearn.outcomes.map((outcome) => (
+                <div key={outcome} className="home-outcomes-item reveal">
+                  <i className="fas fa-check-circle home-outcomes-icon"></i>
+                  <span>{outcome}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -211,35 +204,42 @@ const HomePage: React.FC = () => {
       {/* Social Proof Strip */}
       <section className="social-proof reveal">
         <div className="container">
-          <div className="social-proof-inner">
-            <div className="social-proof-quote-mark">&ldquo;</div>
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentTestimonial}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                transition={{ duration: 0.5 }}
-                className="social-proof-content"
-              >
-                <p className="social-proof-quote">
-                  {home.socialProof.testimonials[currentTestimonial].quote}
-                </p>
-                <div className="social-proof-author">
-                  <span className="social-proof-name">{home.socialProof.testimonials[currentTestimonial].name}</span>
-                  <span className="social-proof-role">{home.socialProof.testimonials[currentTestimonial].role}</span>
-                </div>
-              </motion.div>
-            </AnimatePresence>
-            <div className="social-proof-dots">
-              {home.socialProof.testimonials.map((_, i) => (
-                <button
-                  key={i}
-                  className={`social-proof-dot ${i === currentTestimonial ? 'active' : ''}`}
-                  onClick={() => setCurrentTestimonial(i)}
-                  aria-label={`Show testimonial ${i + 1}`}
-                />
-              ))}
+          <div className="social-proof-layout">
+            <div className="social-proof-video-side">
+              <video controls preload="metadata">
+                <source src={home.socialProof.videoSrc} type="video/mp4" />
+              </video>
+            </div>
+            <div className="social-proof-text-side">
+              <div className="social-proof-quote-mark">&ldquo;</div>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentTestimonial}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.5 }}
+                  className="social-proof-content"
+                >
+                  <p className="social-proof-quote">
+                    {home.socialProof.testimonials[currentTestimonial].quote}
+                  </p>
+                  <div className="social-proof-author">
+                    <span className="social-proof-name">{home.socialProof.testimonials[currentTestimonial].name}</span>
+                    <span className="social-proof-role">{home.socialProof.testimonials[currentTestimonial].role}</span>
+                  </div>
+                </motion.div>
+              </AnimatePresence>
+              <div className="social-proof-dots">
+                {home.socialProof.testimonials.map((_, i) => (
+                  <button
+                    key={i}
+                    className={`social-proof-dot ${i === currentTestimonial ? 'active' : ''}`}
+                    onClick={() => setCurrentTestimonial(i)}
+                    aria-label={`Show testimonial ${i + 1}`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -305,9 +305,9 @@ const HomePage: React.FC = () => {
               <h3>{shared.donateBanner.heading}</h3>
               <p>{shared.donateBanner.text}</p>
             </div>
-            <Link to={shared.donateBanner.buttonLink} className="btn-primary home-donate-banner-btn">
+            <a href="https://compassioncf.com/donate" target="_blank" rel="noopener noreferrer" className="btn-primary home-donate-banner-btn">
               <i className="fas fa-heart"></i> {shared.donateBanner.buttonText}
-            </Link>
+            </a>
           </div>
         </div>
       </section>

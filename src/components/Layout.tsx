@@ -4,6 +4,7 @@ import Footer from './Footer';
 import AuthModal from './AuthModal';
 import { useAuth } from '../context/AuthContext';
 import { usePermissions } from '../context/PermissionsContext';
+import { useVideoAutoplay } from '../hooks/useVideoAutoplay';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,9 @@ const Layout: React.FC<LayoutProps> = ({ children, hideNavigation, hideFooter })
   const [fadeOut, setFadeOut] = useState(false);
 
   const isReady = !authLoading && !permissionsLoading;
+
+  // Autoplay/pause videos as they enter/leave viewport
+  useVideoAutoplay();
 
   useEffect(() => {
     if (isReady && showOverlay) {
