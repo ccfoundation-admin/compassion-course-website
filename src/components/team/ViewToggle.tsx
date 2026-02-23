@@ -1,6 +1,6 @@
 import React from 'react';
 
-export type ViewMode = 'card' | 'list' | 'compact';
+export type ViewMode = 'card' | 'list' | 'compact' | 'expanded';
 
 interface ViewToggleProps {
   mode: ViewMode;
@@ -11,6 +11,7 @@ const modes: { key: ViewMode; icon: string; label: string }[] = [
   { key: 'card', icon: 'fas fa-th-large', label: 'Card view' },
   { key: 'list', icon: 'fas fa-list', label: 'List view' },
   { key: 'compact', icon: 'fas fa-th', label: 'Compact view' },
+  { key: 'expanded', icon: 'fas fa-book-open', label: 'Expanded view' },
 ];
 
 const ViewToggle: React.FC<ViewToggleProps> = ({ mode, onChange }) => (

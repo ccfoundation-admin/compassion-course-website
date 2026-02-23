@@ -5,6 +5,7 @@ import { ViewMode } from './ViewToggle';
 import TeamMemberCard from './TeamMemberCard';
 import TeamMemberRow from './TeamMemberRow';
 import TeamMemberCompact from './TeamMemberCompact';
+import TeamMemberExpanded from './TeamMemberExpanded';
 
 interface TeamGridProps {
   sections: TeamLanguageSection[];
@@ -56,19 +57,21 @@ const TeamGrid: React.FC<TeamGridProps> = ({
     return members.filter(
       (m) =>
         m.name.toLowerCase().includes(q) ||
-        (m.role?.toLowerCase().includes(q)) ||
-        (typeof m.bio === 'string' && m.bio.toLowerCase().includes(q))
+        (m.role?.toLowerCase().includes(q))
     );
   };
 
   const renderMember = (member: TeamMember) => {
+    const q = searchQuery.trim();
     switch (viewMode) {
       case 'list':
-        return <TeamMemberRow key={member.id ?? member.name} member={member} onSelect={onSelectMember} />;
+        return <TeamMemberRow key={member.id ?? member.name} member={member} onSelect={onSelectMember} searchQuery={q} />;
       case 'compact':
-        return <TeamMemberCompact key={member.id ?? member.name} member={member} onSelect={onSelectMember} />;
+        return <TeamMemberCompact key={member.id ?? member.name} member={member} onSelect={onSelectMember} searchQuery={q} />;
+      case 'expanded':
+        return <TeamMemberExpanded key={member.id ?? member.name} member={member} searchQuery={q} />;
       default:
-        return <TeamMemberCard key={member.id ?? member.name} member={member} onSelect={onSelectMember} />;
+        return <TeamMemberCard key={member.id ?? member.name} member={member} onSelect={onSelectMember} searchQuery={q} />;
     }
   };
 

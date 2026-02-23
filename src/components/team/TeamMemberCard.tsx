@@ -1,14 +1,16 @@
 import React from 'react';
 import { TeamMember } from '../../services/contentService';
+import { highlightMatch } from './highlightMatch';
 
 interface TeamMemberCardProps {
   member: TeamMember;
   onSelect: (member: TeamMember) => void;
+  searchQuery?: string;
 }
 
 const FALLBACK_AVATAR = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ccircle cx=%2750%27 cy=%2735%27 r=%2720%27 fill=%27%23cbd5e1%27/%3E%3Ccircle cx=%2750%27 cy=%27100%27 r=%2735%27 fill=%27%23cbd5e1%27/%3E%3C/svg%3E';
 
-const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member, onSelect }) => {
+const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member, onSelect, searchQuery = '' }) => {
   const bioPreview = typeof member.bio === 'string'
     ? member.bio.split('\n')[0]
     : Array.isArray(member.bio) ? member.bio[0] : '';
@@ -25,8 +27,8 @@ const TeamMemberCard: React.FC<TeamMemberCardProps> = ({ member, onSelect }) => 
           onError={(e) => { (e.target as HTMLImageElement).src = FALLBACK_AVATAR; }}
         />
       </div>
-      <h3 className="team-card__name">{member.name}</h3>
-      {member.role && <p className="team-card__role">{member.role}</p>}
+      <h3 className="team-card__name">{highlightMatch(member.name, searchQuery)}</h3>
+      {member.role && <p className="team-card__role">{highlightMatch(member.role, searchQuery)}</p>}
       {bioPreview && <p className="team-card__bio">{bioPreview}</p>}
       <span className="team-card__more">Read more</span>
     </div>

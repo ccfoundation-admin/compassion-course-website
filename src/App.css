@@ -3785,6 +3785,102 @@ section {
 }
 
 /* ==========================================
+   TEAM PAGE — EXPANDED VIEW
+   ========================================== */
+.team-grid--expanded {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding-top: var(--space-5);
+}
+
+.team-expanded {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: var(--space-6);
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-100);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6);
+    transition: box-shadow var(--transition-base);
+}
+
+.team-expanded:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.team-expanded__sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-3);
+}
+
+.team-expanded__photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: center top;
+    border: 3px solid var(--color-primary-100);
+}
+
+.team-expanded__contact {
+    font-size: 0.7rem;
+    color: var(--color-primary);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    word-break: break-all;
+    text-align: center;
+    line-height: 1.4;
+    transition: color var(--transition-base);
+}
+
+.team-expanded__contact:hover {
+    color: var(--color-primary-dark);
+}
+
+.team-expanded__contact i {
+    flex-shrink: 0;
+    font-size: 0.65rem;
+}
+
+.team-expanded__body {
+    min-width: 0;
+}
+
+.team-expanded__name {
+    font-family: 'Playfair Display', serif;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    color: var(--color-gray-900);
+    margin-bottom: 2px;
+}
+
+.team-expanded__role {
+    font-size: var(--font-size-sm);
+    color: var(--color-primary);
+    font-style: italic;
+    margin-bottom: var(--space-3);
+}
+
+.team-expanded__bio {
+    color: var(--color-gray-600);
+    font-size: var(--font-size-sm);
+    line-height: 1.75;
+}
+
+.team-expanded__bio p {
+    margin: 0 0 var(--space-3);
+}
+
+.team-expanded__bio p:last-child {
+    margin-bottom: 0;
+}
+
+/* ==========================================
    TEAM PAGE — MEMBER MODAL
    ========================================== */
 .team-modal-backdrop {
@@ -3886,6 +3982,16 @@ section {
 }
 
 /* ==========================================
+   TEAM PAGE — SEARCH HIGHLIGHT
+   ========================================== */
+.team-highlight {
+    background: rgba(95, 169, 227, 0.2);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+/* ==========================================
    TEAM PAGE — LOADING
    ========================================== */
 .team-loading {
@@ -3944,6 +4050,26 @@ section {
 
     .team-row__bio {
         display: none;
+    }
+
+    .team-expanded {
+        grid-template-columns: 1fr;
+        text-align: center;
+    }
+
+    .team-expanded__sidebar {
+        flex-direction: row;
+        justify-content: center;
+        gap: var(--space-4);
+    }
+
+    .team-expanded__photo {
+        width: 80px;
+        height: 80px;
+    }
+
+    .team-expanded__body {
+        text-align: left;
     }
 
     .team-modal__header {
