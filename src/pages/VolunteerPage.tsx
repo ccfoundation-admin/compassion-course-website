@@ -32,62 +32,71 @@ const VolunteerPage: React.FC = () => {
           <div className="volunteer-ways-grid">
 
             {/* Card 1 — Share with Friends */}
-            <div className="volunteer-card reveal">
-              <div className="volunteer-card-accent"></div>
-              <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[0].eyebrow}</span>
-              <h3>{volunteer.waysToHelp.cards[0].heading}</h3>
-              <p>{volunteer.waysToHelp.cards[0].text}</p>
-              <div className="volunteer-card-action">
-                <span className="volunteer-link-box">
-                  <i className="fas fa-link"></i>
-                  {volunteer.waysToHelp.cards[0].linkUrl}
-                </span>
-                <p className="volunteer-card-note">{volunteer.waysToHelp.cards[0].note}</p>
+            <div className="beam-wrap reveal">
+              <div className="beam-border" />
+              <div className="beam-inner volunteer-card">
+                <div className="volunteer-card-accent"></div>
+                <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[0].eyebrow}</span>
+                <h3>{volunteer.waysToHelp.cards[0].heading}</h3>
+                <p>{volunteer.waysToHelp.cards[0].text}</p>
+                <div className="volunteer-card-action">
+                  <span className="volunteer-link-box">
+                    <i className="fas fa-link"></i>
+                    {volunteer.waysToHelp.cards[0].linkUrl}
+                  </span>
+                  <p className="volunteer-card-note">{volunteer.waysToHelp.cards[0].note}</p>
+                </div>
               </div>
             </div>
 
             {/* Card 2 — Share on Social Media */}
-            <div className="volunteer-card reveal">
-              <div className="volunteer-card-accent"></div>
-              <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[1].eyebrow}</span>
-              <h3>{volunteer.waysToHelp.cards[1].heading}</h3>
-              <p>{volunteer.waysToHelp.cards[1].text}</p>
-              {'socialLinks' in volunteer.waysToHelp.cards[1] && (
-                <div className="volunteer-social-links">
-                  {(volunteer.waysToHelp.cards[1] as any).socialLinks.map((link: any) => (
-                    <a
-                      key={link.href}
-                      href={link.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="volunteer-social-btn"
-                      aria-label={link.label}
-                    >
-                      <i className={link.icon}></i>
-                    </a>
-                  ))}
-                </div>
-              )}
+            <div className="beam-wrap reveal">
+              <div className="beam-border" />
+              <div className="beam-inner volunteer-card">
+                <div className="volunteer-card-accent"></div>
+                <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[1].eyebrow}</span>
+                <h3>{volunteer.waysToHelp.cards[1].heading}</h3>
+                <p>{volunteer.waysToHelp.cards[1].text}</p>
+                {'socialLinks' in volunteer.waysToHelp.cards[1] && (
+                  <div className="volunteer-social-links">
+                    {(volunteer.waysToHelp.cards[1] as any).socialLinks.map((link: any) => (
+                      <a
+                        key={link.href}
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="volunteer-social-btn"
+                        aria-label={link.label}
+                      >
+                        <i className={link.icon}></i>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Card 3 — Post a Flyer */}
-            <div className="volunteer-card reveal">
-              <div className="volunteer-card-accent"></div>
-              <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[2].eyebrow}</span>
-              <h3>{volunteer.waysToHelp.cards[2].heading}</h3>
-              <p>{volunteer.waysToHelp.cards[2].text}</p>
-              {'flyerUrl' in volunteer.waysToHelp.cards[2] && (
-                <div className="volunteer-card-action">
-                  <a
-                    href={(volunteer.waysToHelp.cards[2] as any).flyerUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="volunteer-flyer-btn"
-                  >
-                    <i className="fas fa-image"></i> {(volunteer.waysToHelp.cards[2] as any).flyerButtonText}
-                  </a>
-                </div>
-              )}
+            <div className="beam-wrap reveal">
+              <div className="beam-border" />
+              <div className="beam-inner volunteer-card">
+                <div className="volunteer-card-accent"></div>
+                <span className="volunteer-card-eyebrow">{volunteer.waysToHelp.cards[2].eyebrow}</span>
+                <h3>{volunteer.waysToHelp.cards[2].heading}</h3>
+                <p>{volunteer.waysToHelp.cards[2].text}</p>
+                {'flyerUrl' in volunteer.waysToHelp.cards[2] && (
+                  <div className="volunteer-card-action">
+                    <a
+                      href={(volunteer.waysToHelp.cards[2] as any).flyerUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="volunteer-flyer-btn"
+                    >
+                      <i className="fas fa-image"></i> {(volunteer.waysToHelp.cards[2] as any).flyerButtonText}
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

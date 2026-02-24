@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import Layout from '../components/Layout';
@@ -7,6 +7,7 @@ import StarrySky from '../components/StarrySky';
 import JotformPopup from '../components/JotformPopup';
 import { useContent } from '../context/ContentContext';
 import { useScrollReveal } from '../hooks/useScrollReveal';
+import { useCountUpStats } from '../hooks/useInteractiveEffects';
 import { siteContent } from '../data/siteContent';
 
 const JOTFORM_FORM_ID = import.meta.env.VITE_JOTFORM_FORM_ID || '260333329475357';
@@ -18,8 +19,24 @@ const HomePage: React.FC = () => {
   // const chatbotContainerRef = useRef<HTMLDivElement>(null); // ElevenLabs — commented out
   const heroLogoRef = useRef<HTMLImageElement>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const { containerRef: statsRef, displayValues: statValues, finalValues: statFinals } = useCountUpStats(
+    home.peaceEducation.stats.map((s) => s.number),
+    2200
+  );
 
   useScrollReveal();
+
+  // Tilt handler for cards
+  const handleTilt = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = (e.clientX - rect.left) / rect.width;
+    const y = (e.clientY - rect.top) / rect.height;
+    card.style.transform = `perspective(800px) rotateX(${(y - 0.5) * -12}deg) rotateY(${(x - 0.5) * 12}deg) scale3d(1.02, 1.02, 1.02)`;
+  }, []);
+  const handleTiltLeave = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = 'perspective(800px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+  }, []);
 
   // Observe hero logo visibility and dispatch event for Navigation
   useEffect(() => {
@@ -112,6 +129,9 @@ const HomePage: React.FC = () => {
           </div>
           <div className="hero-globe">
             <Globe />
+            <p className="hero-globe-hint">
+              <i className="fas fa-hand-pointer"></i> Drag to explore our global community
+            </p>
           </div>
         </div>
       </section>
@@ -137,10 +157,13 @@ const HomePage: React.FC = () => {
               </video>
             </div>
           </div>
-          <div className="home-impact-stats">
-            {home.peaceEducation.stats.map((stat) => (
+          <div className="home-impact-stats" ref={statsRef}>
+            {home.peaceEducation.stats.map((stat, i) => (
               <div key={stat.label} className="home-impact-stat">
-                <div className="home-impact-stat-number">{stat.number}</div>
+                <div className="home-impact-stat-number">
+                  <span className="home-impact-stat-ghost" aria-hidden="true">{statFinals[i]}</span>
+                  <span className="home-impact-stat-value">{statValues[i]}</span>
+                </div>
                 <div className="home-impact-stat-label">{stat.label}</div>
               </div>
             ))}
@@ -171,30 +194,33 @@ const HomePage: React.FC = () => {
           <h2 className="section-title">{home.sampleTheCourse.title}</h2>
           <p className="section-description">{home.sampleTheCourse.description}</p>
           <div className="home-sample-grid">
-            {home.sampleTheCourse.weeks.map((sample) => (
-              <div key={sample.week} className="home-sample-card reveal">
-                <div className="home-sample-week">{home.sampleTheCourse.sampleWeekPrefix} {sample.week}</div>
-                <h3>{sample.title}</h3>
-                <p className="home-sample-description">{sample.description}</p>
-                <div className="home-sample-detail">
-                  <div className="home-sample-detail-item">
-                    <i className="fas fa-book-open"></i>
-                    <div>
-                      <strong>{home.sampleTheCourse.storyLabel}</strong>
-                      <p>{sample.story}</p>
+            {home.sampleTheCourse.weeks.map((sample, i) => (
+              <div key={sample.week} className={`beam-wrap reveal-bounce reveal-delay-${i + 1}`}>
+                <div className="beam-border" />
+                <div className="beam-inner home-sample-card">
+                  <div className="home-sample-week">{home.sampleTheCourse.sampleWeekPrefix} {sample.week}</div>
+                  <h3>{sample.title}</h3>
+                  <p className="home-sample-description">{sample.description}</p>
+                  <div className="home-sample-detail">
+                    <div className="home-sample-detail-item">
+                      <i className="fas fa-book-open"></i>
+                      <div>
+                        <strong>{home.sampleTheCourse.storyLabel}</strong>
+                        <p>{sample.story}</p>
+                      </div>
+                    </div>
+                    <div className="home-sample-detail-item">
+                      <i className="fas fa-hands"></i>
+                      <div>
+                        <strong>{home.sampleTheCourse.practiceLabel}</strong>
+                        <p>{sample.practice}</p>
+                      </div>
                     </div>
                   </div>
-                  <div className="home-sample-detail-item">
-                    <i className="fas fa-hands"></i>
-                    <div>
-                      <strong>{home.sampleTheCourse.practiceLabel}</strong>
-                      <p>{sample.practice}</p>
-                    </div>
-                  </div>
+                  <Link to={sample.link} className="home-sample-link">
+                    {home.sampleTheCourse.readFullSampleText} <i className="fas fa-arrow-right"></i>
+                  </Link>
                 </div>
-                <Link to={sample.link} className="home-sample-link">
-                  {home.sampleTheCourse.readFullSampleText} <i className="fas fa-arrow-right"></i>
-                </Link>
               </div>
             ))}
           </div>
@@ -252,15 +278,18 @@ const HomePage: React.FC = () => {
           <p className="section-description">{home.courseIncludes.description}</p>
           <div className="home-components-grid">
             {home.courseIncludes.cards.map((card, i) => (
-              <div key={card.heading} className={`value-card reveal reveal-delay-${(i % 3) + 1}`}>
-                <div className="value-icon">
-                  <i className={card.icon}></i>
+              <div key={card.heading} className={`beam-wrap reveal-bounce reveal-delay-${(i % 3) + 1}`}>
+                <div className="beam-border" />
+                <div className="beam-inner value-card">
+                  <div className="value-icon">
+                    <i className={card.icon}></i>
+                  </div>
+                  <h3>{card.heading}</h3>
+                  <p>{card.description}</p>
+                  <Link to={card.linkHref} className="value-card-link">
+                    {card.linkText} <i className="fas fa-arrow-right"></i>
+                  </Link>
                 </div>
-                <h3>{card.heading}</h3>
-                <p>{card.description}</p>
-                <Link to={card.linkHref} className="value-card-link">
-                  {card.linkText} <i className="fas fa-arrow-right"></i>
-                </Link>
               </div>
             ))}
           </div>

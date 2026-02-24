@@ -456,6 +456,28 @@ export const siteContent = {
           text: "Empathy buddies, practice groups, mentors, monthly live sessions \u2014 you're not learning alone. If you want to go far, go with others.",
         },
       ],
+      comparison: {
+        before: {
+          label: 'Traditional Workshop',
+          items: [
+            { icon: 'fas fa-clock', text: '2-day intensive, then forgotten' },
+            { icon: 'fas fa-user', text: 'Learn alone, practice alone' },
+            { icon: 'fas fa-book', text: 'Theory without integration' },
+            { icon: 'fas fa-dollar-sign', text: 'Expensive tuition required' },
+            { icon: 'fas fa-language', text: 'English only' },
+          ],
+        },
+        after: {
+          label: 'The Compassion Course',
+          items: [
+            { icon: 'fas fa-calendar-check', text: '52 weeks of guided practice' },
+            { icon: 'fas fa-users', text: 'Global community & empathy buddies' },
+            { icon: 'fas fa-seedling', text: 'Habits formed through real life' },
+            { icon: 'fas fa-heart', text: 'Accessible to everyone' },
+            { icon: 'fas fa-globe-americas', text: '20 languages, 120+ countries' },
+          ],
+        },
+      },
     },
 
     optionsExtras: {

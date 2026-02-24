@@ -4,6 +4,34 @@ import Layout from '../components/Layout';
 import JotformPopup from '../components/JotformPopup';
 import { useScrollReveal } from '../hooks/useScrollReveal';
 import { siteContent } from '../data/siteContent';
+// FlipCard component for "What Makes This Different"
+const FlipCard: React.FC<{
+  icon: string;
+  heading: string;
+  text: string;
+}> = ({ icon, heading, text }) => {
+  const [flipped, setFlipped] = useState(false);
+  return (
+    <div
+      className={`flip-card ${flipped ? 'flip-card--flipped' : ''}`}
+      onClick={() => setFlipped(!flipped)}
+    >
+      <div className="flip-card-inner">
+        <div className="flip-card-front">
+          <div className="flip-card-icon">
+            <i className={icon}></i>
+          </div>
+          <h3>{heading}</h3>
+          <span className="flip-card-hint">Click to reveal</span>
+        </div>
+        <div className="flip-card-back">
+          <p>{text}</p>
+          <span className="flip-card-back-label">Click to flip back</span>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const JOTFORM_FORM_ID = import.meta.env.VITE_JOTFORM_FORM_ID || '260333329475357';
 
@@ -95,27 +123,30 @@ const LearnMorePage: React.FC = () => {
           </div>
 
           <div className="learn-how-steps">
-            {learnMore.howItWorks.steps.map((step) => (
+            {learnMore.howItWorks.steps.map((step, i) => (
               <div
                 key={step.number}
-                className="learn-how-step-card reveal"
+                className={`beam-wrap reveal-bounce reveal-delay-${(i % 4) + 1}`}
               >
-                <div className="learn-how-step-number">{step.number}</div>
-                <div className="learn-how-step-icon">
-                  <i className={step.icon}></i>
-                </div>
-                <h3>{step.heading}</h3>
-                <p>{step.text}</p>
-                {'concepts' in step && (
-                  <div className="learn-concepts-grid">
-                    {(step as any).concepts.map((concept: { icon: string; label: string }) => (
-                      <div key={concept.label} className="learn-concept-tag">
-                        <i className={concept.icon}></i>
-                        <span>{concept.label}</span>
-                      </div>
-                    ))}
+                <div className="beam-border" />
+                <div className="beam-inner learn-how-step-card">
+                  <div className="learn-how-step-number">{step.number}</div>
+                  <div className="learn-how-step-icon">
+                    <i className={step.icon}></i>
                   </div>
-                )}
+                  <h3>{step.heading}</h3>
+                  <p>{step.text}</p>
+                  {'concepts' in step && (
+                    <div className="learn-concepts-grid">
+                      {(step as any).concepts.map((concept: { icon: string; label: string }) => (
+                        <div key={concept.label} className="learn-concept-tag">
+                          <i className={concept.icon}></i>
+                          <span>{concept.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -263,17 +294,17 @@ const LearnMorePage: React.FC = () => {
               <source src={learnMore.whatMakesDifferent.videoSrc} type="video/mp4" />
             </video>
           </div>
-          <div className="learn-different-grid">
+          <div className="learn-different-flip-grid">
             {learnMore.whatMakesDifferent.cards.map((card) => (
-              <div key={card.heading} className="learn-different-card reveal">
-                <div className="learn-different-icon">
-                  <i className={card.icon}></i>
-                </div>
-                <h3>{card.heading}</h3>
-                <p>{card.text}</p>
-              </div>
+              <FlipCard
+                key={card.heading}
+                icon={card.icon}
+                heading={card.heading}
+                text={card.text}
+              />
             ))}
           </div>
+
         </div>
       </section>
 
@@ -283,8 +314,8 @@ const LearnMorePage: React.FC = () => {
           <h2 className="section-title">{learnMore.optionsExtras.title}</h2>
           <p className="section-description">{learnMore.optionsExtras.description}</p>
           <div className="learn-options-list">
-            {learnMore.optionsExtras.items.map((item) => (
-              <div key={item.heading} className="learn-options-item reveal">
+            {learnMore.optionsExtras.items.map((item, i) => (
+              <div key={item.heading} className={`learn-options-item reveal-bounce reveal-delay-${(i % 4) + 1}`}>
                 <div className="learn-options-item-icon">
                   <i className={item.icon}></i>
                 </div>

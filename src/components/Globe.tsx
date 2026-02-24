@@ -4,6 +4,13 @@ import { clusterMarkers, type MarkerCluster } from '../data/markerPoints';
 
 const PI = Math.PI;
 
+// Auto-tour: min interval between auto-selections (ms)
+const AUTO_SELECT_INTERVAL = 5000;
+// After user interaction, wait this long before resuming auto-select
+const AUTO_SELECT_RESUME_MS = 15000;
+// How long each auto-selected tooltip stays visible
+const AUTO_SELECT_DURATION = 3500;
+
 // Convert lat/lon to 3D position on unit sphere
 function latLonToVec3(lat: number, lon: number, radius = 1): THREE.Vector3 {
   const phi = (90 - lat) * (PI / 180);
@@ -71,6 +78,7 @@ const Globe: React.FC = () => {
   const [tooltip, setTooltip] = useState<TooltipData>({
     visible: false, dotX: 0, dotY: 0, spriteIdx: -1, dotBehind: false, names: [], count: 0,
   });
+  const [globeReady, setGlobeReady] = useState(false);
 
   // Refs for animation state
   const pointerDown = useRef(false);
@@ -97,6 +105,14 @@ const Globe: React.FC = () => {
   isMobileRef.current = isMobile;
   const hoveredIdx = useRef(-1);
   const baseScales = useRef<number[]>([]);
+
+  // Passive auto-select state — selects markers as they cross the front of the globe
+  const autoSelectEnabled = useRef(true);  // false after user clicks/drags
+  const lastAutoSelectTime = useRef(0);
+  const lastAutoSelectIdx = useRef(-1);    // avoid re-selecting the same marker
+  const autoSelectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastInteractionTime = useRef(0);
+  const userHasSelected = useRef(false);   // true once user manually clicks a marker
 
   // Responsive sizing + mobile detection
   useEffect(() => {
@@ -224,6 +240,7 @@ const Globe: React.FC = () => {
       tex.colorSpace = THREE.SRGBColorSpace;
       earthMat.map = tex;
       earthMat.needsUpdate = true;
+      setGlobeReady(true);
     });
     loader.load('/textures/earth-topology.png', (tex) => {
       earthMat.bumpMap = tex;
@@ -326,13 +343,11 @@ const Globe: React.FC = () => {
         const sx = (projected.x * 0.5 + 0.5) * width;
         const sy = (-projected.y * 0.5 + 0.5) * width;
 
-        // Check if dot is on back side of globe:
-        // Dot product of marker position (from origin) with camera direction toward origin
-        // If the marker faces away from the camera, it's on the back side
+        // Check if dot is on back side of globe
         const camToOrigin = camera.position.clone().negate().normalize();
         const markerDir = worldPos.clone().normalize();
         const facingDot = camToOrigin.dot(markerDir);
-        const isBehind = facingDot > 0.15; // slightly past the edge
+        const isBehind = facingDot > 0.15;
 
         setTooltip(prev => {
           if (!prev.visible || prev.spriteIdx !== tt.spriteIdx) return prev;
@@ -341,6 +356,73 @@ const Globe: React.FC = () => {
           if (!posChanged && !behindChanged) return prev;
           return { ...prev, dotX: sx, dotY: sy, dotBehind: isBehind };
         });
+      }
+
+      // --- Passive auto-select: pick markers crossing the front center ---
+      const now = Date.now();
+      if (
+        autoSelectEnabled.current &&
+        !userHasSelected.current &&
+        !pointerDown.current &&
+        !isMobileRef.current &&
+        !tt.visible &&
+        now - lastAutoSelectTime.current > AUTO_SELECT_INTERVAL
+      ) {
+        // camToOrigin points from camera toward globe center: (0,0,-1)
+        // For front-facing markers, camToOrigin.dot(markerDir) is negative
+        // So we use -dot to get a positive value for front-facing markers
+        const camToOrigin = camera.position.clone().negate().normalize();
+        let bestIdx = -1;
+        let bestScore = -Infinity;
+
+        for (let i = 0; i < sprites.length; i++) {
+          if (i === lastAutoSelectIdx.current) continue;
+          const wp = sprites[i].getWorldPosition(new THREE.Vector3());
+          const dir = wp.clone().normalize();
+          const behindCheck = camToOrigin.dot(dir);
+          // behindCheck > 0 means behind globe, < 0 means front-facing
+          // We want front-facing markers: behindCheck should be well negative
+          if (behindCheck > -0.3) continue; // skip anything not clearly front-facing
+          const frontScore = -behindCheck; // higher = more directly facing camera
+          if (frontScore > bestScore) {
+            const cluster = clusters[i];
+            if (cluster && cluster.count >= 3) {
+              bestScore = frontScore;
+              bestIdx = i;
+            }
+          }
+        }
+
+        if (bestIdx >= 0) {
+          lastAutoSelectTime.current = now;
+          lastAutoSelectIdx.current = bestIdx;
+          const sprite = sprites[bestIdx];
+          const worldPos = sprite.getWorldPosition(new THREE.Vector3());
+          const projected = worldPos.clone().project(camera);
+          const sx = (projected.x * 0.5 + 0.5) * width;
+          const sy = (-projected.y * 0.5 + 0.5) * width;
+          const cluster = clusters[bestIdx];
+
+          setTooltip({
+            visible: true,
+            dotX: sx,
+            dotY: sy,
+            spriteIdx: bestIdx,
+            dotBehind: false,
+            names: cluster.names,
+            count: cluster.count,
+          });
+
+          // Auto-dismiss after duration
+          if (autoSelectTimer.current) clearTimeout(autoSelectTimer.current);
+          autoSelectTimer.current = setTimeout(() => {
+            setTooltip(prev =>
+              prev.spriteIdx === bestIdx
+                ? { ...prev, visible: false, spriteIdx: -1, dotBehind: false }
+                : prev
+            );
+          }, AUTO_SELECT_DURATION);
+        }
       }
     };
     animate();
@@ -356,6 +438,10 @@ const Globe: React.FC = () => {
       pointerStartTime.current = Date.now();
       velocity.current = 0;
       interactCanvas.style.cursor = 'grabbing';
+      // Pause auto-select, resume after inactivity
+      autoSelectEnabled.current = false;
+      lastInteractionTime.current = Date.now();
+      if (autoSelectTimer.current) clearTimeout(autoSelectTimer.current);
     };
 
     const onPointerUp = (e: PointerEvent) => {
@@ -369,7 +455,16 @@ const Globe: React.FC = () => {
 
       if (dist < 5 && elapsed < 400) {
         handleMarkerClick(e);
+        userHasSelected.current = true;  // user manually clicked
       }
+
+      // Resume auto-select after inactivity
+      setTimeout(() => {
+        if (Date.now() - lastInteractionTime.current >= AUTO_SELECT_RESUME_MS - 100) {
+          autoSelectEnabled.current = true;
+          userHasSelected.current = false;
+        }
+      }, AUTO_SELECT_RESUME_MS);
     };
 
     const onPointerOut = () => {
@@ -453,6 +548,8 @@ const Globe: React.FC = () => {
       pointerStartY.current = e.touches[0].clientY;
       pointerStartTime.current = Date.now();
       velocity.current = 0;
+      autoSelectEnabled.current = false;
+      lastInteractionTime.current = Date.now();
     };
 
     const onTouchMove = (e: TouchEvent) => {
@@ -466,6 +563,12 @@ const Globe: React.FC = () => {
 
     const onTouchEnd = () => {
       pointerDown.current = false;
+      setTimeout(() => {
+        if (Date.now() - lastInteractionTime.current >= AUTO_SELECT_RESUME_MS - 100) {
+          autoSelectEnabled.current = true;
+          userHasSelected.current = false;
+        }
+      }, AUTO_SELECT_RESUME_MS);
     };
 
     interactCanvas.addEventListener('pointerdown', onPointerDown);
@@ -514,7 +617,7 @@ const Globe: React.FC = () => {
   return (
     <div className="globe-container notranslate" translate="no" ref={containerRef}>
       <div
-        className="globe-canvas-wrap"
+        className={`globe-canvas-wrap${globeReady ? ' globe-ready' : ''}`}
         style={{
           width: canvasSize,
           height: canvasSize,

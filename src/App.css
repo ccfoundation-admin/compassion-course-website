@@ -1216,9 +1216,29 @@ body {
 
 .hero-globe {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
     position: relative;
+}
+
+.hero-globe-hint {
+    font-size: var(--font-size-xs);
+    color: rgba(255, 255, 255, 0.45);
+    text-align: center;
+    margin-top: var(--space-2);
+    letter-spacing: 0.03em;
+    animation: hintPulse 3s ease-in-out infinite;
+}
+
+.hero-globe-hint i {
+    margin-right: var(--space-1);
+    font-size: 0.75rem;
+}
+
+@keyframes hintPulse {
+    0%, 100% { opacity: 0.45; }
+    50% { opacity: 0.8; }
 }
 
 /* Globe Component */
@@ -1229,6 +1249,40 @@ body {
     justify-content: center;
     width: 100%;
     max-width: 720px;
+}
+
+/* Globe entrance reveal — triggered by .globe-ready when earth texture loads */
+.globe-canvas-wrap {
+    opacity: 0;
+    transform: scale(0.85);
+}
+
+.globe-canvas-wrap.globe-ready {
+    animation: globeReveal 1.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes globeReveal {
+    0% {
+        opacity: 0;
+        transform: scale(0.85);
+    }
+    60% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .globe-canvas-wrap {
+        opacity: 1;
+        transform: none;
+    }
+    .globe-canvas-wrap.globe-ready {
+        animation: none;
+    }
 }
 
 .globe-glow {
@@ -1559,6 +1613,223 @@ section {
     border-radius: calc(var(--radius-2xl) - 4px);
 }
 
+/* ==========================================
+   INTERACTIVE EFFECTS — Border Beam + Tilt + Flip + Typing
+   ========================================== */
+
+/* --- Border Beam wrapper: add class "beam-wrap" to any card ---
+   Structure: <div class="beam-wrap"><div class="beam-border"></div><div class="beam-inner">...content...</div></div>
+*/
+.beam-wrap {
+    position: relative;
+    border-radius: var(--radius-2xl);
+    padding: 2px;
+    background: var(--color-gray-100);
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+}
+
+.beam-border {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: conic-gradient(
+        from var(--wave-angle, 0deg),
+        transparent 55%,
+        #5fa9e3 70%,
+        #e37263 82%,
+        #ef8e2f 90%,
+        transparent 97%
+    );
+    animation: videoWaveRotate 3s linear infinite;
+    opacity: 0;
+    transition: opacity 0.4s;
+}
+
+.beam-wrap:hover .beam-border {
+    opacity: 1;
+}
+
+.beam-wrap:hover {
+    box-shadow: 0 8px 32px rgba(95, 169, 227, 0.12), 0 2px 8px rgba(227, 114, 99, 0.08);
+}
+
+.beam-inner {
+    position: relative;
+    background: var(--color-white);
+    border-radius: calc(var(--radius-2xl) - 2px);
+    z-index: 1;
+    height: 100%;
+}
+
+/* When cards are inside beam-wrap, remove their own border/shadow/hover-transform */
+.beam-inner.value-card,
+.beam-inner.home-sample-card,
+.beam-inner.volunteer-card,
+.beam-inner.learn-how-step-card,
+.beam-inner.learn-different-card {
+    border: none;
+    box-shadow: none;
+    border-radius: calc(var(--radius-2xl) - 2px);
+}
+
+.beam-wrap:hover .beam-inner.value-card,
+.beam-wrap:hover .beam-inner.home-sample-card,
+.beam-wrap:hover .beam-inner.volunteer-card,
+.beam-wrap:hover .beam-inner.learn-how-step-card {
+    transform: none;
+    box-shadow: none;
+}
+
+/* --- 3D Tilt cards --- */
+.tilt-card {
+    transition: transform 0.15s ease, box-shadow 0.3s ease;
+    will-change: transform;
+}
+
+.tilt-card:hover {
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Flip cards --- */
+.flip-card {
+    perspective: 800px;
+    cursor: pointer;
+}
+
+.flip-card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-style: preserve-3d;
+}
+
+.flip-card--flipped .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+.flip-card-front,
+.flip-card-back {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    border-radius: var(--radius-2xl);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-6);
+}
+
+.flip-card-front {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-100);
+    box-shadow: var(--shadow-card);
+}
+
+.flip-card-front .flip-card-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: var(--radius-lg);
+    background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-primary-100) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: var(--space-4);
+}
+
+.flip-card-front .flip-card-icon i {
+    font-size: 1.3rem;
+    color: var(--color-primary);
+}
+
+.flip-card-front h3 {
+    margin-bottom: var(--space-2);
+    color: var(--color-gray-900);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    text-align: center;
+}
+
+.flip-card-hint {
+    font-size: 0.7rem;
+    color: var(--color-gray-400);
+    margin-top: var(--space-3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.flip-card-back {
+    background: linear-gradient(135deg, var(--color-primary), #3d8bbf);
+    color: #fff;
+    transform: rotateY(180deg);
+    text-align: center;
+}
+
+.flip-card-back p {
+    font-size: var(--font-size-sm);
+    line-height: 1.75;
+    margin: 0;
+}
+
+.flip-card-back-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    opacity: 0.7;
+    margin-top: var(--space-3);
+}
+
+/* --- Typing effect --- */
+.hero-typing {
+    min-height: 1.6em;
+    margin-bottom: var(--space-4);
+}
+
+.hero-typing--prominent {
+    min-height: 2em;
+    margin-bottom: var(--space-8);
+}
+
+.hero-typing--prominent .hero-typing-text {
+    font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.01em;
+}
+
+.hero-typing-text {
+    font-family: 'DM Sans', sans-serif;
+    font-size: var(--font-size-base);
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.7;
+    font-weight: 400;
+}
+
+.hero-typing-cursor {
+    animation: heroBlink 1s step-end infinite;
+    color: var(--color-accent);
+    font-weight: 300;
+}
+
+@keyframes heroBlink {
+    50% { opacity: 0; }
+}
+
+/* --- Marquee word band divider --- */
+/* --- What Makes Different flip grid --- */
+.learn-different-flip-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-6);
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.learn-different-flip-grid .flip-card {
+    height: 260px;
+}
+
 .home-impact-stats {
     display: flex;
     justify-content: center;
@@ -1568,7 +1839,7 @@ section {
 }
 
 .home-impact-stat {
-    text-align: center;
+    text-align: left;
 }
 
 .home-impact-stat-number {
@@ -1577,6 +1848,19 @@ section {
     font-weight: 700;
     color: var(--color-primary);
     line-height: 1.1;
+    text-align: left;
+    position: relative;
+}
+
+.home-impact-stat-ghost {
+    visibility: hidden;
+    display: block;
+    height: 0;
+    overflow: hidden;
+}
+
+.home-impact-stat-value {
+    display: block;
 }
 
 .home-impact-stat-label {
@@ -4652,6 +4936,113 @@ section {
     margin: 0;
 }
 
+/* --- Transformation Comparison --- */
+.learn-comparison {
+    display: flex;
+    align-items: stretch;
+    max-width: 860px;
+    margin: var(--space-12) auto 0;
+    border-radius: var(--radius-2xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+}
+
+.learn-comparison-side {
+    flex: 1;
+    padding: var(--space-8) var(--space-6);
+    position: relative;
+}
+
+.learn-comparison-side--before {
+    background: linear-gradient(160deg, #fef2f2 0%, #fff1f2 100%);
+}
+
+.learn-comparison-side--after {
+    background: linear-gradient(160deg, #f0fdf4 0%, #ecfdf5 100%);
+}
+
+.learn-comparison-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--space-4);
+}
+
+.learn-comparison-badge--before {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+}
+
+.learn-comparison-badge--after {
+    background: rgba(34, 197, 94, 0.12);
+    color: #16a34a;
+}
+
+.learn-comparison-side h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: var(--font-size-xl);
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-5);
+}
+
+.learn-comparison-side ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.learn-comparison-side li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--font-size-sm);
+    line-height: 1.5;
+    color: var(--color-gray-700);
+}
+
+.learn-comparison-side--before li i {
+    color: #ef4444;
+    font-size: 0.85rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.learn-comparison-side--after li i {
+    color: #22c55e;
+    font-size: 0.85rem;
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.learn-comparison-vs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-white);
+    padding: 0 var(--space-4);
+    z-index: 1;
+    box-shadow: -2px 0 8px rgba(0,0,0,0.04), 2px 0 8px rgba(0,0,0,0.04);
+}
+
+.learn-comparison-vs span {
+    font-family: 'Playfair Display', serif;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-gray-400);
+    letter-spacing: 0.1em;
+}
+
 /* --- About the Founder --- */
 .learn-founder {
     background: var(--color-white);
@@ -4891,6 +5282,29 @@ section {
         grid-template-columns: 1fr;
     }
 
+    .learn-different-flip-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-4);
+    }
+
+    .learn-different-flip-grid .flip-card {
+        height: 230px;
+    }
+
+    .learn-comparison {
+        flex-direction: column;
+    }
+
+    .learn-comparison-vs {
+        padding: var(--space-3) 0;
+        box-shadow: 0 -2px 8px rgba(0,0,0,0.04), 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    /* Disable 3D tilt on touch devices */
+    .tilt-card {
+        transform: none !important;
+    }
+
     .learn-founder-inner {
         grid-template-columns: 1fr;
         gap: var(--space-8);
@@ -4925,6 +5339,22 @@ section {
 
     .learn-different-card {
         padding: var(--space-6);
+    }
+
+    .learn-different-flip-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .learn-different-flip-grid .flip-card {
+        height: 200px;
+    }
+
+    .flip-card-front h3 {
+        font-size: var(--font-size-base);
+    }
+
+    .flip-card-back p {
+        font-size: 0.8rem;
     }
 
     .learn-photo-strip-item {

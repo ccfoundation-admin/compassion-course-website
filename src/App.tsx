@@ -17,6 +17,9 @@ import ContactPage from './pages/ContactPage'
 import CompassCompanionPage from './pages/CompassCompanionPage'
 import LearnMorePage from './pages/LearnMorePage'
 import VolunteerPage from './pages/VolunteerPage'
+import StylePreviewPage from './pages/StylePreviewPage'
+import StylePreview2Page from './pages/StylePreview2Page'
+import GlobePreviewPage from './pages/GlobePreviewPage'
 import UnauthorizedPage from './pages/UnauthorizedPage'
 
 // User Pages
@@ -68,6 +71,9 @@ function App() {
               <Route path="/compass-companion" element={<CompassCompanionPage />} />
               <Route path="/learn-more" element={<LearnMorePage />} />
               <Route path="/volunteer" element={<VolunteerPage />} />
+              <Route path="/style-preview" element={<StylePreviewPage />} />
+              <Route path="/style-preview-2" element={<StylePreview2Page />} />
+              <Route path="/globe-preview" element={<GlobePreviewPage />} />
 
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
               
