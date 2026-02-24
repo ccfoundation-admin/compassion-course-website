@@ -304,19 +304,32 @@ const HomePage: React.FC = () => {
           <div className="home-languages-grid">
             {home.languages.items.map((lang) =>
               lang.url ? (
-                <a
-                  key={lang.en}
-                  href={lang.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="home-language-tag home-language-tag--link"
-                  title={`${lang.en} — ${lang.native}`}
-                >
-                  <span className="home-language-native">{lang.native}</span>
-                  <span className="home-language-en">{lang.en}</span>
-                </a>
+                lang.url.startsWith('/') ? (
+                  <a
+                    key={lang.en}
+                    href={lang.url}
+                    className="home-language-tag home-language-tag--link"
+                    title={`${lang.en} — ${lang.native}`}
+                    onClick={(e) => { e.preventDefault(); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  >
+                    <span className="home-language-native">{lang.native}</span>
+                    <span className="home-language-en">{lang.en}</span>
+                  </a>
+                ) : (
+                  <a
+                    key={lang.en}
+                    href={lang.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="home-language-tag home-language-tag--link"
+                    title={`${lang.en} — ${lang.native}`}
+                  >
+                    <span className="home-language-native">{lang.native}</span>
+                    <span className="home-language-en">{lang.en}</span>
+                  </a>
+                )
               ) : (
-                <span key={lang.en} className="home-language-tag" title={lang.en}>
+                <span key={lang.en} className="home-language-tag home-language-tag--nolink" title={`${lang.en} — coming soon`}>
                   <span className="home-language-native">{lang.native}</span>
                   <span className="home-language-en">{lang.en}</span>
                 </span>

@@ -177,7 +177,7 @@ export const siteContent = {
       description:
         'The Compassion Course is translated and facilitated by dedicated teams around the world, each with their own monthly conferences in their native language.',
       items: [
-        { en: 'English', native: 'English' },
+        { en: 'English', native: 'English', url: '/' },
         { en: 'German', native: 'Deutsch', url: 'https://www.mitgefuehl-als-weg.com/' },
         { en: 'Spanish', native: 'Espa\u00F1ol', url: 'https://www.elcursodecompasion.org/' },
         { en: 'Arabic', native: '\u0639\u0631\u0628\u0649', url: 'https://www.altarahum.com/' },
@@ -433,7 +433,7 @@ export const siteContent = {
       imageAlt: 'Golden sunrise over misty green hills',
       heading: 'What Makes This Different',
       subtitle:
-        "The Compassion Course is rigorous. It is challenging and approaches s a year of gradual, real change.",
+        "The Compassion Course is rigorous. It is challenging and approaches a year of gradual, real change.",
       cards: [
         {
           icon: 'fas fa-calendar-week',
@@ -578,12 +578,14 @@ export const siteContent = {
         {
           question: 'Is there a certification option?',
           answer:
-            'Yes. For a small additional fee, you can earn a Certificate of Completion by tracking your weekly progress and keeping a private journal throughout the year and submitting it for verification.',
+            'Yes. For an additional US$75, you can earn a Certificate of Completion by tracking your weekly progress and keeping a private journal throughout the year and submitting it for verification.',
         },
         {
           question: 'What is the cost? Is financial help available?',
           answer:
-            'Tuition for the Participant Track is 240-190 U.S. Dollars  Leadership Track is the same (240-190), however has prerequisites. Accessibility is a founding value of the course \u2014 the course is available to any inspired human, regardless of ability to pay, and alternative payment options are available. CLICK HERE for financial aid information.',
+            'Standard tuition for Participants is US$240. If you can afford it, we ask that you pay this amount. Participants can also pay a reduced tuition of US$190. Tuition for the Leadership Track is the same, however it has prerequisites. Accessibility is a founding value of the course \u2014 the course is available to any inspired human, regardless of ability to pay. Alternative payment options are available, too.',
+          linkText: 'Click here for financial aid information',
+          linkUrl: 'https://nycnvc.org/financial-aid',
         },
         {
           question: 'How are refunds and cancellations handled?',

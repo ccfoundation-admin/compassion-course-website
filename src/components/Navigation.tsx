@@ -7,7 +7,7 @@ import { getUserProfile } from '../services/userProfileService';
 import type { UserProfile } from '../types/platform';
 import GoogleTranslate from './GoogleTranslate';
 
-const DESKTOP_BREAKPOINT = 1280;
+const DESKTOP_BREAKPOINT = 1080;
 
 const Navigation: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);

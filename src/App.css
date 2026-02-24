@@ -2143,6 +2143,11 @@ section {
     color: rgba(255, 255, 255, 0.7);
 }
 
+.home-language-tag--nolink {
+    opacity: 0.55;
+    cursor: default;
+}
+
 /* ==========================================
    HOME — VALUE CARD LINKS
    ========================================== */
@@ -5195,6 +5200,16 @@ section {
     margin: 0;
 }
 
+.learn-faq-link {
+    color: var(--color-primary);
+    text-decoration: underline;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+.learn-faq-link:hover {
+    color: var(--color-primary-dark, #0b7a70);
+}
+
 /* --- Learn More Page Responsive --- */
 @media (max-width: 768px) {
     .learn-hero {
@@ -5672,8 +5687,8 @@ section {
     }
 }
 
-/* Hamburger collapse (1280px) */
-@media (max-width: 1280px) {
+/* Hamburger collapse (1080px) */
+@media (max-width: 1080px) {
     .nav-menu {
         position: fixed;
         left: 0;
@@ -5824,7 +5839,7 @@ section {
 }
 
 /* When Google Translate is active, force hamburger nav on all screen sizes.
-   Mirrors the @media (max-width: 1280px) styles above. */
+   Mirrors the @media (max-width: 1080px) styles above. */
 .gt-translated .nav-menu {
     position: fixed;
     left: 0;

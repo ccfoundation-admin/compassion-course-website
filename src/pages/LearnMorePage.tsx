@@ -384,7 +384,12 @@ const LearnMorePage: React.FC = () => {
                     opacity: openFaq === index ? 1 : 0,
                   }}
                 >
-                  <p>{faq.answer}</p>
+                  <p>
+                    {faq.answer}
+                    {(faq as any).linkText && (faq as any).linkUrl && (
+                      <>{' '}<a href={(faq as any).linkUrl} target="_blank" rel="noopener noreferrer" className="learn-faq-link">{(faq as any).linkText}</a></>
+                    )}
+                  </p>
                 </div>
               </div>
             ))}
