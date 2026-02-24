@@ -609,7 +609,7 @@ export const siteContent = {
     team: {
       title: 'Meet the Team',
       description:
-        'The Compassion Course is translated, facilitated, and supported by dedicated volunteer teams across 8 language communities around the world.',
+        'The Compassion Course is translated, facilitated, and supported by dedicated volunteer teams across communities around the world.',
       contactLabel: 'Contact:',
       sections: [
         {
