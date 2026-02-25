@@ -540,7 +540,7 @@ const LearnMorePage: React.FC = () => {
       </section>
 
       {/* FAQ Section */}
-      <section className="learn-faq reveal">
+      <section id="faq" className="learn-faq reveal">
         <div className="container">
           <h2 className="section-title">{learnMore.faq.title}</h2>
           <div className="learn-faq-list">

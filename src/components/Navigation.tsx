@@ -129,9 +129,6 @@ const Navigation: React.FC = () => {
           <li className="nav-item">
             <Link to="/about" className={`nav-link ${isActive('/about') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>About Us</Link>
           </li>
-          <li className="nav-item">
-            <Link to="/volunteer" className={`nav-link ${isActive('/volunteer') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>Volunteer</Link>
-          </li>
           {user && showLeadership && (
             <li className="nav-item">
               <Link to="/portal/leadership" className={`nav-link ${isActivePrefix('/portal/leadership') ? 'active' : ''}`} onClick={() => setIsMenuOpen(false)}>

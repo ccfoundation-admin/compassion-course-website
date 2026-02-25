@@ -1,15 +1,12 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
-import { useContent } from '../context/ContentContext';
-import { renderHTML } from '../utils/contentUtils';
 
 const ContactPage: React.FC = () => {
-  const { getContent } = useContent();
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     subject: '',
-    message: ''
+    message: '',
   });
   const [submitted, setSubmitted] = useState(false);
 
@@ -20,112 +17,128 @@ const ContactPage: React.FC = () => {
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      setFormData({ email: '', subject: '', message: '' });
     }, 3000);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   return (
     <Layout>
       <section className="contact-page">
         <div className="container">
-          <h1>{getContent('contact-page', 'title', 'Contact Us')}</h1>
+          <div className="contact-layout">
 
-          {getContent('contact-page', 'subtitle') && (
-            <p className="section-description" dangerouslySetInnerHTML={renderHTML(
-              getContent('contact-page', 'subtitle', '')
-            )} />
-          )}
+            {/* Left: contact info */}
+            <div className="contact-info-side">
+              <div className="contact-info-block">
+                <div className="contact-info-icon">
+                  <i className="fas fa-envelope" />
+                </div>
+                <div>
+                  <h3>Email Us</h3>
+                  <a href="mailto:coursecoordinator@nycnvc.org">coursecoordinator@nycnvc.org</a>
+                </div>
+              </div>
 
-          <div className="contact-grid">
-            {/* Contact Information */}
-            <div>
-              {getContent('contact-page', 'description') && (
-                <div className="contact-card" style={{ marginBottom: 'var(--space-6)' }}
-                  dangerouslySetInnerHTML={renderHTML(getContent('contact-page', 'description', ''))}
-                />
-              )}
+              <div className="contact-info-block">
+                <div className="contact-info-icon">
+                  <i className="fas fa-phone" />
+                </div>
+                <div>
+                  <h3>Call Us</h3>
+                  <a href="tel:+16462019226">(646) 201-9226</a>
+                </div>
+              </div>
 
-              <div className="contact-card">
-                {getContent('contact-page', 'email') && (
-                  <div className="contact-info-item">
-                    <h3><i className="fas fa-envelope"></i> Email</h3>
-                    <a href={`mailto:${getContent('contact-page', 'email', '')}`}>
-                      {getContent('contact-page', 'email', '')}
-                    </a>
-                  </div>
-                )}
+              <div className="contact-info-block">
+                <div className="contact-info-icon">
+                  <i className="fas fa-map-marker-alt" />
+                </div>
+                <div>
+                  <h3>Our Office</h3>
+                  <p>
+                    NYCNVC<br />
+                    645 Gardnertown Road<br />
+                    Newburgh, NY 12550
+                  </p>
+                </div>
+              </div>
 
-                {getContent('contact-page', 'phone') && (
-                  <div className="contact-info-item">
-                    <h3><i className="fas fa-phone"></i> Phone</h3>
-                    <a href={`tel:${getContent('contact-page', 'phone', '')}`}>
-                      {getContent('contact-page', 'phone', '')}
-                    </a>
-                  </div>
-                )}
-
-                {getContent('contact-page', 'address') && (
-                  <div className="contact-info-item">
-                    <h3><i className="fas fa-map-marker-alt"></i> Address</h3>
-                    <p dangerouslySetInnerHTML={renderHTML(getContent('contact-page', 'address', ''))} />
-                  </div>
-                )}
-
-                {getContent('contact-page', 'hours') && (
-                  <div className="contact-info-item">
-                    <h3><i className="fas fa-clock"></i> Office Hours</h3>
-                    <p dangerouslySetInnerHTML={renderHTML(getContent('contact-page', 'hours', ''))} />
-                  </div>
-                )}
+              {/* FAQ hint */}
+              <div className="contact-faq-hint">
+                <i className="fas fa-lightbulb" />
+                <span>
+                  Check our <Link to="/learn-more#faq">FAQ</Link> — your question may already
+                  be answered there.
+                </span>
               </div>
             </div>
 
-            {/* Contact Form */}
-            <div className="contact-card">
-              <h2>{getContent('contact-page', 'form-title', 'Send us a Message')}</h2>
+            {/* Right: form */}
+            <div className="contact-form-wrap">
+              <h2>Send a Message</h2>
+              <p className="contact-form-intro">
+                All fields marked with <span className="contact-required">*</span> are required.
+              </p>
 
               {submitted ? (
                 <div className="contact-success">
-                  {getContent('contact-page', 'form-success-message', 'Thank you! Your message has been sent.')}
+                  <i className="fas fa-check-circle" />
+                  <div>
+                    <strong>Message sent!</strong>
+                    <p>Thank you for reaching out. We'll get back to you shortly.</p>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit}>
                   <div className="contact-form-group">
-                    <label htmlFor="name">Name *</label>
-                    <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required />
+                    <label htmlFor="email">Email <span className="contact-required">*</span></label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      required
+                      placeholder="your@email.com"
+                    />
                   </div>
                   <div className="contact-form-group">
-                    <label htmlFor="email">Email *</label>
-                    <input type="email" id="email" name="email" value={formData.email} onChange={handleChange} required />
+                    <label htmlFor="subject">Subject <span className="contact-required">*</span></label>
+                    <input
+                      type="text"
+                      id="subject"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleChange}
+                      required
+                      placeholder="What is this regarding?"
+                    />
                   </div>
                   <div className="contact-form-group">
-                    <label htmlFor="subject">Subject *</label>
-                    <input type="text" id="subject" name="subject" value={formData.subject} onChange={handleChange} required />
+                    <label htmlFor="message">Message <span className="contact-required">*</span></label>
+                    <textarea
+                      id="message"
+                      name="message"
+                      value={formData.message}
+                      onChange={handleChange}
+                      required
+                      placeholder="Tell us how we can help..."
+                      rows={6}
+                    />
                   </div>
-                  <div className="contact-form-group">
-                    <label htmlFor="message">Message *</label>
-                    <textarea id="message" name="message" value={formData.message} onChange={handleChange} required />
-                  </div>
-                  <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-                    {getContent('contact-page', 'form-button-text', 'Send Message')}
+                  <button type="submit" className="btn-primary contact-submit-btn">
+                    <i className="fas fa-paper-plane" /> Send Message
                   </button>
                 </form>
               )}
             </div>
           </div>
-
-          {getContent('contact-page', 'footer-text') && (
-            <div className="contact-card" style={{ marginTop: 'var(--space-12)', maxWidth: '900px', margin: 'var(--space-12) auto 0', textAlign: 'center' }}
-              dangerouslySetInnerHTML={renderHTML(getContent('contact-page', 'footer-text', ''))}
-            />
-          )}
         </div>
       </section>
     </Layout>
