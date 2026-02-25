@@ -711,5 +711,16 @@ export const getContentStructure = (): { section: string; keys: { key: string; l
         { key: 'buttonSecondary', label: 'Secondary Button Text', type: 'text' },
       ],
     },
+    {
+      section: 'contact-page',
+      keys: [
+        { key: 'email', label: 'Contact Email', type: 'text' },
+        { key: 'phone', label: 'Phone Number', type: 'text' },
+        { key: 'phone-display', label: 'Phone Display Text', type: 'text' },
+        { key: 'address', label: 'Office Address (HTML allowed)', type: 'rich' },
+        { key: 'form-title', label: 'Form Title', type: 'text' },
+        { key: 'success-message', label: 'Form Success Message', type: 'text' },
+      ],
+    },
   ];
 };

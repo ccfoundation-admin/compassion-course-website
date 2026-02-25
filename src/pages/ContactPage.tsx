@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
+import { useContent } from '../context/ContentContext';
 
 const ContactPage: React.FC = () => {
+  const { getContent } = useContent();
+
+  // CMS-driven contact info (falls back to hardcoded defaults)
+  const contactEmail = getContent('contact-page', 'email', 'coursecoordinator@nycnvc.org');
+  const contactPhone = getContent('contact-page', 'phone', '+16462019226');
+  const contactPhoneDisplay = getContent('contact-page', 'phone-display', '(646) 201-9226');
+  const contactAddress = getContent('contact-page', 'address', 'NYCNVC<br />645 Gardnertown Road<br />Newburgh, NY 12550');
+  const formTitle = getContent('contact-page', 'form-title', 'Send a Message');
+  const successMessage = getContent('contact-page', 'success-message', 'Thank you for reaching out. We\'ll get back to you shortly.');
   const [formData, setFormData] = useState({
     email: '',
     subject: '',
@@ -41,7 +51,7 @@ const ContactPage: React.FC = () => {
                 </div>
                 <div>
                   <h3>Email Us</h3>
-                  <a href="mailto:coursecoordinator@nycnvc.org">coursecoordinator@nycnvc.org</a>
+                  <a href={`mailto:${contactEmail}`}>{contactEmail}</a>
                 </div>
               </div>
 
@@ -51,7 +61,7 @@ const ContactPage: React.FC = () => {
                 </div>
                 <div>
                   <h3>Call Us</h3>
-                  <a href="tel:+16462019226">(646) 201-9226</a>
+                  <a href={`tel:${contactPhone}`}>{contactPhoneDisplay}</a>
                 </div>
               </div>
 
@@ -61,11 +71,7 @@ const ContactPage: React.FC = () => {
                 </div>
                 <div>
                   <h3>Our Office</h3>
-                  <p>
-                    NYCNVC<br />
-                    645 Gardnertown Road<br />
-                    Newburgh, NY 12550
-                  </p>
+                  <p dangerouslySetInnerHTML={{ __html: contactAddress }} />
                 </div>
               </div>
 
@@ -87,7 +93,7 @@ const ContactPage: React.FC = () => {
 
             {/* Right: form */}
             <div className="contact-form-wrap">
-              <h2>Send a Message</h2>
+              <h2>{formTitle}</h2>
               <p className="contact-form-intro">
                 All fields marked with <span className="contact-required">*</span> are required.
               </p>
@@ -97,7 +103,7 @@ const ContactPage: React.FC = () => {
                   <i className="fas fa-check-circle" />
                   <div>
                     <strong>Message sent!</strong>
-                    <p>Thank you for reaching out. We'll get back to you shortly.</p>
+                    <p>{successMessage}</p>
                   </div>
                 </div>
               ) : (

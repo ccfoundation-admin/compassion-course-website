@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { 
   getAllContent, 
@@ -1016,12 +1015,6 @@ const ContentManagement: React.FC = () => {
 
         {/* Section Navigation */}
         <div style={{ marginBottom: '30px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <Link to="/admin" style={{ color: '#002B4D', textDecoration: 'none' }}>
-              ← Back to Dashboard
-            </Link>
-          </div>
-          
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
@@ -2085,57 +2078,88 @@ const ContentManagement: React.FC = () => {
                 {contentLoading && (
                   <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
                 )}
-                {!contentLoading && getContentForSection('contact').length === 0 && (
-                  <button
-                    onClick={() => {
-                      setLoadedSections(prev => {
-                        const updated = new Set(prev);
-                        updated.delete('contact');
-                        return updated;
-                      });
-                      loadSectionData('contact');
-                    }}
-                    className="btn btn-small btn-secondary"
-                    style={{ fontSize: '0.875rem' }}
-                  >
-                    Retry Loading
-                  </button>
-                )}
               </div>
             </div>
             <p style={{ color: '#6b7280', marginBottom: '20px' }}>
-              Edit content for the Contact page. Add or edit content items below.
+              Edit the contact information shown on the Contact Us page. Changes appear immediately.
             </p>
-            
-            {getContentForSection('contact').length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: '#9ca3af' }}>
-                <p>No content items found for Contact page.</p>
-                <p style={{ fontSize: '0.875rem', marginTop: '10px' }}>
-                  Use the content structure below to add new content items.
-                </p>
-              </div>
-            ) : (
-              getContentForSection('contact').map((section) => (
-                <div key={section.section} style={{ marginBottom: '20px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px' }}>
-                  <h3 style={{ color: '#002B4D', marginBottom: '15px' }}>{section.section.replace(/-/g, ' ')}</h3>
-                  {section.items.map((item) => (
-                    <div key={item.id} style={{ marginBottom: '15px', padding: '15px', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <div>
-                          <strong style={{ color: '#002B4D' }}>{item.key}</strong>
-                          <p style={{ color: '#6b7280', fontSize: '0.875rem', margin: '5px 0 0 0' }}>
-                            {typeof item.value === 'string' ? item.value.substring(0, 100) : JSON.stringify(item.value).substring(0, 100)}
-                          </p>
-                        </div>
-                        <button onClick={() => handleEdit(item)} className="btn btn-small btn-secondary">
-                          Edit
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+
+            {/* Contact Info Fields */}
+            {[
+              { key: 'email', label: 'Contact Email', defaultValue: 'coursecoordinator@nycnvc.org', icon: '✉️' },
+              { key: 'phone', label: 'Phone Number (tel: link)', defaultValue: '+16462019226', icon: '📞' },
+              { key: 'phone-display', label: 'Phone Display Text', defaultValue: '(646) 201-9226', icon: '📱' },
+              { key: 'address', label: 'Office Address (HTML allowed)', defaultValue: 'NYCNVC<br />645 Gardnertown Road<br />Newburgh, NY 12550', icon: '📍' },
+              { key: 'form-title', label: 'Form Heading', defaultValue: 'Send a Message', icon: '📝' },
+              { key: 'success-message', label: 'Form Success Message', defaultValue: "Thank you for reaching out. We'll get back to you shortly.", icon: '✅' },
+            ].map((field) => (
+              <div key={field.key} style={{
+                marginBottom: '15px',
+                padding: '16px 20px',
+                backgroundColor: '#f9fafb',
+                borderRadius: '10px',
+                border: '1px solid #e5e7eb',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: '16px',
+              }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                    <span>{field.icon}</span>
+                    <strong style={{ color: '#002B4D', fontSize: '0.95rem' }}>{field.label}</strong>
+                  </div>
+                  <p style={{ color: '#6b7280', fontSize: '0.85rem', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {getLocalContent('contact-page', field.key, field.defaultValue)}
+                  </p>
                 </div>
-              ))
-            )}
+                <button
+                  onClick={() => {
+                    const item = getContentItem('contact-page', field.key) || {
+                      section: 'contact-page',
+                      key: field.key,
+                      value: field.defaultValue,
+                      type: field.key === 'address' ? 'rich' as const : 'text' as const,
+                      order: 0,
+                      isActive: true,
+                    };
+                    handleEdit(item);
+                  }}
+                  className="btn btn-small btn-secondary"
+                  style={{ flexShrink: 0 }}
+                >
+                  Edit
+                </button>
+              </div>
+            ))}
+
+            {/* Preview */}
+            <div style={{
+              marginTop: '24px',
+              padding: '20px',
+              border: '1px dashed #d1d5db',
+              borderRadius: '10px',
+              backgroundColor: '#fafafa',
+            }}>
+              <h4 style={{ color: '#002B4D', marginTop: 0, marginBottom: '12px', fontSize: '0.9rem' }}>
+                <i className="fas fa-eye" style={{ marginRight: '6px', opacity: 0.6 }} />
+                Live Preview
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', fontSize: '0.85rem' }}>
+                <div>
+                  <span style={{ color: '#6b7280' }}>Email: </span>
+                  <span style={{ color: '#002B4D' }}>{getLocalContent('contact-page', 'email', 'coursecoordinator@nycnvc.org')}</span>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>Phone: </span>
+                  <span style={{ color: '#002B4D' }}>{getLocalContent('contact-page', 'phone-display', '(646) 201-9226')}</span>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <span style={{ color: '#6b7280' }}>Address: </span>
+                  <span style={{ color: '#002B4D' }} dangerouslySetInnerHTML={{ __html: getLocalContent('contact-page', 'address', 'NYCNVC<br />645 Gardnertown Road<br />Newburgh, NY 12550') }} />
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

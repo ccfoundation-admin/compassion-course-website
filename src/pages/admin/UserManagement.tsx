@@ -22,7 +22,7 @@ const UserManagement: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab');
+  const tabParam = searchParams.get('userTab');
   const activeTab: AdminUserTab =
     tabParam === 'teams' || tabParam === 'pending' ? tabParam : 'directory';
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
@@ -41,10 +41,12 @@ const UserManagement: React.FC = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [editingProfile, setEditingProfile] = useState<UserProfile | null>(null);
 
-  // Redirect legacy ?tab=create to directory
+  // Redirect legacy ?userTab=create to directory
   useEffect(() => {
-    if (searchParams.get('tab') === 'create') {
-      setSearchParams({});
+    if (searchParams.get('userTab') === 'create') {
+      const params = new URLSearchParams(searchParams);
+      params.delete('userTab');
+      setSearchParams(params, { replace: true });
     }
   }, [searchParams, setSearchParams]);
 
@@ -65,7 +67,15 @@ const UserManagement: React.FC = () => {
   const [approvingUid, setApprovingUid] = useState<string | null>(null);
   const [openingEditPendingUid, setOpeningEditPendingUid] = useState<string | null>(null);
 
-  const setTab = (t: AdminUserTab) => setSearchParams(t === 'directory' ? {} : { tab: t });
+  const setTab = (t: AdminUserTab) => {
+    const params = new URLSearchParams(searchParams);
+    if (t === 'directory') {
+      params.delete('userTab');
+    } else {
+      params.set('userTab', t);
+    }
+    setSearchParams(params, { replace: true });
+  };
 
   const toggleSelected = (id: string) => {
     setSelectedIds((prev) => {
