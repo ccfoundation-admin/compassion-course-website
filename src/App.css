@@ -5698,6 +5698,51 @@ section {
 }
 
 /* ==========================================
+   COMMUNITY — COMING SOON PLACEHOLDER
+   ========================================== */
+.community-coming-soon {
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: calc(var(--nav-height) + 15vh) var(--space-6) var(--space-16);
+    background: linear-gradient(170deg, #f0f7fb 0%, #fafbfc 40%, #f8f6f4 100%);
+}
+.community-coming-soon-inner {
+    text-align: center;
+    max-width: 480px;
+}
+.community-coming-soon-icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--color-primary-50, #e8f4fa);
+    color: var(--color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto var(--space-6);
+    font-size: 1.6rem;
+}
+.community-coming-soon h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: var(--font-size-3xl);
+    color: var(--color-gray-900);
+    margin-bottom: var(--space-3);
+}
+.community-coming-soon-date {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-bottom: var(--space-4);
+}
+.community-coming-soon-text {
+    color: var(--color-gray-500);
+    font-size: var(--font-size-base);
+    line-height: 1.7;
+}
+
+/* ==========================================
    IFRAME PAGES (Community, Backlog, etc.)
    ========================================== */
 .iframe-page {
