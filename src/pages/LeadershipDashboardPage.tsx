@@ -79,6 +79,9 @@ const LeadershipDashboardPage: React.FC = () => {
   const [messagesOverlayMemberLabels, setMessagesOverlayMemberLabels] = useState<Record<string, string>>({});
   const [messagesOverlayMemberAvatars, setMessagesOverlayMemberAvatars] = useState<Record<string, string>>({});
 
+  // Per-team summary stats for the team cards
+  const [teamStats, setTeamStats] = useState<Record<string, { backlog: number; todo: number; inProgress: number; done: number; blocked: number; total: number }>>({});
+
   // Modal
   const [showCreateTeamModal, setShowCreateTeamModal] = useState(false);
 
@@ -147,6 +150,32 @@ const LeadershipDashboardPage: React.FC = () => {
 
     return () => { cancelled = true; };
   }, [user?.uid, isActive]);
+
+  // Load per-team board stats for the team selector cards
+  useEffect(() => {
+    if (teams.length === 0) { setTeamStats({}); return; }
+    let cancelled = false;
+    Promise.all(
+      teams.map((t) =>
+        listWorkItems(t.id)
+          .then((items) => {
+            const backlog = items.filter((i) => i.status === 'backlog').length;
+            const todo = items.filter((i) => i.status === 'todo').length;
+            const inProgress = items.filter((i) => i.status === 'in_progress').length;
+            const done = items.filter((i) => i.status === 'done').length;
+            const blocked = items.filter((i) => i.blocked).length;
+            return { teamId: t.id, backlog, todo, inProgress, done, blocked, total: items.length };
+          })
+          .catch(() => ({ teamId: t.id, backlog: 0, todo: 0, inProgress: 0, done: 0, blocked: 0, total: 0 }))
+      )
+    ).then((results) => {
+      if (cancelled) return;
+      const map: typeof teamStats = {};
+      results.forEach((r) => { map[r.teamId] = r; });
+      setTeamStats(map);
+    });
+    return () => { cancelled = true; };
+  }, [teams]);
 
   // Load team data when selected team changes
   const loadTeamData = useCallback(async (teamId: string) => {
@@ -264,7 +293,20 @@ const LeadershipDashboardPage: React.FC = () => {
   }, [activeTab, user?.uid, teams]);
 
   const refreshTeamData = useCallback(() => {
-    if (selectedTeamId) loadTeamData(selectedTeamId);
+    if (selectedTeamId) {
+      loadTeamData(selectedTeamId);
+      // Also refresh the card stats for this team
+      listWorkItems(selectedTeamId)
+        .then((items) => {
+          const backlog = items.filter((i) => i.status === 'backlog').length;
+          const todo = items.filter((i) => i.status === 'todo').length;
+          const inProgress = items.filter((i) => i.status === 'in_progress').length;
+          const done = items.filter((i) => i.status === 'done').length;
+          const blocked = items.filter((i) => i.blocked).length;
+          setTeamStats((prev) => ({ ...prev, [selectedTeamId]: { backlog, todo, inProgress, done, blocked, total: items.length } }));
+        })
+        .catch(() => {});
+    }
   }, [selectedTeamId, loadTeamData]);
 
   // Quiet refresh: just reload work items without loading spinner (for DnD)
@@ -439,31 +481,77 @@ const LeadershipDashboardPage: React.FC = () => {
         <h1 className="ld-heading">Leadership Dashboard</h1>
         <p className="ld-subtitle">Manage teams, boards, backlogs, and settings — all in one place.</p>
 
-        {/* ── Top bar: team selector ── */}
-        <div className="ld-top-bar">
-          <div className="ld-team-selector-wrap">
-            {teams.length === 0 ? (
-              <div className="ld-team-selector-empty">
-                <i className="fas fa-users"></i>
-                <span>No teams yet</span>
-              </div>
-            ) : (
-              <select
-                className="ld-team-dropdown"
-                value={selectedTeamId}
-                onChange={(e) => handleTeamChange(e.target.value)}
-              >
-                <option value="" disabled>Select a team…</option>
-                {teams.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({t.memberIds?.length ?? 0} members)
-                  </option>
-                ))}
-              </select>
-            )}
+        {/* ── Team selector cards ── */}
+        {teamsLoading ? (
+          <div className="ld-team-cards-loading">Loading teams…</div>
+        ) : teams.length === 0 ? (
+          <div className="ld-team-selector-empty">
+            <i className="fas fa-users"></i>
+            <span>No teams yet</span>
           </div>
-          {teamsLoading && <span className="ld-empty" style={{ fontSize: '0.85rem' }}>Loading teams…</span>}
-        </div>
+        ) : (
+          <div className="ld-team-cards">
+            {teams.map((t) => {
+              const selected = t.id === selectedTeamId;
+              const stats = teamStats[t.id];
+              const memberCount = t.memberIds?.length ?? 0;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={`ld-team-card ${selected ? 'ld-team-card--selected' : ''}`}
+                  onClick={() => handleTeamChange(t.id)}
+                >
+                  <div className="ld-team-card__header">
+                    <span className="ld-team-card__name">{t.name}</span>
+                    {selected && <i className="fas fa-check-circle ld-team-card__check" />}
+                  </div>
+                  <div className="ld-team-card__meta">
+                    <span className="ld-team-card__members">
+                      <i className="fas fa-users" />
+                      {memberCount} member{memberCount !== 1 ? 's' : ''}
+                    </span>
+                    {stats && (
+                      <span className="ld-team-card__done">
+                        <i className="fas fa-check" />
+                        {stats.done} done
+                      </span>
+                    )}
+                  </div>
+                  {stats ? (
+                    <div className="ld-team-card__stats">
+                      <span className="ld-team-card__stat ld-team-card__stat--backlog">
+                        <span className="ld-team-card__stat-val">{stats.backlog}</span> Backlog
+                      </span>
+                      <span className="ld-team-card__stat ld-team-card__stat--todo">
+                        <span className="ld-team-card__stat-val">{stats.todo}</span> To&nbsp;do
+                      </span>
+                      <span className="ld-team-card__stat ld-team-card__stat--progress">
+                        <span className="ld-team-card__stat-val">{stats.inProgress}</span> Active
+                      </span>
+                      {stats.blocked > 0 && (
+                        <span className="ld-team-card__stat ld-team-card__stat--blocked">
+                          <span className="ld-team-card__stat-val">{stats.blocked}</span> Blocked
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="ld-team-card__stats ld-team-card__stats--loading">
+                      <span className="ld-team-card__stat">Loading…</span>
+                    </div>
+                  )}
+                  {stats && (stats.backlog + stats.todo + stats.inProgress) > 0 && (
+                    <div className="ld-team-card__bar">
+                      {stats.backlog > 0 && <div className="ld-team-card__bar-seg ld-team-card__bar-seg--backlog" style={{ flex: stats.backlog }} />}
+                      {stats.todo > 0 && <div className="ld-team-card__bar-seg ld-team-card__bar-seg--todo" style={{ flex: stats.todo }} />}
+                      {stats.inProgress > 0 && <div className="ld-team-card__bar-seg ld-team-card__bar-seg--progress" style={{ flex: stats.inProgress }} />}
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {/* ── Tab bar ── */}
         <div className="ld-tab-bar">

@@ -38,6 +38,23 @@ const TeamTabView: React.FC<TeamTabViewProps> = ({
   const [newAgreement, setNewAgreement] = useState('');
   const [savingAgreements, setSavingAgreements] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [backlogItems, setBacklogItems] = useState<LeadershipWorkItem[]>([]);
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<LeadershipWorkItem | null>(null);
+
+  const loadBacklog = async () => {
+    try {
+      const items = await listTeamBacklog(teamId);
+      setBacklogItems(items);
+    } catch (err) {
+      console.error('Failed to load backlog:', err);
+    }
+  };
+
+  useEffect(() => {
+    loadBacklog();
+  }, [teamId]);
 
   useEffect(() => {
     let cancelled = false;

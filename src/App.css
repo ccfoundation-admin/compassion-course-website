@@ -6826,43 +6826,17 @@ section {
     margin: 0 0 20px;
 }
 
-/* Top bar: team selector + create team */
-.ld-top-bar {
-    display: flex;
-    align-items: center;
+/* Team selector cards */
+.ld-team-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
-    flex-wrap: wrap;
     margin-bottom: 20px;
 }
-
-/* Team dropdown selector */
-.ld-team-selector-wrap {
-    flex: 1;
-    min-width: 0;
-}
-.ld-team-dropdown {
-    padding: 8px 32px 8px 12px;
-    border: 1.5px solid #e5e7eb;
-    border-radius: 10px;
-    background: #fff;
+.ld-team-cards-loading {
+    color: #9ca3af;
     font-size: 0.9rem;
-    font-family: inherit;
-    color: #374151;
-    cursor: pointer;
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 10px center;
-    min-width: 180px;
-    transition: border-color 0.15s;
-}
-.ld-team-dropdown:hover {
-    border-color: #d1d5db;
-}
-.ld-team-dropdown:focus {
-    outline: none;
-    border-color: #002B4D;
-    box-shadow: 0 0 0 3px rgba(0, 43, 77, 0.08);
+    margin-bottom: 20px;
 }
 .ld-team-selector-empty {
     display: flex;
@@ -6870,6 +6844,140 @@ section {
     gap: 8px;
     color: #9ca3af;
     font-size: 0.9rem;
+    margin-bottom: 20px;
+}
+.ld-team-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 16px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s, transform 0.12s;
+    position: relative;
+}
+.ld-team-card:hover {
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transform: translateY(-1px);
+}
+.ld-team-card--selected {
+    border-color: #002B4D;
+    box-shadow: 0 0 0 3px rgba(0, 43, 77, 0.10), 0 2px 8px rgba(0,0,0,0.06);
+}
+.ld-team-card--selected:hover {
+    border-color: #002B4D;
+}
+.ld-team-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.ld-team-card__name {
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #1f2937;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.ld-team-card__check {
+    color: #002B4D;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+}
+.ld-team-card__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.ld-team-card__members {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.8rem;
+    color: #6b7280;
+}
+.ld-team-card__members i {
+    font-size: 0.72rem;
+    color: #9ca3af;
+}
+.ld-team-card__done {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.78rem;
+    color: #10b981;
+    font-weight: 600;
+}
+.ld-team-card__done i {
+    font-size: 0.65rem;
+}
+.ld-team-card__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 10px;
+}
+.ld-team-card__stats--loading {
+    color: #d1d5db;
+    font-size: 0.78rem;
+}
+.ld-team-card__stat {
+    font-size: 0.75rem;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+.ld-team-card__stat-val {
+    font-weight: 700;
+    font-size: 0.82rem;
+}
+.ld-team-card__stat--backlog .ld-team-card__stat-val {
+    color: #9ca3af;
+}
+.ld-team-card__stat--todo .ld-team-card__stat-val {
+    color: #3b82f6;
+}
+.ld-team-card__stat--progress .ld-team-card__stat-val {
+    color: #f59e0b;
+}
+.ld-team-card__stat--blocked .ld-team-card__stat-val {
+    color: #ef4444;
+}
+/* Mini progress bar at bottom of team card */
+.ld-team-card__bar {
+    display: flex;
+    height: 4px;
+    border-radius: 2px;
+    overflow: hidden;
+    background: #f3f4f6;
+    margin-top: 2px;
+}
+.ld-team-card__bar-seg {
+    min-width: 2px;
+    transition: flex 0.3s ease;
+}
+.ld-team-card__bar-seg--progress {
+    background: #f59e0b;
+}
+.ld-team-card__bar-seg--todo {
+    background: #3b82f6;
+}
+.ld-team-card__bar-seg--backlog {
+    background: #d1d5db;
+}
+
+@media (max-width: 600px) {
+    .ld-team-cards {
+        grid-template-columns: 1fr;
+    }
 }
 
 
