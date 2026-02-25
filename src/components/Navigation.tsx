@@ -261,6 +261,17 @@ const Navigation: React.FC = () => {
                     <i className="fas fa-user-cog nav-dropdown-icon"></i>
                     Profile settings
                   </Link>
+                  <a
+                    href="https://login.circle.so/sign_in?request_host=www.theglobalcompassionnetwork.com#email"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="nav-account-dropdown-item"
+                    onClick={() => setAccountOpen(false)}
+                  >
+                    <i className="fas fa-globe-americas nav-dropdown-icon"></i>
+                    2025 GCN Login
+                    <i className="fas fa-external-link-alt nav-dropdown-external"></i>
+                  </a>
                   {isDesktop && <div className="nav-account-dropdown-divider" />}
                   <button
                     type="button"

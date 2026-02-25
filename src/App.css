@@ -890,6 +890,12 @@ body {
     text-align: center;
 }
 
+.nav-dropdown-external {
+    margin-left: 8px;
+    font-size: 0.65rem;
+    opacity: 0.35;
+}
+
 @keyframes dropdownEnter {
     from {
         opacity: 0;
@@ -10207,3 +10213,4 @@ section {
         justify-content: flex-end;
     }
 }
+
