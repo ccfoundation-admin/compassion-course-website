@@ -77,6 +77,12 @@ const ContactPage: React.FC = () => {
                   be answered there.
                 </span>
               </div>
+
+              {/* Happy cat mascot */}
+              <div className="contact-cat">
+                <div className="contact-cat-bubble">We'd love to hear from you!</div>
+                <img src="/images/happy_cat.jpg" alt="Happy cat" className="contact-cat-img" />
+              </div>
             </div>
 
             {/* Right: form */}

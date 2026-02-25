@@ -5554,6 +5554,58 @@ section {
     color: #451a03;
 }
 
+/* Happy cat mascot */
+.contact-cat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: var(--space-6);
+    position: relative;
+}
+
+.contact-cat-bubble {
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: #0f3760;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    margin-bottom: 8px;
+    position: relative;
+    text-align: center;
+}
+
+/* Little triangle pointing down from bubble */
+.contact-cat-bubble::after {
+    content: '';
+    position: absolute;
+    bottom: -7px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-top: 7px solid var(--color-white);
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.05));
+}
+
+.contact-cat-img {
+    width: 140px;
+    height: 140px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid var(--color-white);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.contact-cat-img:hover {
+    transform: scale(1.06) rotate(3deg);
+}
+
 /* Form card */
 .contact-form-wrap {
     padding: var(--space-8) var(--space-8) var(--space-6);
