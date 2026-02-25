@@ -62,7 +62,7 @@ const CollapsibleSection: React.FC<{
   );
 };
 
-const JOTFORM_FORM_ID = import.meta.env.VITE_JOTFORM_FORM_ID || '260333329475357';
+const JOTFORM_FORM_ID = import.meta.env.VITE_JOTFORM_FORM_ID || '260544078267159';
 
 const { learnMore } = siteContent;
 
@@ -506,6 +506,73 @@ const LearnMorePage: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* The Leadership Track */}
+      <section id="leadership-track" className="learn-leadership reveal">
+        <div className="container">
+          <div className="learn-leadership-header">
+            <div className="learn-leadership-icon">
+              <i className="fas fa-award"></i>
+            </div>
+            <h2 className="section-title">{learnMore.leadershipTrack.title}</h2>
+            <p className="section-description">{learnMore.leadershipTrack.description}</p>
+          </div>
+
+          <div className="learn-leadership-grid">
+            {/* Monthly meetings card */}
+            <div className="learn-leadership-card">
+              <div className="learn-leadership-card-icon">
+                <i className="fas fa-calendar-alt"></i>
+              </div>
+              <h3>{learnMore.leadershipTrack.monthlyMeetings.heading}</h3>
+              <p>{learnMore.leadershipTrack.monthlyMeetings.description}</p>
+              <ul className="learn-leadership-list">
+                {learnMore.leadershipTrack.monthlyMeetings.items.map((item, i) => (
+                  <li key={i}>
+                    <i className="fas fa-check"></i>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Community & Support card */}
+            <div className="learn-leadership-card">
+              <div className="learn-leadership-card-icon">
+                <i className="fas fa-users"></i>
+              </div>
+              <h3>{learnMore.leadershipTrack.communitySupport.heading}</h3>
+              <ul className="learn-leadership-list learn-leadership-list--spaced">
+                {learnMore.leadershipTrack.communitySupport.items.map((item, i) => (
+                  <li key={i}>
+                    <i className="fas fa-check"></i>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Callout */}
+          <div className="learn-leadership-callout">
+            <i className="fas fa-heart"></i>
+            <p>{learnMore.leadershipTrack.callout}</p>
+          </div>
+
+          {/* Requirements & Tuition */}
+          <div className="learn-leadership-details">
+            <div className="learn-leadership-detail">
+              <h4><i className="fas fa-clipboard-check"></i> {learnMore.leadershipTrack.requirements.heading}</h4>
+              <p>{learnMore.leadershipTrack.requirements.facilitator}</p>
+              <p>{learnMore.leadershipTrack.requirements.mentor}</p>
+            </div>
+            <div className="learn-leadership-detail learn-leadership-detail--tuition">
+              <h4><i className="fas fa-tag"></i> Tuition</h4>
+              <p>{learnMore.leadershipTrack.tuition}</p>
+            </div>
           </div>
         </div>
       </section>

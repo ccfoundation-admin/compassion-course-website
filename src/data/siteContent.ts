@@ -166,8 +166,8 @@ export const siteContent = {
           heading: 'Leadership Opportunities',
           description:
             'Alumni can join the Leadership Community to lead practice groups worldwide, or join the Mentor Community to guide newer participants \u2014 deepening their own practice while giving back.',
-          linkText: 'How the course works',
-          linkHref: '/learn-more#how-it-works',
+          linkText: 'Learn about the Leadership Track',
+          linkHref: '/learn-more#leadership-track',
         },
       ],
     },
@@ -609,6 +609,40 @@ export const siteContent = {
           text: 'Monthly Empathy Caf\u00E9s, Empathy Circles and an Empathy Buddy Network for year-round practice.',
         },
       ],
+    },
+
+    leadershipTrack: {
+      title: 'The Leadership Track',
+      description:
+        'Compassion Course alumni who would like to organize and/or facilitate a group of Compassion Course Participants, or become a CCO Mentor, can get guidance and support through The Leadership Track.',
+      monthlyMeetings: {
+        heading: 'Monthly Community Meetings',
+        description: 'The core of The Leadership Track includes monthly community meetings where we address subjects like:',
+        items: [
+          'Working with Agreements',
+          'Planning for group sessions',
+          'Check-ins, review practice group progress and preview upcoming concepts and exercises',
+          'Troubleshooting and support',
+          'Q&A time for questions about your group, mentee or course content',
+          'How to adapt exercises for groups and individuals',
+        ],
+      },
+      communitySupport: {
+        heading: 'Community & Support',
+        items: [
+          'Facilitators and Mentors can list their group in our Practice Group and Mentor directories, available to Compassion Course participants.',
+          'To keep the community connected 24/7, Mentors and Facilitators also have access to our secure and private Leadership forum.',
+        ],
+      },
+      callout:
+        'The Leadership Track is a wonderful way to provide an important service to the community, experience growth, and even make some money.',
+      requirements: {
+        heading: 'Requirements',
+        facilitator: 'Practice Group Facilitation experience is not necessary for this track. However, previous completion of a practice group, Compassion Course, and Facilitation agreement are required.',
+        mentor: 'To become a CCO Mentor, you must have a Certificate of Completion and have had at least 6 mentoring sessions.',
+      },
+      tuition:
+        'Tuition for The Leadership Track is $240\u2013$190 for the year and includes tuition for the Compassion Course for Mentors and Practice Group Facilitators.',
     },
 
     founder: {
