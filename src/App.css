@@ -6608,6 +6608,45 @@ section {
     gap: 12px;
     margin-bottom: 20px;
 }
+/* Skeleton / shimmer loading placeholders */
+@keyframes ld-shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+}
+.ld-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 800px 100%;
+    animation: ld-shimmer 1.6s ease-in-out infinite;
+    border-radius: 6px;
+}
+.ld-skeleton-card {
+    padding: 14px 16px;
+    border: 1.5px solid #e5e7eb;
+    border-radius: 12px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.ld-skeleton-line {
+    height: 14px;
+    border-radius: 4px;
+}
+.ld-skeleton-line--title { width: 60%; height: 16px; }
+.ld-skeleton-line--short { width: 40%; height: 12px; }
+.ld-skeleton-line--bar   { width: 100%; height: 6px; border-radius: 3px; margin-top: 4px; }
+.ld-skeleton-tab {
+    height: 18px;
+    width: 64px;
+    border-radius: 4px;
+    margin: 10px 10px;
+}
+.ld-skeleton-widget-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 0;
+}
 .ld-team-cards-loading {
     color: #9ca3af;
     font-size: 0.9rem;

@@ -1,13 +1,27 @@
 import React, { useState, useMemo } from 'react';
 import type { LeadershipTeam, LeadershipWorkItem } from '../../types/leadership';
 import type { UserNotification } from '../../services/notificationService';
-import { getDashboardPrefs, type DashboardPrefs, type WidgetId } from './dashboard/DashboardPrefs';
+import { getDashboardPrefs, type DashboardPrefs, type WidgetId, WIDGET_LABELS } from './dashboard/DashboardPrefs';
 import DashboardSettingsModal from './dashboard/DashboardSettingsModal';
 import MyTeamsWidget from './dashboard/MyTeamsWidget';
 import MyTasksWidget from './dashboard/MyTasksWidget';
 import BlockedTasksWidget from './dashboard/BlockedTasksWidget';
 import TeamListWidget from './dashboard/TeamListWidget';
 import MyMessagesWidget from './dashboard/MyMessagesWidget';
+
+/** Skeleton placeholder for a single dashboard widget while data loads */
+const SkeletonWidget: React.FC<{ title: string }> = ({ title }) => (
+  <div className="ld-dashboard-widget">
+    <h3 className="ld-dashboard-widget-title">{title}</h3>
+    <div className="ld-dashboard-widget-body">
+      <div className="ld-skeleton-widget-rows">
+        <div className="ld-skeleton ld-skeleton-line" style={{ width: '70%' }} />
+        <div className="ld-skeleton ld-skeleton-line" style={{ width: '55%' }} />
+        <div className="ld-skeleton ld-skeleton-line" style={{ width: '85%' }} />
+      </div>
+    </div>
+  </div>
+);
 
 interface DashboardTabViewProps {
   teams: LeadershipTeam[];
@@ -16,6 +30,7 @@ interface DashboardTabViewProps {
   allDashboardWorkItems: LeadershipWorkItem[];
   allDashboardMemberLabels: Record<string, string>;
   userId: string;
+  loading?: boolean;
   onSwitchToTeamBoard: (teamId: string) => void;
   onMessageClick: (notification: UserNotification) => void;
   onAllTeamsClick: () => void;
@@ -28,6 +43,7 @@ const DashboardTabView: React.FC<DashboardTabViewProps> = ({
   allDashboardWorkItems,
   allDashboardMemberLabels,
   userId,
+  loading,
   onSwitchToTeamBoard,
   onMessageClick,
   onAllTeamsClick,
@@ -56,6 +72,11 @@ const DashboardTabView: React.FC<DashboardTabViewProps> = ({
   };
 
   const renderWidget = (id: WidgetId) => {
+    // Show skeleton while data is still loading
+    if (loading) {
+      return <SkeletonWidget key={id} title={WIDGET_LABELS[id] ?? id} />;
+    }
+
     switch (id) {
       case 'myTeams':
         return (

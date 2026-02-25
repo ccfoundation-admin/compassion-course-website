@@ -423,15 +423,17 @@ const LeadershipDashboardPage: React.FC = () => {
 
   const unreadCount = useMemo(() => notifications.filter((n) => !n.read).length, [notifications]);
 
-  // Hide Backlog tab when it's shown as a column on the board; Admin Portal only for admins
+  // Hide Backlog tab when it's shown as a column on the board (or while settings are still loading
+  // to prevent a flash of the tab appearing then disappearing); Admin Portal only for admins
   const visibleTabs = useMemo(() => {
-    const base = boardSettings?.showBacklogOnBoard
+    const hideBacklogTab = boardSettings === null || boardSettings.showBacklogOnBoard;
+    const base = hideBacklogTab
       ? TABS.filter((t) => t.id !== 'backlog')
       : TABS;
     const isAdmin_ = !!(isAdminUser || isAdmin);
     if (!isAdmin_) return base.filter((t) => t.id !== 'adminPortal');
     return base;
-  }, [boardSettings?.showBacklogOnBoard, isAdminUser, isAdmin]);
+  }, [boardSettings, isAdminUser, isAdmin]);
 
   // Auto-switch away from backlog tab if it gets hidden
   useEffect(() => {
@@ -480,7 +482,15 @@ const LeadershipDashboardPage: React.FC = () => {
 
         {/* ── Team selector cards ── */}
         {teamsLoading ? (
-          <div className="ld-team-cards-loading">Loading teams…</div>
+          <div className="ld-team-cards">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="ld-skeleton-card">
+                <div className="ld-skeleton ld-skeleton-line ld-skeleton-line--title" />
+                <div className="ld-skeleton ld-skeleton-line ld-skeleton-line--short" />
+                <div className="ld-skeleton ld-skeleton-line ld-skeleton-line--bar" />
+              </div>
+            ))}
+          </div>
         ) : teams.length === 0 ? (
           <div className="ld-team-selector-empty">
             <i className="fas fa-users"></i>
@@ -575,7 +585,12 @@ const LeadershipDashboardPage: React.FC = () => {
         {/* ── Tab content ── */}
         <div className="ld-tab-content">
           {teamDataLoading && activeTab !== 'dashboard' && activeTab !== 'backlog' && activeTab !== 'messages' ? (
-            <div className="loading"><div className="spinner"></div></div>
+            <div className="ld-skeleton-content">
+              <div className="ld-skeleton ld-skeleton-line" style={{ width: '35%', height: 20, marginBottom: 16 }} />
+              <div className="ld-skeleton ld-skeleton-line" style={{ width: '100%', height: 60, marginBottom: 12 }} />
+              <div className="ld-skeleton ld-skeleton-line" style={{ width: '100%', height: 60, marginBottom: 12 }} />
+              <div className="ld-skeleton ld-skeleton-line" style={{ width: '80%', height: 60 }} />
+            </div>
           ) : (
             <>
               {activeTab === 'dashboard' && user?.uid && (
@@ -586,6 +601,7 @@ const LeadershipDashboardPage: React.FC = () => {
                   allDashboardWorkItems={allDashboardWorkItems}
                   allDashboardMemberLabels={allDashboardMemberLabels}
                   userId={user.uid}
+                  loading={teamsLoading}
                   onSwitchToTeamBoard={handleSwitchToTeamBoard}
                   onMessageClick={handleDashboardMessageClick}
                   onAllTeamsClick={handleAllTeamsClick}

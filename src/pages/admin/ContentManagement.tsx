@@ -44,7 +44,7 @@ import { useContent } from '../../context/ContentContext';
 import { renderHTML, ensureTeamSuffix } from '../../utils/contentUtils';
 
 // Section definitions
-type SectionId = 'home' | 'about' | 'programs' | 'contact';
+type SectionId = 'about' | 'programs' | 'contact';
 
 interface SectionDefinition {
   id: SectionId;
@@ -54,12 +54,6 @@ interface SectionDefinition {
 }
 
 const SECTIONS: SectionDefinition[] = [
-  {
-    id: 'home',
-    name: 'Home',
-    description: 'Edit hero, stats, programs, testimonials, and CTA sections',
-    contentSections: ['hero', 'hero-stats', 'programs', 'testimonials', 'cta']
-  },
   {
     id: 'about',
     name: 'About Us',
@@ -229,7 +223,7 @@ const ContentManagement: React.FC = () => {
   const [editingLanguageSection, setEditingLanguageSection] = useState<TeamLanguageSection | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [expandedLanguageSections, setExpandedLanguageSections] = useState<Set<string>>(new Set());
-  const [activeSection, setActiveSection] = useState<SectionId>('home');
+  const [activeSection, setActiveSection] = useState<SectionId>('about');
   const { getContent } = useContent();
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -300,52 +294,7 @@ const ContentManagement: React.FC = () => {
       const timeout = 15000; // Increased to 15 seconds for initial load
       
       // Load only data needed for this section
-      if (sectionId === 'home') {
-        setContentLoading(true);
-        try {
-          const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Content loading timeout after 15 seconds')), timeout)
-          );
-          
-          // Only load content for home section's content sections with retry
-          const content = await loadWithRetry(
-            () => Promise.race([
-              getContentBySections(sectionDef.contentSections),
-              timeoutPromise
-            ]),
-            2,
-            'Content loading'
-          );
-          
-          // Merge with existing sections (don't overwrite other sections)
-          setSections(prev => {
-            const existing = prev.filter(s => !sectionDef.contentSections.includes(s.section));
-            return [...existing, ...content];
-          });
-          
-          // Expand first section by default
-          if (content.length > 0) {
-            setExpandedSections(new Set([content[0].section]));
-          }
-        } catch (contentError: any) {
-          console.error('Error loading content:', contentError);
-          const errorMsg = contentError?.message || 'Unknown error';
-          
-          if (contentError?.code === 'failed-precondition' || errorMsg.includes('index')) {
-            setError('Firestore index required. Please check the browser console for index creation link.');
-          } else if (errorMsg.includes('timeout')) {
-            setError('Content loading timed out. The database may be slow. You can try again or continue with cached data.');
-          } else if (contentError?.code === 'permission-denied' || contentError?.code === 'PERMISSION_DENIED') {
-            setError('Permission denied. Check Firestore security rules to ensure admin access is allowed.');
-          } else if (contentError?.code === 'unavailable' || errorMsg.includes('network')) {
-            setError('Unable to connect to Firestore. Check your internet connection and try again.');
-          } else {
-            setError('Failed to load content: ' + errorMsg);
-          }
-        } finally {
-          setContentLoading(false);
-        }
-      } else if (sectionId === 'about') {
+      if (sectionId === 'about') {
         setMembersLoading(true);
         setSectionsLoading(true);
         
@@ -1214,228 +1163,6 @@ const ContentManagement: React.FC = () => {
           </div>
         )}
 
-        {/* Home Section Editor */}
-        {activeSection === 'home' && (
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-            padding: '30px',
-            marginBottom: '20px',
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <h2 style={{ marginTop: 0, color: '#002B4D', margin: 0 }}>Home Page Editor</h2>
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                {contentLoading && (
-                  <span style={{ color: '#6b7280', fontSize: '0.875rem' }}>Loading content...</span>
-                )}
-                {!contentLoading && sections.length === 0 && (
-                  <button
-                    onClick={() => {
-                      setLoadedSections(prev => {
-                        const updated = new Set(prev);
-                        updated.delete('home');
-                        return updated;
-                      });
-                      loadSectionData('home');
-                    }}
-                    className="btn btn-small btn-secondary"
-                    style={{ fontSize: '0.875rem' }}
-                  >
-                    Retry Loading
-                  </button>
-                )}
-              </div>
-            </div>
-            
-            {/* Hero Section Preview */}
-            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3 style={{ margin: 0, color: '#002B4D' }}>Hero Section</h3>
-                <button
-                  onClick={() => {
-                    const item = getContentItem('hero', 'title') || {
-                      section: 'hero',
-                      key: 'title',
-                      value: '',
-                      type: 'text',
-                      order: 0,
-                      isActive: true
-                    };
-                    handleEdit(item);
-                  }}
-                  className="btn btn-small btn-primary"
-                >
-                  Edit Hero
-                </button>
-              </div>
-              <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
-                <h1 style={{ fontSize: '2.5rem', color: '#002B4D', marginBottom: '10px' }}>
-                  {getLocalContent('hero', 'title', 'Discover The Compassion Course')}
-                </h1>
-                <p style={{ fontSize: '1.25rem', color: '#6b7280', marginBottom: '20px' }}>
-                  {getLocalContent('hero', 'subtitle', 'Changing lives in over 120 Countries')}
-                </p>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-primary" style={{ pointerEvents: 'none' }}>
-                    {getLocalContent('hero', 'ctaPrimary', 'Learn More About The Course')}
-                  </button>
-                  <button className="btn btn-secondary" style={{ pointerEvents: 'none' }}>
-                    {getLocalContent('hero', 'ctaSecondary', 'Watch an Interactive Introduction')}
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Hero Stats Section */}
-            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3 style={{ margin: 0, color: '#002B4D' }}>Hero Stats</h3>
-                <button
-                  onClick={() => {
-                    const item = getContentItem('hero-stats', 'stat1-title') || {
-                      section: 'hero-stats',
-                      key: 'stat1-title',
-                      value: '',
-                      type: 'text',
-                      order: 0,
-                      isActive: true
-                    };
-                    handleEdit(item);
-                  }}
-                  className="btn btn-small btn-primary"
-                >
-                  Edit Stats
-                </button>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-                <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
-                  <h4 style={{ color: '#002B4D', marginBottom: '10px' }}>
-                    {getLocalContent('hero-stats', 'stat1-title', 'Global Leader')}
-                  </h4>
-                  <p style={{ color: '#6b7280', fontSize: '0.9rem' }} dangerouslySetInnerHTML={renderHTML(
-                    getLocalContent('hero-stats', 'stat1-description', 'Compassion Course is an internationally recognized...')
-                  )} />
-                </div>
-                <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
-                  <h4 style={{ color: '#002B4D', marginBottom: '10px' }}>
-                    {getLocalContent('hero-stats', 'stat2-title', 'Leading-Edge Methodology')}
-                  </h4>
-                  <p style={{ color: '#6b7280', fontSize: '0.9rem' }} dangerouslySetInnerHTML={renderHTML(
-                    getLocalContent('hero-stats', 'stat2-description', 'Our industry-leading approach...')
-                  )} />
-                </div>
-                <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
-                  <h4 style={{ color: '#002B4D', marginBottom: '10px' }}>
-                    {getLocalContent('hero-stats', 'stat3-title', 'Individualized Impact')}
-                  </h4>
-                  <p style={{ color: '#6b7280', fontSize: '0.9rem' }} dangerouslySetInnerHTML={renderHTML(
-                    getLocalContent('hero-stats', 'stat3-description', 'Designed to make a unique difference...')
-                  )} />
-                </div>
-              </div>
-            </div>
-
-            {/* Programs Section */}
-            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3 style={{ margin: 0, color: '#002B4D' }}>Programs Section</h3>
-                <button
-                  onClick={() => {
-                    const item = getContentItem('programs', 'title') || {
-                      section: 'programs',
-                      key: 'title',
-                      value: '',
-                      type: 'text',
-                      order: 0,
-                      isActive: true
-                    };
-                    handleEdit(item);
-                  }}
-                  className="btn btn-small btn-primary"
-                >
-                  Edit Programs
-                </button>
-              </div>
-              <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
-                <h2 style={{ color: '#002B4D', marginBottom: '15px' }}>
-                  {getLocalContent('programs', 'title', 'After The Compassion Course - A World of Possibilities')}
-                </h2>
-                <p style={{ color: '#6b7280' }} dangerouslySetInnerHTML={renderHTML(
-                  getLocalContent('programs', 'description', 'Discover a world of possibilities...')
-                )} />
-              </div>
-            </div>
-
-            {/* Testimonials Section */}
-            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3 style={{ margin: 0, color: '#002B4D' }}>Testimonials Section</h3>
-                <button
-                  onClick={() => {
-                    const item = getContentItem('testimonials', 'title') || {
-                      section: 'testimonials',
-                      key: 'title',
-                      value: '',
-                      type: 'text',
-                      order: 0,
-                      isActive: true
-                    };
-                    handleEdit(item);
-                  }}
-                  className="btn btn-small btn-primary"
-                >
-                  Edit Testimonials
-                </button>
-              </div>
-              <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
-                <h2 style={{ color: '#002B4D', marginBottom: '15px' }}>
-                  {getLocalContent('testimonials', 'title', 'What People Say')}
-                </h2>
-              </div>
-            </div>
-
-            {/* CTA Section */}
-            <div style={{ marginBottom: '30px', border: '1px solid #e5e7eb', borderRadius: '8px', padding: '20px', backgroundColor: '#f9fafb' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <h3 style={{ margin: 0, color: '#002B4D' }}>Call to Action Section</h3>
-                <button
-                  onClick={() => {
-                    const item = getContentItem('cta', 'title') || {
-                      section: 'cta',
-                      key: 'title',
-                      value: '',
-                      type: 'text',
-                      order: 0,
-                      isActive: true
-                    };
-                    handleEdit(item);
-                  }}
-                  className="btn btn-small btn-primary"
-                >
-                  Edit CTA
-                </button>
-              </div>
-              <div style={{ padding: '20px', backgroundColor: '#ffffff', borderRadius: '8px' }}>
-                <h2 style={{ color: '#002B4D', marginBottom: '15px' }}>
-                  {getLocalContent('cta', 'title', 'Ready to Transform Your Life?')}
-                </h2>
-                <p style={{ color: '#6b7280', marginBottom: '20px' }} dangerouslySetInnerHTML={renderHTML(
-                  getLocalContent('cta', 'description', 'Join thousands of participants worldwide...')
-                )} />
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button className="btn btn-primary" style={{ pointerEvents: 'none' }}>
-                    {getLocalContent('cta', 'buttonPrimary', 'Enroll Now')}
-                  </button>
-                  <button className="btn btn-secondary" style={{ pointerEvents: 'none' }}>
-                    {getLocalContent('cta', 'buttonSecondary', 'Explore Programs')}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* About Us Section Editor */}
         {activeSection === 'about' && (
           <div style={{
@@ -2164,7 +1891,7 @@ const ContentManagement: React.FC = () => {
         )}
 
         {/* Legacy Content Sections (for backward compatibility - only show if no active section matches) */}
-        {activeSection !== 'home' && activeSection !== 'about' && activeSection !== 'programs' && activeSection !== 'contact' && sections.map((section) => {
+        {activeSection !== 'about' && activeSection !== 'programs' && activeSection !== 'contact' && sections.map((section) => {
           const sectionStructure = getContentStructureForSection(section.section);
           const isExpanded = expandedSections.has(section.section);
           
