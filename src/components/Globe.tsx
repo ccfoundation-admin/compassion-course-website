@@ -554,6 +554,7 @@ const Globe: React.FC = () => {
 
     const onTouchMove = (e: TouchEvent) => {
       if (!pointerDown.current || !e.touches[0]) return;
+      e.preventDefault(); // prevent page scroll while spinning globe
       const delta = e.touches[0].clientX - lastPointerX.current;
       lastPointerX.current = e.touches[0].clientX;
       const dragSpeed = delta / 150;
@@ -576,7 +577,7 @@ const Globe: React.FC = () => {
     interactCanvas.addEventListener('pointerout', onPointerOut);
     interactCanvas.addEventListener('pointermove', onPointerMove);
     interactCanvas.addEventListener('touchstart', onTouchStart, { passive: true });
-    interactCanvas.addEventListener('touchmove', onTouchMove, { passive: true });
+    interactCanvas.addEventListener('touchmove', onTouchMove, { passive: false });
     interactCanvas.addEventListener('touchend', onTouchEnd);
 
     return () => {

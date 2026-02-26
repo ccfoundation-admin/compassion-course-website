@@ -136,6 +136,17 @@ const Navigation: React.FC = () => {
               </Link>
             </li>
           )}
+          {!user && !authLoading && (
+            <li className="nav-item">
+              <button
+                type="button"
+                className="nav-link nav-link--login"
+                onClick={() => { setIsMenuOpen(false); handleLogInClick(); }}
+              >
+                Log in
+              </button>
+            </li>
+          )}
           <li className="nav-item">
             <a href="https://compassioncf.com/donate" target="_blank" rel="noopener noreferrer" className="nav-link nav-link--donate" onClick={() => setIsMenuOpen(false)}>
               <i className="fas fa-heart nav-donate-icon"></i> Donate
@@ -160,21 +171,50 @@ const Navigation: React.FC = () => {
                   <i className="fas fa-external-link-alt nav-external-icon"></i>
                 </a>
               </li>
-              <li className="nav-item nav-menu-account-item nav-account-divider">
-                <span className="nav-account-divider-line" aria-hidden="true" />
-              </li>
-              {user ? (
-                <li className="nav-item nav-menu-account-item">
-                  <button type="button" className="nav-account-btn" onClick={() => { setIsMenuOpen(false); handlePortalLogout(); }}>
-                    Logout
-                  </button>
-                </li>
-              ) : (
-                <li className="nav-item nav-menu-account-item">
-                  <button type="button" className="nav-account-btn" onClick={() => { setIsMenuOpen(false); handleLogInClick(); }}>
-                    Log in
-                  </button>
-                </li>
+              {user && (
+                <>
+                  <li className="nav-item nav-menu-account-item nav-account-divider">
+                    <span className="nav-account-divider-line" aria-hidden="true" />
+                  </li>
+                  <li className="nav-item nav-menu-account-item nav-menu-account-header">
+                    <span className="nav-avatar-circle nav-avatar-circle--menu">
+                      {profile?.avatar || user.photoURL ? (
+                        <img src={profile?.avatar || user.photoURL || ''} alt="" className="nav-avatar-img" />
+                      ) : (
+                        <span className="nav-avatar-initial">{initials}</span>
+                      )}
+                    </span>
+                    <span className="nav-menu-account-info">
+                      <span className="nav-menu-account-name">{profile?.name || user.displayName || 'User'}</span>
+                      <span className="nav-menu-account-email">{user.email}</span>
+                    </span>
+                  </li>
+                  <li className="nav-item nav-menu-account-item">
+                    <Link to="/platform/profile" className="nav-account-btn" onClick={() => setIsMenuOpen(false)}>
+                      <i className="fas fa-user-cog nav-menu-account-icon"></i>
+                      Profile settings
+                    </Link>
+                  </li>
+                  <li className="nav-item nav-menu-account-item">
+                    <a
+                      href="https://login.circle.so/sign_in?request_host=www.theglobalcompassionnetwork.com#email"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="nav-account-btn"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <i className="fas fa-globe-americas nav-menu-account-icon"></i>
+                      2025 GCN Login
+                      <i className="fas fa-external-link-alt nav-menu-account-ext"></i>
+                    </a>
+                  </li>
+                  <li className="nav-item nav-menu-account-item">
+                    <button type="button" className="nav-account-btn" onClick={() => { setIsMenuOpen(false); handlePortalLogout(); }}>
+                      <i className="fas fa-sign-out-alt nav-menu-account-icon"></i>
+                      Logout
+                    </button>
+                  </li>
+                </>
               )}
             </>
           )}
@@ -194,19 +234,8 @@ const Navigation: React.FC = () => {
             <i className="fas fa-external-link-alt nav-companion-ext"></i>
           </a>
 
-          {/* Visible Log in / Sign up button when not logged in */}
-          {!user && !authLoading && (
-            <button
-              type="button"
-              className="nav-auth-btn"
-              onClick={handleLogInClick}
-            >
-              Log in
-            </button>
-          )}
-
-          {/* Avatar + name + account dropdown when logged in */}
-          {user && (
+          {/* Avatar + name + account dropdown when logged in (desktop only — mobile uses hamburger menu) */}
+          {user && isDesktop && (
             <div className="nav-avatar-wrap" ref={accountRef}>
               <button
                 type="button"

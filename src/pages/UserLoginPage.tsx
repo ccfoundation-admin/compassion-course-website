@@ -24,7 +24,8 @@ const UserLoginPage: React.FC = () => {
     return (
       <div className="login-page">
         <div className="login-container">
-          <h2>Global Compassion Network</h2>
+          <img src="/globalcompnet.png" alt="Global Compassion Network" className="login-logo" />
+          <h2>Log into your account</h2>
           <p>Logging in...</p>
         </div>
       </div>
@@ -92,7 +93,8 @@ const UserLoginPage: React.FC = () => {
   return (
     <div className="login-page">
       <div className="login-container">
-        <h2>Global Compassion Network</h2>
+        <img src="/globalcompnet.png" alt="Global Compassion Network" className="login-logo" />
+        <h2>Log into your account</h2>
         {error && (
           <div className="error" style={{ 
             padding: '15px', 

@@ -15,10 +15,10 @@ const UserRegisterPage: React.FC = () => {
   const navigate = useNavigate();
   const recaptchaVerifierRef = useRef<RecaptchaVerifier | null>(null);
 
-  // Redirect to portal when user is authenticated
+  // Redirect home when user is authenticated after signup
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/portal', { replace: true });
+      navigate('/', { replace: true });
     }
   }, [user, authLoading, navigate]);
 
@@ -64,7 +64,8 @@ const UserRegisterPage: React.FC = () => {
     return (
       <div className="login-page">
         <div className="login-container">
-          <h2>Global Compassion Network</h2>
+          <img src="/globalcompnet.png" alt="Global Compassion Network" className="login-logo" />
+          <h2>Create your account</h2>
           <p>Checking authentication...</p>
         </div>
       </div>
@@ -171,7 +172,8 @@ const UserRegisterPage: React.FC = () => {
   return (
     <div className="login-page">
       <div className="login-container">
-        <h2>Global Compassion Network</h2>
+        <img src="/globalcompnet.png" alt="Global Compassion Network" className="login-logo" />
+        <h2>Create your account</h2>
         {error && <div className="error">{error}</div>}
         <button
           type="button"
