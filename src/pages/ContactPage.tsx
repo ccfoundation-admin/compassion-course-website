@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import Layout from '../components/Layout';
 import { useContent } from '../context/ContentContext';
@@ -13,28 +13,38 @@ const ContactPage: React.FC = () => {
   const contactAddress = getContent('contact-page', 'address', 'NYCNVC<br />645 Gardnertown Road<br />Newburgh, NY 12550');
   const formTitle = getContent('contact-page', 'form-title', 'Send a Message');
   const successMessage = getContent('contact-page', 'success-message', 'Thank you for reaching out. We\'ll get back to you shortly.');
-  const [formData, setFormData] = useState({
-    email: '',
-    subject: '',
-    message: '',
-  });
+
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const formRef = useRef<HTMLFormElement>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement form submission to backend/Firebase
-    console.log('Form submitted:', formData);
-    setSubmitted(true);
-    setTimeout(() => {
-      setSubmitted(false);
-      setFormData({ email: '', subject: '', message: '' });
-    }, 3000);
-  };
+    if (!formRef.current) return;
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setSubmitting(true);
+    setError('');
+
+    try {
+      const formData = new FormData(formRef.current);
+      const res = await fetch('https://formsubmit.co/ajax/coursecoordinator@nycnvc.org', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: formData,
+      });
+
+      if (res.ok) {
+        setSubmitted(true);
+        formRef.current.reset();
+      } else {
+        setError('Something went wrong. Please try again or email us directly.');
+      }
+    } catch {
+      setError('Something went wrong. Please try again or email us directly.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -107,15 +117,29 @@ const ContactPage: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit}>
+                <form ref={formRef} onSubmit={handleSubmit}>
+                  {/* FormSubmit hidden config fields */}
+                  <input type="hidden" name="_cc" value="thombond@nycnvc.org" />
+                  <input type="hidden" name="_captcha" value="false" />
+                  <input type="hidden" name="_subject" value="New Contact Message – The Compassion Course" />
+                  <input type="hidden" name="_template" value="table" />
+
+                  <div className="contact-form-group">
+                    <label htmlFor="name">Name <span className="contact-required">*</span></label>
+                    <input
+                      type="text"
+                      id="name"
+                      name="name"
+                      required
+                      placeholder="Your name"
+                    />
+                  </div>
                   <div className="contact-form-group">
                     <label htmlFor="email">Email <span className="contact-required">*</span></label>
                     <input
                       type="email"
                       id="email"
                       name="email"
-                      value={formData.email}
-                      onChange={handleChange}
                       required
                       placeholder="your@email.com"
                     />
@@ -126,8 +150,6 @@ const ContactPage: React.FC = () => {
                       type="text"
                       id="subject"
                       name="subject"
-                      value={formData.subject}
-                      onChange={handleChange}
                       required
                       placeholder="What is this regarding?"
                     />
@@ -137,15 +159,24 @@ const ContactPage: React.FC = () => {
                     <textarea
                       id="message"
                       name="message"
-                      value={formData.message}
-                      onChange={handleChange}
                       required
                       placeholder="Tell us how we can help..."
                       rows={6}
                     />
                   </div>
-                  <button type="submit" className="btn-primary contact-submit-btn">
-                    <i className="fas fa-paper-plane" /> Send Message
+
+                  {error && (
+                    <div className="contact-error">
+                      <i className="fas fa-exclamation-circle" /> {error}
+                    </div>
+                  )}
+
+                  <button type="submit" className="btn-primary contact-submit-btn" disabled={submitting}>
+                    {submitting ? (
+                      <><i className="fas fa-spinner fa-spin" /> Sending...</>
+                    ) : (
+                      <><i className="fas fa-paper-plane" /> Send Message</>
+                    )}
                   </button>
                 </form>
               )}
