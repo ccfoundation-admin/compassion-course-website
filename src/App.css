@@ -1871,7 +1871,7 @@ section {
     justify-content: center;
     position: relative;
     z-index: 2;
-    transition: all 0.3s ease;
+    transition: background 0.3s ease, border-color 0.3s ease;
 }
 
 .home-journey-dot i {
@@ -1910,9 +1910,6 @@ section {
     font-size: 1.2rem;
 }
 
-.home-journey-milestone:hover .home-journey-dot {
-    transform: scale(1.12);
-}
 
 .home-journey-date {
     font-family: var(--font-heading);
@@ -1947,6 +1944,52 @@ section {
 @keyframes arrowSlide {
     0%, 100% { transform: translateX(0); }
     50% { transform: translateX(4px); }
+}
+
+/* --- Register button on timeline (beam border hover) --- */
+.home-journey-register-wrap {
+    margin-top: 10px;
+    position: relative;
+    display: inline-flex;
+    border-radius: 100px;
+    padding: 2.5px;
+    background: var(--color-gray-200, #e5e7eb);
+    overflow: hidden;
+    transition: box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.home-journey-register-wrap .beam-border {
+    border-radius: 100px;
+}
+
+.home-journey-register-wrap:hover .beam-border {
+    opacity: 1;
+}
+
+.home-journey-register-wrap:hover {
+    box-shadow: 0 4px 16px rgba(95, 169, 227, 0.18), 0 2px 6px rgba(227, 114, 99, 0.12);
+}
+
+.home-journey-register-btn {
+    position: relative;
+    z-index: 1;
+    display: block;
+    padding: 6px 20px !important;
+    font-size: 0.78rem !important;
+    border-radius: 100px !important;
+    background: var(--color-primary, #0d9488) !important;
+    color: #fff !important;
+    border: none !important;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.4;
+    transition: background 0.2s ease;
+}
+
+.home-journey-register-btn:hover {
+    background: var(--color-primary-dark, #0f766e) !important;
 }
 
 /* --- Tuition pill --- */

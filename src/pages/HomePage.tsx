@@ -250,6 +250,16 @@ const HomePage: React.FC = () => {
                     <span className="home-journey-event">
                       {journeyPhase === 'before' ? 'Registration Opens' : 'Registration Open'}
                     </span>
+                    {journeyPhase !== 'before' && journeyPhase !== 'in-progress' && journeyPhase !== 'closed' && journeyPhase !== 'completed' && (
+                      <div className="home-journey-register-wrap">
+                        <div className="beam-border"></div>
+                        <JotformPopup
+                          formId={JOTFORM_FORM_ID}
+                          buttonText="Register Now"
+                          className="home-journey-register-btn"
+                        />
+                      </div>
+                    )}
                   </div>
 
                   {/* Registration Closes */}
