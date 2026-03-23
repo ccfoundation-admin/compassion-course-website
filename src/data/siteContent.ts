@@ -8,6 +8,37 @@ export const siteContent = {
   // HOME PAGE
   // ═══════════════════════════════════════════════════════════════════════════
   home: {
+    keyDetails: {
+      startDate: {
+        label: 'Course Starts',
+        value: 'June 24, 2026',
+        icon: 'fas fa-calendar-alt',
+        calendarEvent: {
+          title: 'The Compassion Course Begins',
+          date: '2026-06-24',
+          description: 'The Compassion Course \u2014 A 52-week guided journey in compassion. Register at https://compassioncourse.org',
+        },
+      },
+      tuition: {
+        label: 'Tuition',
+        value: 'US$240',
+        subtext: 'Reduced: US$190',
+        icon: 'fas fa-tag',
+        tooltip: 'Reduced tuition is available for those with financial need \u2014 no documentation required.',
+      },
+      registration: {
+        label: 'Registration',
+        value: 'Opens March 1st',
+        subtext: 'Closes July 8th',
+        icon: 'fas fa-clock',
+        calendarEvent: {
+          title: 'Compassion Course \u2014 Registration Deadline',
+          date: '2026-07-08',
+          description: 'Last day to register for The Compassion Course. Register at https://compassioncourse.org',
+        },
+      },
+    },
+
     hero: {
       eyebrowDefault: 'A Guided Global Journey Into Living Compassion',
       logoAlt: 'The Compassion Course',

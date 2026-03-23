@@ -1750,11 +1750,433 @@ section {
 }
 
 /* ==========================================
+   HOME — JOURNEY TIMELINE
+   ========================================== */
+.home-journey {
+    background: var(--color-white);
+    padding: 60px 0 40px;
+    position: relative;
+    z-index: 2;
+    overflow: visible;
+}
+
+.home-journey .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.home-journey-heading {
+    text-align: center;
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    color: var(--color-gray-900, #1a1a2e);
+    margin-bottom: 56px;
+}
+
+.home-journey-timeline {
+    max-width: 800px;
+    width: 100%;
+    position: relative;
+}
+
+/* --- Progress track --- */
+.home-journey-track {
+    position: absolute;
+    top: 20px;
+    left: 40px;
+    right: 40px;
+    height: 4px;
+    background: var(--color-gray-100, #f3f4f6);
+    border-radius: 2px;
+    z-index: 0;
+}
+
+.home-journey-track-fill {
+    height: 100%;
+    border-radius: 2px;
+    background: linear-gradient(90deg, var(--color-primary), #5fa9e3);
+    transition: width 1s ease;
+}
+
+/* --- "You are here" indicator --- */
+.home-journey-here-track {
+    position: absolute;
+    height: 4px;
+    z-index: 0;
+    pointer-events: none;
+}
+
+.home-journey-here {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.home-journey-here-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.5);
+    animation: journeyPulse 2s ease-in-out infinite;
+}
+
+.home-journey-here::after {
+    content: 'you are here';
+    position: absolute;
+    top: calc(100% + 6px);
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    white-space: nowrap;
+    z-index: 10;
+    letter-spacing: 0.03em;
+    text-transform: lowercase;
+}
+
+@keyframes journeyPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(13, 148, 136, 0.5); }
+    50% { box-shadow: 0 0 0 8px rgba(13, 148, 136, 0); }
+}
+
+/* --- Milestones row --- */
+.home-journey-milestones {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+}
+
+.home-journey-milestone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    flex: 1;
+}
+
+.home-journey-dot {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--color-white);
+    border: 3px solid var(--color-gray-200, #e5e7eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.home-journey-dot i {
+    font-size: 0.85rem;
+}
+
+.home-journey-dot--done {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+}
+
+.home-journey-dot--done i {
+    color: var(--color-white);
+}
+
+.home-journey-dot--warn {
+    border-color: #f59e0b;
+    background: var(--color-white);
+}
+
+.home-journey-dot--warn i {
+    color: #f59e0b;
+}
+
+.home-journey-dot--primary {
+    width: 54px;
+    height: 54px;
+    background: linear-gradient(135deg, #5fa9e3 0%, #e37263 50%, #ef8e2f 100%);
+    border: none;
+    box-shadow: 0 4px 20px rgba(227, 114, 99, 0.3);
+    margin-top: -6px;
+}
+
+.home-journey-dot--primary i {
+    color: var(--color-white);
+    font-size: 1.2rem;
+}
+
+.home-journey-milestone:hover .home-journey-dot {
+    transform: scale(1.12);
+}
+
+.home-journey-date {
+    font-family: var(--font-heading);
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-gray-900, #1a1a2e);
+    margin-top: 14px;
+}
+
+.home-journey-event {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 2px;
+}
+
+.home-journey-arrow {
+    margin-top: 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-gray-400, #9ca3af);
+    letter-spacing: 0.03em;
+}
+
+.home-journey-arrow i {
+    margin-left: 4px;
+    animation: arrowSlide 1.5s ease-in-out infinite;
+}
+
+@keyframes arrowSlide {
+    0%, 100% { transform: translateX(0); }
+    50% { transform: translateX(4px); }
+}
+
+/* --- Tuition pill --- */
+.home-journey-tuition {
+    text-align: center;
+    margin-top: 32px;
+    padding: 14px 28px;
+    background: var(--color-gray-50, #f9fafb);
+    border-radius: 100px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+}
+
+.home-journey-tuition-label {
+    font-weight: 400;
+    color: var(--color-gray-500, #6b7280);
+}
+
+.home-journey-tuition-price {
+    font-weight: 700;
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    color: var(--color-gray-900, #1a1a2e);
+}
+
+.home-journey-tuition-reduced {
+    font-size: 0.8rem;
+    color: var(--color-gray-500, #6b7280);
+    border-left: 1px solid var(--color-gray-200, #e5e7eb);
+    padding-left: 8px;
+}
+
+/* In-progress / late-reg banner */
+.home-journey-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdfa 100%);
+    border: 1px solid rgba(13, 148, 136, 0.2);
+    border-radius: 12px;
+    padding: 14px 24px;
+    margin-bottom: 32px;
+    font-size: 0.9rem;
+    color: var(--color-gray-700, #374151);
+    max-width: 600px;
+}
+
+.home-journey-banner i {
+    color: var(--color-primary);
+    font-size: 1.1rem;
+}
+
+/* Completed state */
+.home-journey-completed {
+    text-align: center;
+    padding: 24px 0;
+    font-size: 1rem;
+    color: var(--color-gray-600, #4b5563);
+    max-width: 400px;
+}
+
+/* Info icon + tooltip */
+.home-key-details-info-wrap {
+    position: relative;
+    display: inline-block;
+    margin-left: 4px;
+}
+
+.home-key-details-info-icon {
+    font-size: 0.75rem;
+    color: var(--color-gray-400, #9ca3af);
+    cursor: help;
+    transition: color 0.2s;
+}
+
+.home-key-details-info-icon:hover {
+    color: var(--color-primary);
+}
+
+.home-key-details-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-gray-900, #1a1a2e);
+    color: var(--color-white);
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.5;
+    padding: 10px 14px;
+    border-radius: 8px;
+    width: 220px;
+    z-index: 20;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.home-key-details-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: var(--color-gray-900, #1a1a2e);
+}
+
+.home-key-details-info-wrap:hover .home-key-details-tooltip {
+    display: block;
+}
+
+/* Add to Calendar link + dropdown */
+.home-key-details-cal {
+    position: relative;
+    font-size: 0.75rem;
+    color: var(--color-primary);
+    cursor: pointer;
+    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    transition: color 0.2s;
+    padding-bottom: 8px;
+}
+
+.home-key-details-cal:hover {
+    color: var(--color-primary-dark, #0f766e);
+}
+
+.home-key-details-cal-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding-top: 4px;
+    z-index: 30;
+    min-width: 190px;
+}
+
+.home-key-details-cal-dropdown-inner {
+    background: var(--color-white);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    border: 1px solid var(--color-gray-100, #f3f4f6);
+    overflow: hidden;
+}
+
+.home-key-details-cal:hover .home-key-details-cal-dropdown {
+    display: block;
+}
+
+.home-key-details-cal-dropdown-inner a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--color-gray-700, #374151);
+    text-decoration: none;
+    transition: background 0.15s;
+    white-space: nowrap;
+}
+
+.home-key-details-cal-dropdown-inner a:hover {
+    background: var(--color-gray-50, #f9fafb);
+    color: var(--color-primary);
+}
+
+.home-key-details-cal-dropdown-inner a i {
+    width: 16px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .home-journey {
+        padding: 40px 0 32px;
+    }
+
+    .home-journey-heading {
+        font-size: 1.3rem;
+        margin-bottom: 40px;
+    }
+
+    .home-journey-track {
+        display: none;
+    }
+
+    .home-journey-here {
+        display: none;
+    }
+
+    .home-journey-milestones {
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+    }
+
+    .home-journey-milestone {
+        flex-direction: row;
+        text-align: left;
+        gap: 16px;
+    }
+
+    .home-journey-dot--primary {
+        margin-top: 0;
+    }
+
+    .home-journey-date {
+        margin-top: 0;
+    }
+
+    .home-journey-tuition {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+}
+
+/* ==========================================
    HOME — IMPACT / WHY PEACE ED
    ========================================== */
 .home-impact {
     background: var(--color-white);
-    padding: 100px 0;
+    padding: 0 0 100px;
 }
 
 .home-impact-content {

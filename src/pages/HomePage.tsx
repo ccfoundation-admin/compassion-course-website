@@ -14,11 +14,67 @@ const JOTFORM_FORM_ID = import.meta.env.VITE_JOTFORM_FORM_ID || '260544078267159
 
 const { home, shared } = siteContent;
 
+// Calendar link generators (with reminders)
+function makeGoogleCalUrl(title: string, date: string, description: string) {
+  const d = date.replace(/-/g, '');
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${d}/${d}&details=${encodeURIComponent(description)}&add=DISPLAY:1440`;
+}
+function makeOutlookCalUrl(title: string, date: string, description: string) {
+  return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${encodeURIComponent(title)}&startdt=${date}&enddt=${date}&body=${encodeURIComponent(description)}&rru=addevent`;
+}
+function makeIcsDataUrl(title: string, date: string, description: string) {
+  const d = date.replace(/-/g, '');
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'BEGIN:VEVENT',
+    `DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${d}`,
+    `SUMMARY:${title}`, `DESCRIPTION:${description.replace(/\n/g, '\\n')}`,
+    'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY',
+    `DESCRIPTION:Reminder: ${title}`, 'END:VALARM',
+    'END:VEVENT', 'END:VCALENDAR',
+  ].join('\r\n');
+  return `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`;
+}
+
+// Timeline dates and phase logic
+const JOURNEY = {
+  regOpen: new Date('2026-03-01').getTime(),
+  courseStart: new Date('2026-06-24').getTime(),
+  regClose: new Date('2026-07-08').getTime(),
+  courseEnd: new Date('2027-06-23').getTime(), // 52 weeks
+};
+
+type JourneyPhase = 'before' | 'registration' | 'in-progress' | 'late-reg' | 'closed' | 'completed';
+
+function getJourneyInfo(dateMs: number) {
+  let phase: JourneyPhase;
+  let progress: number;
+
+  if (dateMs < JOURNEY.regOpen) {
+    phase = 'before';
+    progress = 0;
+  } else if (dateMs < JOURNEY.courseStart) {
+    phase = 'registration';
+    progress = Math.round(((dateMs - JOURNEY.regOpen) / (JOURNEY.courseStart - JOURNEY.regOpen)) * 100);
+  } else if (dateMs < JOURNEY.regClose) {
+    phase = 'late-reg'; // course started but registration still open
+    progress = 100;
+  } else if (dateMs < JOURNEY.courseEnd) {
+    phase = 'in-progress';
+    progress = 100;
+  } else {
+    phase = 'completed';
+    progress = 100;
+  }
+  return { phase, progress: Math.min(100, Math.max(0, progress)) };
+}
+
 const HomePage: React.FC = () => {
   const { getContent } = useContent();
   const chatbotContainerRef = useRef<HTMLDivElement>(null);
   const heroLogoRef = useRef<HTMLImageElement>(null);
   const [currentTestimonial, setCurrentTestimonial] = useState(0);
+  const journeyInfo = getJourneyInfo(Date.now());
+  const { phase: journeyPhase, progress: journeyProgress } = journeyInfo;
   const { containerRef: statsRef, displayValues: statValues, finalValues: statFinals } = useCountUpStats(
     home.peaceEducation.stats.map((s) => s.number),
     2200
@@ -133,6 +189,148 @@ const HomePage: React.FC = () => {
               <i className="fas fa-hand-pointer"></i> Drag to explore our global community
             </p>
           </div>
+        </div>
+      </section>
+
+      {/* Your Journey Timeline */}
+      <section className="home-journey reveal">
+        <div className="container">
+          <h2 className="home-journey-heading">
+            {journeyPhase === 'in-progress' || journeyPhase === 'late-reg'
+              ? 'The Journey Has Begun'
+              : journeyPhase === 'completed'
+              ? 'Thank You for an Incredible Year'
+              : 'Your Compassion Journey'}
+          </h2>
+
+          {/* Phase: completed — simple message, no timeline */}
+          {journeyPhase === 'completed' ? (
+            <div className="home-journey-completed">
+              <div className="home-journey-dot home-journey-dot--primary" style={{ margin: '0 auto 16px' }}>
+                <i className="fas fa-heart"></i>
+              </div>
+              <p>The 2026 Compassion Course has concluded. Stay tuned for the next session!</p>
+            </div>
+          ) : (
+            <>
+              {/* Phase: in-progress — course is underway banner */}
+              {(journeyPhase === 'in-progress' || journeyPhase === 'late-reg') && (
+                <div className="home-journey-banner">
+                  <i className="fas fa-seedling"></i>
+                  <span>
+                    {journeyPhase === 'late-reg'
+                      ? 'The course has started — but you can still join! Registration closes July 8th.'
+                      : 'The 52-week Compassion Course is currently underway.'}
+                  </span>
+                </div>
+              )}
+
+              <div className="home-journey-timeline">
+                {/* Progress track */}
+                <div className="home-journey-track">
+                  <div className="home-journey-track-fill" style={{ width: `${journeyProgress}%` }}></div>
+                </div>
+                {/* "You are here" — overlays on top of everything */}
+                {journeyProgress > 5 && journeyProgress < 95 && journeyPhase === 'registration' && (
+                  <div className="home-journey-here-track" style={{ left: '40px', right: '40px', top: '20px' }}>
+                    <div className="home-journey-here" style={{ left: `${journeyProgress}%` }}>
+                      <div className="home-journey-here-dot"></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Milestones */}
+                <div className="home-journey-milestones">
+                  {/* Registration Opens */}
+                  <div className={`home-journey-milestone ${journeyPhase !== 'before' ? 'home-journey-milestone--done' : ''}`}>
+                    <div className={`home-journey-dot ${journeyPhase !== 'before' ? 'home-journey-dot--done' : ''}`}>
+                      {journeyPhase !== 'before' ? <i className="fas fa-check"></i> : <i className="fas fa-door-open"></i>}
+                    </div>
+                    <span className="home-journey-date">March 1</span>
+                    <span className="home-journey-event">
+                      {journeyPhase === 'before' ? 'Registration Opens' : 'Registration Open'}
+                    </span>
+                  </div>
+
+                  {/* Registration Closes */}
+                  <div className="home-journey-milestone">
+                    <div className={`home-journey-dot ${journeyPhase === 'in-progress' || journeyPhase === 'closed' ? 'home-journey-dot--done' : 'home-journey-dot--warn'}`}>
+                      {journeyPhase === 'in-progress' || journeyPhase === 'closed'
+                        ? <i className="fas fa-check"></i>
+                        : <i className="fas fa-hourglass-half"></i>}
+                    </div>
+                    <span className="home-journey-date">July 8</span>
+                    <span className="home-journey-event">
+                      {journeyPhase === 'in-progress' || journeyPhase === 'closed' ? 'Registration Closed' : 'Last Chance to Join'}
+                    </span>
+                    {journeyPhase !== 'in-progress' && journeyPhase !== 'closed' && (
+                      <div className="home-key-details-cal">
+                        <i className="fas fa-bell"></i> Remind Me
+                        <div className="home-key-details-cal-dropdown"><div className="home-key-details-cal-dropdown-inner">
+                          <a href={makeGoogleCalUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
+                            <i className="fab fa-google"></i> Google Calendar
+                          </a>
+                          <a href={makeOutlookCalUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
+                            <i className="fab fa-microsoft"></i> Outlook
+                          </a>
+                          <a href={makeIcsDataUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} download="compassion-course-deadline.ics">
+                            <i className="fab fa-apple"></i> Apple Calendar
+                          </a>
+                        </div></div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Course Begins — destination */}
+                  <div className="home-journey-milestone home-journey-milestone--destination">
+                    <div className={`home-journey-dot ${journeyPhase === 'in-progress' || journeyPhase === 'late-reg' || journeyPhase === 'closed' ? 'home-journey-dot--done' : 'home-journey-dot--primary'}`}>
+                      {journeyPhase === 'in-progress' || journeyPhase === 'late-reg' || journeyPhase === 'closed'
+                        ? <i className="fas fa-check"></i>
+                        : <i className="fas fa-heart"></i>}
+                    </div>
+                    <span className="home-journey-date">{home.keyDetails.startDate.value}</span>
+                    <span className="home-journey-event">
+                      {journeyPhase === 'in-progress' || journeyPhase === 'late-reg' ? 'Journey Underway' : 'Journey Begins'}
+                    </span>
+                    {journeyPhase === 'before' || journeyPhase === 'registration' ? (
+                      <div className="home-key-details-cal">
+                        <i className="fas fa-bell"></i> Remind Me
+                        <div className="home-key-details-cal-dropdown"><div className="home-key-details-cal-dropdown-inner">
+                          <a href={makeGoogleCalUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
+                            <i className="fab fa-google"></i> Google Calendar
+                          </a>
+                          <a href={makeOutlookCalUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
+                            <i className="fab fa-microsoft"></i> Outlook
+                          </a>
+                          <a href={makeIcsDataUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} download="compassion-course-start.ics">
+                            <i className="fab fa-apple"></i> Apple Calendar
+                          </a>
+                        </div></div>
+                      </div>
+                    ) : null}
+                    <div className="home-journey-arrow">
+                      <span>52 weeks <i className="fas fa-arrow-right"></i></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Tuition badge — hide when completed */}
+          {journeyPhase !== 'completed' && journeyPhase !== 'in-progress' && (
+            <div className="home-journey-tuition">
+              <span className="home-journey-tuition-label">Tuition:</span>
+              <span className="home-journey-tuition-price">{home.keyDetails.tuition.value}</span>
+              <span className="home-journey-tuition-reduced">
+                {home.keyDetails.tuition.subtext}
+                <span className="home-key-details-info-wrap">
+                  <i className="fas fa-info-circle home-key-details-info-icon"></i>
+                  <span className="home-key-details-tooltip">{home.keyDetails.tuition.tooltip}</span>
+                </span>
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
