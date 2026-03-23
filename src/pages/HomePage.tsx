@@ -246,20 +246,22 @@ const HomePage: React.FC = () => {
                     <div className={`home-journey-dot ${journeyPhase !== 'before' ? 'home-journey-dot--done' : ''}`}>
                       {journeyPhase !== 'before' ? <i className="fas fa-check"></i> : <i className="fas fa-door-open"></i>}
                     </div>
-                    <span className="home-journey-date">March 1</span>
-                    <span className="home-journey-event">
-                      {journeyPhase === 'before' ? 'Registration Opens' : 'Registration Open'}
-                    </span>
-                    {journeyPhase !== 'before' && journeyPhase !== 'in-progress' && journeyPhase !== 'closed' && journeyPhase !== 'completed' && (
-                      <div className="home-journey-register-wrap">
-                        <div className="beam-border"></div>
-                        <JotformPopup
-                          formId={JOTFORM_FORM_ID}
-                          buttonText="Register Now"
-                          className="home-journey-register-btn"
-                        />
-                      </div>
-                    )}
+                    <div className="home-journey-content">
+                      <span className="home-journey-date">March 1</span>
+                      <span className="home-journey-event">
+                        {journeyPhase === 'before' ? 'Registration Opens' : 'Registration Open'}
+                      </span>
+                      {journeyPhase !== 'before' && journeyPhase !== 'in-progress' && journeyPhase !== 'closed' && journeyPhase !== 'completed' && (
+                        <div className="home-journey-register-wrap">
+                          <div className="beam-border"></div>
+                          <JotformPopup
+                            formId={JOTFORM_FORM_ID}
+                            buttonText="Register Now"
+                            className="home-journey-register-btn"
+                          />
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Registration Closes */}
@@ -269,26 +271,28 @@ const HomePage: React.FC = () => {
                         ? <i className="fas fa-check"></i>
                         : <i className="fas fa-hourglass-half"></i>}
                     </div>
-                    <span className="home-journey-date">July 8</span>
-                    <span className="home-journey-event">
-                      {journeyPhase === 'in-progress' || journeyPhase === 'closed' ? 'Registration Closed' : 'Last Chance to Join'}
-                    </span>
-                    {journeyPhase !== 'in-progress' && journeyPhase !== 'closed' && (
-                      <div className="home-key-details-cal">
-                        <i className="fas fa-bell"></i> Remind Me
-                        <div className="home-key-details-cal-dropdown"><div className="home-key-details-cal-dropdown-inner">
-                          <a href={makeGoogleCalUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
-                            <i className="fab fa-google"></i> Google Calendar
-                          </a>
-                          <a href={makeOutlookCalUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
-                            <i className="fab fa-microsoft"></i> Outlook
-                          </a>
-                          <a href={makeIcsDataUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} download="compassion-course-deadline.ics">
-                            <i className="fab fa-apple"></i> Apple Calendar
-                          </a>
-                        </div></div>
-                      </div>
-                    )}
+                    <div className="home-journey-content">
+                      <span className="home-journey-date">July 8</span>
+                      <span className="home-journey-event">
+                        {journeyPhase === 'in-progress' || journeyPhase === 'closed' ? 'Registration Closed' : 'Last Chance to Join'}
+                      </span>
+                      {journeyPhase !== 'in-progress' && journeyPhase !== 'closed' && (
+                        <div className="home-key-details-cal">
+                          <i className="fas fa-bell"></i> Remind Me
+                          <div className="home-key-details-cal-dropdown"><div className="home-key-details-cal-dropdown-inner">
+                            <a href={makeGoogleCalUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
+                              <i className="fab fa-google"></i> Google Calendar
+                            </a>
+                            <a href={makeOutlookCalUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
+                              <i className="fab fa-microsoft"></i> Outlook
+                            </a>
+                            <a href={makeIcsDataUrl(home.keyDetails.registration.calendarEvent.title, home.keyDetails.registration.calendarEvent.date, home.keyDetails.registration.calendarEvent.description)} download="compassion-course-deadline.ics">
+                              <i className="fab fa-apple"></i> Apple Calendar
+                            </a>
+                          </div></div>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Course Begins — destination */}
@@ -298,28 +302,30 @@ const HomePage: React.FC = () => {
                         ? <i className="fas fa-check"></i>
                         : <i className="fas fa-heart"></i>}
                     </div>
-                    <span className="home-journey-date">{home.keyDetails.startDate.value}</span>
-                    <span className="home-journey-event">
-                      {journeyPhase === 'in-progress' || journeyPhase === 'late-reg' ? 'Journey Underway' : 'Journey Begins'}
-                    </span>
-                    {journeyPhase === 'before' || journeyPhase === 'registration' ? (
-                      <div className="home-key-details-cal">
-                        <i className="fas fa-bell"></i> Remind Me
-                        <div className="home-key-details-cal-dropdown"><div className="home-key-details-cal-dropdown-inner">
-                          <a href={makeGoogleCalUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
-                            <i className="fab fa-google"></i> Google Calendar
-                          </a>
-                          <a href={makeOutlookCalUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
-                            <i className="fab fa-microsoft"></i> Outlook
-                          </a>
-                          <a href={makeIcsDataUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} download="compassion-course-start.ics">
-                            <i className="fab fa-apple"></i> Apple Calendar
-                          </a>
-                        </div></div>
+                    <div className="home-journey-content">
+                      <span className="home-journey-date">{home.keyDetails.startDate.value}</span>
+                      <span className="home-journey-event">
+                        {journeyPhase === 'in-progress' || journeyPhase === 'late-reg' ? 'Journey Underway' : 'Journey Begins'}
+                      </span>
+                      {journeyPhase === 'before' || journeyPhase === 'registration' ? (
+                        <div className="home-key-details-cal">
+                          <i className="fas fa-bell"></i> Remind Me
+                          <div className="home-key-details-cal-dropdown"><div className="home-key-details-cal-dropdown-inner">
+                            <a href={makeGoogleCalUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
+                              <i className="fab fa-google"></i> Google Calendar
+                            </a>
+                            <a href={makeOutlookCalUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} target="_blank" rel="noopener noreferrer">
+                              <i className="fab fa-microsoft"></i> Outlook
+                            </a>
+                            <a href={makeIcsDataUrl(home.keyDetails.startDate.calendarEvent.title, home.keyDetails.startDate.calendarEvent.date, home.keyDetails.startDate.calendarEvent.description)} download="compassion-course-start.ics">
+                              <i className="fab fa-apple"></i> Apple Calendar
+                            </a>
+                          </div></div>
+                        </div>
+                      ) : null}
+                      <div className="home-journey-arrow">
+                        <span>52 weeks <i className="fas fa-arrow-right"></i></span>
                       </div>
-                    ) : null}
-                    <div className="home-journey-arrow">
-                      <span>52 weeks <i className="fas fa-arrow-right"></i></span>
                     </div>
                   </div>
                 </div>
