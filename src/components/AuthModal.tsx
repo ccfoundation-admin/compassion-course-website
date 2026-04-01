@@ -126,7 +126,7 @@ const AuthModal: React.FC = () => {
         >
           ×
         </button>
-        <img src="/globalcompnet.png" alt="Global Compassion Network" className="auth-modal-logo" />
+        <img src="/logo_heart.png" alt="The Compassion Course" className="auth-modal-logo" />
         <h2 id="auth-modal-title" className="auth-modal-title">
           {activeTab === 'login' ? 'Admin Portal' : 'Create admin account'}
         </h2>
