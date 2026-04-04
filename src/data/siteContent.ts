@@ -85,7 +85,7 @@ export const siteContent = {
         'Create constructive dialogues with conflict resolution tools',
         'Increase alignment between your values and actions',
         'Be part of our Global Compassion Network community',
-        'Explore 12 core concepts from needs awareness to living compassion',
+        // 'Explore 12 core concepts from needs awareness to living compassion',
       ],
     },
 
