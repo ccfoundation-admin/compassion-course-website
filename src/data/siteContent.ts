@@ -99,7 +99,7 @@ export const siteContent = {
       readFullSampleText: 'Read the full sample',
       weeks: [
         {
-          week: 1,
+          week: 10,
           title: 'What Empathy Is\u2026 and What It\u2019s Not',
           description:
             'Discover how empathy differs from common listening habits like advising, fixing, or sympathizing. Learn to create space for genuine connection instead of filling it with automatic responses.',
@@ -110,7 +110,7 @@ export const siteContent = {
           link: '/learn-more#sample-empathy',
         },
         {
-          week: 2,
+          week: 22,
           title: 'The Power of Appreciation',
           description:
             'Explore the difference between praise (designed to control) and genuine appreciation (designed to connect). Learn to express gratitude by naming what someone did and the needs it met.',
@@ -388,17 +388,17 @@ export const siteContent = {
       moreText:
         '50+ concepts and differentiations across 52 weeks \u2014 each one practiced in real life, not just understood in theory.',
       sampleLinks: [
-        { href: '#sample-empathy', icon: 'fas fa-file-alt', text: 'Read Sample Week 1: Empathy' },
+        { href: '#sample-empathy', icon: 'fas fa-file-alt', text: 'Read Sample Week 10: Empathy' },
         {
           href: '#sample-appreciation',
           icon: 'fas fa-file-alt',
-          text: 'Read Sample Week 2: Appreciation',
+          text: 'Read Sample Week 22: Appreciation',
         },
       ],
     },
 
     sampleEmpathy: {
-      badge: 'Sample Week 1',
+      badge: 'Sample Week 10',
       title: 'What Empathy Is\u2026 and What It\u2019s Not',
       practicesHeading: 'Practices for the Week',
       quote: {
@@ -499,7 +499,7 @@ export const siteContent = {
     },
 
     sampleAppreciation: {
-      badge: 'Sample Week 2',
+      badge: 'Sample Week 22',
       title: 'The Power of Appreciation',
       practicesHeading: 'Practices for the Week',
       quote: {
@@ -684,9 +684,9 @@ export const siteContent = {
       quoteAttribution: '\u2014 Thom Bond, on creating the course',
       bio: [
         'Thom Bond spent the first half of his career as an environmental engineer \u2014 developing energy-auditing software, microprocessor-based building controls, and LED lighting products. He was good at it. But in 2002, when he encountered Marshall Rosenberg\u2019s work on Nonviolent Communication, he saw a different kind of technology \u2014 one oriented around people instead of buildings.',
-        'He closed his engineering firm to study and teach with Rosenberg full-time. In 2003, Thom and Nellie Bright co-founded the New York Center for Nonviolent Communication (NYCNVC), now a United Nations Civil Society Organization. In 2011, he created The Compassion Course Online to bring these skills to anyone in the world.',
+        'He closed his engineering firm to study and teach with Rosenberg full-time. In 2003, Thom and Nellie Bright co-founded the New York Center for Nonviolent Communication (NYCNVC), formerly a United Nations Civil Society Organization. In 2011, he created The Compassion Course Online to bring these skills to anyone in the world.',
         'Today, Thom leads monthly live conferences for participants, trains Organizer/Facilitators who run local practice groups worldwide, and continues developing new tools like the COMPASS Companions digital guides for conflict resolution.',
-        'He is the author of The Compassion Book: Lessons from The Compassion Course and serves on the Advisory Board for the Communications Coordination Committee for the United Nations.',
+        'He is the author of The Compassion Book: Lessons from The Compassion Course and formerly served on the Advisory Board for the Communications Coordination Committee for the United Nations.',
       ],
     },
 
@@ -792,7 +792,7 @@ export const siteContent = {
               bio: [
                 'Thom brings 29 years of human potential experience and training experience to his work as an Internationally Certified NVC Trainer. His passion and knowledge of Nonviolent Communication (NVC) combine to create a practical, understandable, humorous, and potentially profound approach for learning and integrating the skills of peacemaking. He is described as concise, inspiring, sincere and optimistic, applying transformational and spiritual ideas and sensibilities to real-life situations. Many of his students become active facilitators, trainers and practitioners.',
                 'As a trainer, speaker, mediator, and coach, Thom has taught tens of thousands of clients, participants, readers and listeners Nonviolent Communication. He has been published or featured in The New York Times, New York Magazine, Yoga Magazine.',
-                'He is a founder and the Director of Education for The New York Center for Nonviolent Communication (NYCNVC), the creator of The Compassion Course, a member of the Communications Coordination Committee for the United Nations and a CNVC IIT trainer.',
+                'He is a founder and the Director of Education for The New York Center for Nonviolent Communication (NYCNVC), the creator of The Compassion Course, a former member of the Communications Coordination Committee for the United Nations and a CNVC IIT trainer.',
               ],
               contact: 'thombond@nycnvc.org',
             },
