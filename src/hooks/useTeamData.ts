@@ -3,7 +3,7 @@ import { getTeamMembers, getLanguageSections, TeamMember, TeamLanguageSection } 
 import { ensureTeamSuffix } from '../utils/contentUtils';
 import { siteContent } from '../data/siteContent';
 
-export const GUEST_TRAINER_SECTION = 'Guest Trainers';
+export const GUEST_TRAINER_SECTION = 'Guest Trainers Team';
 
 export interface UseTeamDataReturn {
   guestTrainers: TeamMember[];
