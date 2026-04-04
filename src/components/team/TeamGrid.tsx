@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import { TeamMember, TeamLanguageSection } from '../../services/contentService';
-import { ensureTeamSuffix } from '../../utils/contentUtils';
 import { GUEST_TRAINER_SECTION } from '../../hooks/useTeamData';
 import { ViewMode } from './ViewToggle';
 import TeamMemberCard from './TeamMemberCard';
@@ -31,39 +30,26 @@ const TeamGrid: React.FC<TeamGridProps> = ({
 }) => {
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
-  const toggleSection = (name: string) => {
+  const toggleSection = (id: string) => {
     setCollapsed((prev) => {
       const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
       return next;
     });
   };
 
-  // Filter sections to display
+  // Filter sections to display (activeSection is now a section ID)
   const visibleSections = useMemo(() => {
     if (activeSection) {
-      return sections.filter((s) => s.name === activeSection);
+      return sections.filter((s) => s.id === activeSection);
     }
     return sections;
   }, [sections, activeSection]);
 
-  // Get members for a section, applying search filter + dedup
-  const getMembersForSection = (sectionName: string): TeamMember[] => {
-    const normalized = ensureTeamSuffix(sectionName);
-    const raw = [
-      ...(membersBySection[sectionName] ?? []),
-      ...(sectionName !== normalized ? (membersBySection[normalized] ?? []) : []),
-    ];
-
-    // Deduplicate within a section (same name from both raw + normalized keys)
-    const seen = new Set<string>();
-    const members = raw.filter((m) => {
-      const key = m.name.toLowerCase().trim();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
+  // Get members for a section by ID, applying search filter + dedup
+  const getMembersForSection = (sectionId: string): TeamMember[] => {
+    const members = membersBySection[sectionId] ?? [];
 
     if (!searchQuery.trim()) return members;
 
@@ -98,10 +84,9 @@ const TeamGrid: React.FC<TeamGridProps> = ({
     const seenIds = new Set<string>();
     const seenNames = new Set<string>();
     visibleSections.forEach((section) => {
-      getMembersForSection(section.name).forEach((m) => {
+      getMembersForSection(section.id || '').forEach((m) => {
         const idKey = m.id ?? '';
         const nameKey = m.name.toLowerCase().trim();
-        // Deduplicate by both id and normalized name
         if ((idKey && seenIds.has(idKey)) || seenNames.has(nameKey)) return;
         if (idKey) seenIds.add(idKey);
         seenNames.add(nameKey);
@@ -129,16 +114,17 @@ const TeamGrid: React.FC<TeamGridProps> = ({
   return (
     <div className="team-sections">
       {visibleSections.map((section) => {
-        const members = getMembersForSection(section.name);
+        const sectionId = section.id || '';
+        const members = getMembersForSection(sectionId);
         if (members.length === 0) return null;
-        const isCollapsed = collapsed.has(section.name);
+        const isCollapsed = collapsed.has(sectionId);
         const isGuest = section.name === GUEST_TRAINER_SECTION;
 
         return (
-          <div key={section.name} className={`team-section ${isGuest ? 'team-section--guest' : ''}`}>
+          <div key={sectionId} className={`team-section ${isGuest ? 'team-section--guest' : ''}`}>
             <button
               className="team-section__header"
-              onClick={() => toggleSection(section.name)}
+              onClick={() => toggleSection(sectionId)}
               aria-expanded={!isCollapsed}
             >
               {isGuest && <i className="fas fa-star team-section__guest-icon"></i>}

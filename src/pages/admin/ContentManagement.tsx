@@ -503,18 +503,21 @@ const ContentManagement: React.FC = () => {
   };
 
   const handleAddNewMember = (languageSectionId?: string) => {
-    const defaultSection = languageSections.length > 0 ? languageSections[0].name : 'English Team';
-    const sectionName = languageSectionId 
-      ? languageSections.find(s => s.id === languageSectionId)?.name || defaultSection
-      : defaultSection;
-    
+    const defaultSectionId = languageSections.length > 0 ? languageSections[0].id || '' : '';
+    const sectionId = languageSectionId || defaultSectionId;
+
+    if (!sectionId) {
+      setError('No language sections available. Please create a language section first.');
+      return;
+    }
+
     setEditingMember({
       name: '',
       role: '',
       bio: '',
       photo: '',
       contact: '',
-      teamSection: sectionName,
+      teamSection: sectionId,
       order: 0,
       isActive: true,
     });
@@ -656,14 +659,17 @@ const ContentManagement: React.FC = () => {
     setExpandedLanguageSections(newExpanded);
   };
 
-  const getMembersForSection = (sectionName: string): TeamMember[] => {
-    // Normalize the section name for matching
+  const getMembersForSection = (sectionId: string): TeamMember[] => {
+    // Find the section to get its name for backward compat matching
+    const section = languageSections.find(s => s.id === sectionId);
+    const sectionName = section?.name || '';
     const normalizedName = ensureTeamSuffix(sectionName);
+
     return teamMembers
       .filter(m => {
-        // Match if teamSection equals either the original or normalized name (for backward compatibility)
         const memberSection = m.teamSection || '';
-        return (memberSection === sectionName || memberSection === normalizedName) && m.isActive !== false;
+        // Match by ID (new) or by name/normalized name (backward compat for un-migrated data)
+        return (memberSection === sectionId || memberSection === sectionName || memberSection === normalizedName) && m.isActive !== false;
       })
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
   };
@@ -745,12 +751,12 @@ const ContentManagement: React.FC = () => {
     }
   };
 
-  const handleDragEnd = async (event: DragEndEvent, sectionName: string) => {
+  const handleDragEnd = async (event: DragEndEvent, sectionId: string) => {
     const { active, over } = event;
-    
+
     if (!over || active.id === over.id) return;
-    
-    const members = getMembersForSection(sectionName);
+
+    const members = getMembersForSection(sectionId);
     const oldIndex = members.findIndex(m => m.id === active.id);
     const newIndex = members.findIndex(m => m.id === over.id);
     
@@ -1059,7 +1065,7 @@ const ContentManagement: React.FC = () => {
             ) : (
               languageSections.map((langSection) => {
                 const isExpanded = expandedLanguageSections.has(langSection.id || '');
-                const members = getMembersForSection(langSection.name);
+                const members = getMembersForSection(langSection.id || '');
 
                 return (
                   <div
@@ -1127,7 +1133,7 @@ const ContentManagement: React.FC = () => {
                           <DndContext
                             sensors={sensors}
                             collisionDetection={closestCenter}
-                            onDragEnd={(e) => handleDragEnd(e, langSection.name)}
+                            onDragEnd={(e) => handleDragEnd(e, langSection.id || '')}
                           >
                             <SortableContext
                               items={members.map(m => m.id || '')}
@@ -1266,7 +1272,7 @@ const ContentManagement: React.FC = () => {
                   {languageSections
                     .filter(s => s.isActive !== false)
                     .map(section => (
-                      <option key={section.id} value={section.name}>
+                      <option key={section.id} value={section.id}>
                         {section.name}
                       </option>
                     ))}

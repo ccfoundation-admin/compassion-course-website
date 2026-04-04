@@ -1,18 +1,20 @@
-import { 
-  collection, 
-  doc, 
-  getDoc, 
-  getDocs, 
-  setDoc, 
-  updateDoc, 
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
   deleteDoc,
   query,
   where,
   orderBy,
   limit,
-  Timestamp
+  Timestamp,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '../firebase/firebaseConfig';
+import { ensureTeamSuffix } from '../utils/contentUtils';
 
 export interface ContentItem {
   id?: string;
@@ -49,7 +51,7 @@ export interface TeamMember {
   bio: string; // Biography paragraphs (array of strings or single string)
   photo: string; // Firebase Storage URL or path to photo
   contact?: string; // Email or contact info
-  teamSection: string; // References TeamLanguageSection name
+  teamSection: string; // References TeamLanguageSection ID (legacy data may contain section name)
   order?: number; // For ordering within team section
   isActive?: boolean;
   createdAt?: Date;
@@ -72,7 +74,7 @@ const FALLBACK_TEAM_MEMBERS: TeamMember[] = [
     bio: 'Thom brings 29 years of human potential experience and training experience to his work as an Internationally Certified NVC Trainer. His passion and knowledge of Nonviolent Communication (NVC) combine to create a practical, understandable, humorous, and potentially profound approach for learning and integrating the skills of peacemaking. He is described as concise, inspiring, sincere and optimistic, applying transformational and spiritual ideas and sensibilities to real-life situations. Many of his students become active facilitators, trainers and practitioners.\nAs a trainer, speaker, mediator, and coach, Thom has taught tens of thousands of clients, participants, readers and listeners Nonviolent Communication. He has been published or featured in The New York Times, New York Magazine, Yoga Magazine.\nHe is a founder and the Director of Education for The New York Center for Nonviolent Communication (NYCNVC), the creator of The Compassion Course, a member of the Communications Coordination Committee for the United Nations and a CNVC IIT trainer.',
     photo: '/Team/ThomBond.png',
     contact: 'thombond@nycnvc.org',
-    teamSection: 'English Team',
+    teamSection: 'english',
     order: 0,
     isActive: true,
   },
@@ -82,7 +84,7 @@ const FALLBACK_TEAM_MEMBERS: TeamMember[] = [
     role: 'Co-Director and Lead Trainer',
     bio: 'Clara Moisello embraced Nonviolent Communication as part of a journey of self-discovery and transformation that began once she left her home in Italy in 2006 to pursue her doctoral studies in New York. While still working as neuroscience researcher at CUNY, Clara became actively involved in supporting the NYCNVC community, participating in and facilitating practice groups and intensives and training under the mentorship of Thom Bond. Eventually, this led her to a life and career shift.\nAs of today, Clara has completed over 1000 hours of NVC training and supports NYCNVC both as Lead Trainer and Co-Director. She is also the founder and leader of Compassion Course Italia - the Italian chapter of the renown Compassion Course Online, written and facilitated by Thom Bond, serving over 100 countries in 16 languages.\nFrom her initial participation in coordinating and facilitating workshops to her current position as Co-director and Lead Trainer, Clara has continuously evolved and contributed to the organization\'s growth. Driven by curiosity and creativity, she continuously explores new avenues to enhance the effectiveness of NVC. Her background in neuroscience, combined with contemplative practices, enriches her approach and adds depth to the work of NYCNVC.\nClara is committed to advancing the art and science of compassion, both within NYCNVC and beyond. Her work is driven by a desire to create a more empathetic and connected world, fostering compassionate dialogue and personal growth.',
     photo: '/Team/1769005145485-Clara_Moisello.webp',
-    teamSection: 'English Team',
+    teamSection: 'english',
     order: 1,
     isActive: true,
   },
@@ -576,6 +578,50 @@ export const getLanguageSections = async (): Promise<TeamLanguageSection[]> => {
 };
 
 /**
+ * Migrate team members that reference a section by name to use the section ID instead.
+ * Handles both the old name and new name to catch all orphaned members.
+ */
+const migrateTeamMembersToSectionId = async (
+  sectionId: string,
+  oldName: string | null,
+  newName: string
+): Promise<void> => {
+  try {
+    const teamRef = collection(db, 'teamMembers');
+    const batch = writeBatch(db);
+    let updateCount = 0;
+
+    // Find members referencing this section by any name variant (not by ID)
+    const namesToCheck = new Set<string>();
+    if (oldName) {
+      namesToCheck.add(oldName);
+      namesToCheck.add(ensureTeamSuffix(oldName));
+    }
+    namesToCheck.add(newName);
+    namesToCheck.add(ensureTeamSuffix(newName));
+    // Don't migrate members that already use the correct ID
+    namesToCheck.delete(sectionId);
+
+    for (const name of namesToCheck) {
+      const q = query(teamRef, where('teamSection', '==', name));
+      const snap = await getDocs(q);
+      snap.forEach((docSnap) => {
+        batch.update(docSnap.ref, { teamSection: sectionId });
+        updateCount++;
+      });
+    }
+
+    if (updateCount > 0) {
+      await batch.commit();
+      console.log(`✅ Migrated ${updateCount} team member(s) to section ID: ${sectionId}`);
+    }
+  } catch (error) {
+    console.error('Error migrating team members to section ID:', error);
+    // Don't throw — migration is best-effort, section save already succeeded
+  }
+};
+
+/**
  * Save a language section (create or update)
  */
 export const saveLanguageSection = async (
@@ -588,6 +634,11 @@ export const saveLanguageSection = async (
     if (section.id) {
       // Update existing section
       const docRef = doc(sectionsRef, section.id);
+
+      // Get old name before updating so we can migrate members
+      const oldDoc = await getDoc(docRef);
+      const oldName = oldDoc.exists() ? oldDoc.data()?.name : null;
+
       await updateDoc(docRef, {
         name: section.name,
         order: section.order ?? 0,
@@ -595,6 +646,10 @@ export const saveLanguageSection = async (
         updatedAt: Timestamp.now(),
         updatedBy,
       });
+
+      // Migrate members: update any that reference this section by old name to use section ID
+      await migrateTeamMembersToSectionId(section.id, oldName, section.name);
+
       return { ...section, updatedAt: new Date() };
     } else {
       // Create new section
@@ -636,6 +691,51 @@ export const deleteLanguageSection = async (id: string): Promise<void> => {
   } catch (error) {
     console.error('Error deleting language section:', error);
     throw error;
+  }
+};
+
+/**
+ * Bulk-migrate all team members from name-based teamSection to ID-based.
+ * Called on data load to auto-fix legacy data. Idempotent.
+ */
+export const migrateAllTeamMembersToSectionIds = async (
+  sections: TeamLanguageSection[],
+  members: TeamMember[]
+): Promise<void> => {
+  try {
+    // Build name→ID lookup (including normalized variants)
+    const nameToId = new Map<string, string>();
+    sections.forEach((s) => {
+      if (!s.id) return;
+      nameToId.set(s.name, s.id);
+      nameToId.set(ensureTeamSuffix(s.name), s.id);
+    });
+
+    // Build set of valid section IDs for quick lookup
+    const validIds = new Set(sections.map((s) => s.id).filter(Boolean));
+
+    const teamRef = collection(db, 'teamMembers');
+    const batch = writeBatch(db);
+    let updateCount = 0;
+
+    for (const member of members) {
+      if (!member.id) continue;
+      // Skip if already using a valid section ID
+      if (validIds.has(member.teamSection)) continue;
+      // Resolve name to ID
+      const resolvedId = nameToId.get(member.teamSection);
+      if (resolvedId) {
+        batch.update(doc(teamRef, member.id), { teamSection: resolvedId });
+        updateCount++;
+      }
+    }
+
+    if (updateCount > 0) {
+      await batch.commit();
+      console.log(`✅ Auto-migrated ${updateCount} team member(s) from name to section ID`);
+    }
+  } catch (error) {
+    console.error('Auto-migration of team sections failed (non-blocking):', error);
   }
 };
 

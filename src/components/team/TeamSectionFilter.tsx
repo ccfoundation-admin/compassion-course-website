@@ -1,11 +1,10 @@
 import React from 'react';
 import { TeamLanguageSection } from '../../services/contentService';
-import { ensureTeamSuffix } from '../../utils/contentUtils';
 
 interface TeamSectionFilterProps {
   sections: TeamLanguageSection[];
   active: string | null;
-  onChange: (sectionName: string | null) => void;
+  onChange: (sectionId: string | null) => void;
   membersBySection: Record<string, any[]>;
 }
 
@@ -28,18 +27,17 @@ const TeamSectionFilter: React.FC<TeamSectionFilterProps> = ({
         All <span className="team-filter-count">{totalMembers}</span>
       </button>
       {sections.map((section) => {
-        const name = section.name;
-        const normalized = ensureTeamSuffix(name);
-        const count = (membersBySection[name]?.length ?? 0) + (name !== normalized ? (membersBySection[normalized]?.length ?? 0) : 0);
+        const sectionId = section.id || '';
+        const count = membersBySection[sectionId]?.length ?? 0;
         return (
           <button
-            key={name}
-            className={`team-filter-pill ${active === name ? 'team-filter-pill--active' : ''}`}
-            onClick={() => onChange(name)}
+            key={sectionId}
+            className={`team-filter-pill ${active === sectionId ? 'team-filter-pill--active' : ''}`}
+            onClick={() => onChange(sectionId)}
             role="tab"
-            aria-selected={active === name}
+            aria-selected={active === sectionId}
           >
-            {name} <span className="team-filter-count">{count}</span>
+            {section.name} <span className="team-filter-count">{count}</span>
           </button>
         );
       })}
